@@ -1,0 +1,37 @@
+# Qaynaq Configuration
+# Copy this file to config.yaml and adjust settings as needed.
+# CLI flags and environment variables override values in this file.
+#
+# Values support environment variable interpolation:
+#   ${VAR}            - replaced with the value of VAR (empty string if unset)
+#   ${VAR:-default}   - replaced with VAR's value, or "default" if unset
+
+role: coordinator
+grpc-port: 50000
+http-port: 8080
+discovery-uri: localhost:50000
+debug: false
+
+database:
+  driver: sqlite
+  uri: "file:./qaynaq.sqlite?_foreign_keys=1&mode=rwc"
+
+  # PostgreSQL example with interpolation:
+  # driver: postgres
+  # uri: "postgres://${PG_USER:-qaynaq}:${PG_PASS}@${PG_HOST:-localhost}:${PG_PORT:-5432}/${PG_DB:-qaynaq}?sslmode=disable"
+
+secret:
+  key: "${SECRET_KEY:-this_is_a_32_byte_key_for_AES!!!}"
+
+auth:
+  type: none
+  # basic-username: qaynaq
+  # basic-password: password
+  # oauth2-client-id: ""
+  # oauth2-client-secret: ""
+  # oauth2-authorization-url: ""
+  # oauth2-token-url: ""
+  # oauth2-redirect-url: ""
+  # oauth2-scopes: "openid,email,profile"
+  # oauth2-user-info-url: ""
+  # oauth2-session-cookie-name: qaynaq_session

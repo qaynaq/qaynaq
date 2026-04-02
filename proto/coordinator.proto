@@ -1,0 +1,592 @@
+syntax = "proto3";
+
+package protorender;
+
+import "common.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/qaynaq/qaynaq/internal/protogen";
+
+message RegisterWorkerRequest {
+  string id = 1;
+  uint32 port = 2;
+}
+
+message DeregisterWorkerRequest {
+  string id = 1;
+}
+
+message HeartbeatRequest {
+  string id = 1;
+  uint32 port = 2;
+  repeated int64 running_worker_flow_ids = 3;
+}
+
+message HeartbeatResponse {
+  string message = 1;
+  repeated int64 renewed_lease_worker_flow_ids = 2;
+  repeated int64 expired_lease_worker_flow_ids = 3;
+}
+
+message WorkerFlowStatusRequest {
+  int64 worker_flow_id = 1;
+  WorkerFlowStatus status = 2;
+}
+
+message ListWorkersRequest {
+  string status = 1 [(validate.rules).string = {
+    in: [
+      "active",
+      "inactive",
+      "all"
+    ]
+  }];
+}
+
+message ListWorkersResponse {
+  message Worker {
+    string id = 1;
+    string address = 2;
+    string status = 3;
+    google.protobuf.Timestamp last_heartbeat = 4 [json_name = "last_heartbeat"];
+  }
+  repeated Worker data = 1;
+}
+
+message ListFlowsRequest {
+  string status = 1 [(validate.rules).string = {
+    in: [
+      "active",
+      "completed",
+      "paused",
+      "failed",
+      "all"
+    ]
+  }];
+}
+
+message ListFlowsResponse {
+  repeated Flow data = 1;
+}
+
+message GetFlowRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message FlowResponse {
+  Flow data = 1;
+  CommonResponse meta = 2;
+}
+
+message Event {
+  int64 worker_flow_id = 1;
+  string section = 2;
+  string component_label = 3;
+  string type = 4 [(validate.rules).string = {
+    in: [
+      "PRODUCE",
+      "CONSUME",
+      "DELETE",
+      "ERROR",
+      "UNKNOWN"
+    ]
+  }];
+  string content = 5;
+  google.protobuf.Struct meta = 6;
+  string trace_id = 7;
+  int64 id = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+message ListEventsRequest {
+  int64 flow_id = 1 [(validate.rules).int64.gt = 0];
+  int64 limit = 2;
+  int64 offset = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+}
+
+message ListEventsResponse {
+  repeated Event data = 1;
+  int64 total = 2;
+}
+
+message MetricsRequest {
+  int64 worker_flow_id = 1 [(validate.rules).int64.gt = 0];
+  uint64 input_events = 2;
+  uint64 processor_errors = 3;
+  uint64 output_events = 4;
+  map<string, uint64> input_events_by_component = 5;
+  map<string, uint64> processor_events_by_component = 6;
+  map<string, uint64> output_events_by_component = 7;
+}
+
+message GetAnalyticsRequest {}
+
+message GetAnalyticsResponse {
+  message FlowStatusCount {
+    string status = 1;
+    int64 count = 2;
+  }
+  message ComponentCount {
+    string component = 1;
+    int64 count = 2;
+  }
+  message TimeSeriesPoint {
+    string timestamp = 1;
+    int64 input_events = 2 [json_name = "input_events"];
+    int64 output_events = 3 [json_name = "output_events"];
+    int64 error_events = 4 [json_name = "error_events"];
+  }
+  int64 total_flows = 1 [json_name = "total_flows"];
+  repeated FlowStatusCount flows_by_status = 2 [json_name = "flows_by_status"];
+  uint64 total_input_events = 3 [json_name = "total_input_events"];
+  uint64 total_output_events = 4 [json_name = "total_output_events"];
+  uint64 total_processor_errors = 5 [json_name = "total_processor_errors"];
+  int64 active_workers = 6 [json_name = "active_workers"];
+  int64 total_events = 7 [json_name = "total_events"];
+  int64 error_events = 8 [json_name = "error_events"];
+  repeated TimeSeriesPoint events_over_time = 9 [json_name = "events_over_time"];
+  repeated ComponentCount top_input_components = 10 [json_name = "top_input_components"];
+  repeated ComponentCount top_output_components = 11 [json_name = "top_output_components"];
+}
+
+message SecretRequest {
+  string key = 1;
+  string value = 2;
+}
+
+message ListSecretsResponse {
+  repeated Secret data = 1;
+}
+
+message SecretResponse {
+  Secret data = 1;
+  CommonResponse meta = 2;
+}
+
+message ListCachesResponse {
+  repeated Cache data = 1;
+}
+
+message GetCacheRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message CacheResponse {
+  Cache data = 1;
+  CommonResponse meta = 2;
+}
+
+message ListRateLimitsResponse {
+  repeated RateLimit data = 1;
+}
+
+message GetBufferRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message BufferResponse {
+  Buffer data = 1;
+  CommonResponse meta = 2;
+}
+
+message ListBuffersResponse {
+  repeated Buffer data = 1;
+}
+
+message ListFilesResponse {
+  repeated File data = 1;
+}
+
+message GetFileRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message FileResponse {
+  File data = 1;
+  CommonResponse meta = 2;
+}
+
+message GetRateLimitRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message RateLimitResponse {
+  RateLimit data = 1;
+  CommonResponse meta = 2;
+}
+
+// Validate flow messages
+message ValidateFlowRequest {
+  string input_component = 1 [json_name = "input_component"];
+  string input_label = 2 [json_name = "input_label"];
+  string input_config = 3 [json_name = "input_config"];
+  string output_component = 4 [json_name = "output_component"];
+  string output_label = 5 [json_name = "output_label"];
+  string output_config = 6 [json_name = "output_config"];
+  repeated Flow.Processor processors = 7 [json_name = "processors"];
+}
+
+message ValidateFlowResponse {
+  bool valid = 1 [json_name = "valid"];
+  string error = 2 [json_name = "error"];
+}
+
+// Try flow messages
+message TryFlowRequest {
+  message TryMessage {
+    string content = 1 [json_name = "content"];
+  }
+  repeated Flow.Processor processors = 1 [json_name = "processors"];
+  repeated TryMessage messages = 2 [json_name = "messages"];
+}
+
+message TryFlowResponse {
+  message TryOutput {
+    string content = 1 [json_name = "content"];
+  }
+  repeated TryOutput outputs = 1 [json_name = "outputs"];
+  string error = 2 [json_name = "error"];
+}
+
+// Settings messages
+message GetMCPSettingsResponse {
+  bool protected = 1 [json_name = "protected"];
+  bool auth_enabled = 2 [json_name = "auth_enabled"];
+  repeated APIToken tokens = 3 [json_name = "tokens"];
+}
+
+message UpdateMCPProtectedRequest {
+  bool protected = 1 [json_name = "protected"];
+}
+
+message UpdateMCPProtectedResponse {
+  bool protected = 1 [json_name = "protected"];
+}
+
+message APIToken {
+  int64 id = 1 [json_name = "id"];
+  string name = 2 [json_name = "name"];
+  string token = 3 [json_name = "token"];
+  repeated string scopes = 4 [json_name = "scopes"];
+  google.protobuf.Timestamp created_at = 5 [json_name = "created_at"];
+  optional google.protobuf.Timestamp last_used_at = 6 [json_name = "last_used_at"];
+}
+
+message CreateAPITokenRequest {
+  string name = 1 [(validate.rules).string = {min_len: 1, max_len: 100}];
+  repeated string scopes = 2 [json_name = "scopes"];
+}
+
+message CreateAPITokenResponse {
+  APIToken data = 1;
+}
+
+message DeleteAPITokenRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message ListAPITokensResponse {
+  repeated APIToken tokens = 1 [json_name = "tokens"];
+}
+
+message ConnectionRequest {
+  string name = 1;
+}
+
+message ConnectionInfo {
+  string name = 1 [json_name = "name"];
+  string provider = 2 [json_name = "provider"];
+  repeated string scopes = 3 [json_name = "scopes"];
+  string client_id = 4 [json_name = "client_id"];
+  string client_secret_hint = 5 [json_name = "client_secret_hint"];
+  google.protobuf.Timestamp created_at = 6 [json_name = "created_at"];
+  google.protobuf.Timestamp updated_at = 7 [json_name = "updated_at"];
+}
+
+message ListConnectionsResponse {
+  repeated ConnectionInfo data = 1;
+}
+
+message ConnectionTokenResponse {
+  string data = 1;
+}
+
+message SetupStatusResponse {
+  bool first_run_complete = 1 [json_name = "first_run_complete"];
+}
+
+message TestConnectionRequest {
+  string connection_string = 1 [json_name = "connection_string"];
+  string driver = 2 [json_name = "driver"];
+}
+
+message TestConnectionResponse {
+  bool ok = 1;
+  string error = 2;
+}
+
+message TestShopifyConnectionRequest {
+  string shop_name = 1 [json_name = "shop_name"];
+  string api_access_token = 2 [json_name = "api_access_token"];
+}
+
+message TestShopifyConnectionResponse {
+  bool ok = 1;
+  string error = 2;
+  string shop_name = 3 [json_name = "shop_name"];
+}
+
+message ProviderScope {
+  string scope = 1 [json_name = "scope"];
+  string label = 2 [json_name = "label"];
+  string description = 3 [json_name = "description"];
+}
+
+message Provider {
+  string id = 1 [json_name = "id"];
+  repeated ProviderScope scopes = 2 [json_name = "scopes"];
+}
+
+message ListProvidersResponse {
+  repeated Provider data = 1;
+}
+
+service Coordinator {
+  // Worker flow methods
+  rpc UpdateWorkerFlowStatus(WorkerFlowStatusRequest) returns (CommonResponse) {}
+
+  // Worker methods
+  rpc RegisterWorker(RegisterWorkerRequest) returns (CommonResponse) {}
+  rpc DeregisterWorker(DeregisterWorkerRequest) returns (CommonResponse) {}
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse) {}
+  rpc ListWorkers(ListWorkersRequest) returns (ListWorkersResponse) {
+    option (google.api.http) = {get: "/v0/workers/{status}"};
+  }
+
+  // Flow methods
+  rpc ListFlows(ListFlowsRequest) returns (ListFlowsResponse) {
+    option (google.api.http) = {get: "/v0/flows"};
+  }
+  rpc GetFlow(GetFlowRequest) returns (FlowResponse) {
+    option (google.api.http) = {get: "/v0/flows/{id}"};
+  }
+  rpc CreateFlow(Flow) returns (FlowResponse) {
+    option (google.api.http) = {
+      post: "/v0/flows"
+      body: "*"
+    };
+  }
+  rpc UpdateFlow(Flow) returns (FlowResponse) {
+    option (google.api.http) = {
+      put: "/v0/flows/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteFlow(GetFlowRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/flows/{id}"};
+  }
+  rpc ValidateFlow(ValidateFlowRequest) returns (ValidateFlowResponse) {
+    option (google.api.http) = {
+      post: "/v0/flows/validate"
+      body: "*"
+    };
+  }
+  rpc TryFlow(TryFlowRequest) returns (TryFlowResponse) {
+    option (google.api.http) = {
+      post: "/v0/flows/try"
+      body: "*"
+    };
+  }
+
+  // Secret methods
+  rpc ListSecrets(google.protobuf.Empty) returns (ListSecretsResponse) {
+    option (google.api.http) = {get: "/v0/secrets"};
+  }
+  rpc CreateSecret(SecretRequest) returns (CommonResponse) {
+    option (google.api.http) = {
+      post: "/v0/secrets"
+      body: "*"
+    };
+  }
+  rpc UpdateSecret(SecretRequest) returns (CommonResponse) {
+    option (google.api.http) = {
+      put: "/v0/secrets/{key}"
+      body: "*"
+    };
+  }
+  rpc GetSecret(SecretRequest) returns (SecretResponse) {
+    option (google.api.http) = {get: "/v0/secrets/{key}"};
+  }
+  rpc DeleteSecret(SecretRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/secrets/{key}"};
+  }
+
+  // Cache methods
+  rpc ListCaches(google.protobuf.Empty) returns (ListCachesResponse) {
+    option (google.api.http) = {get: "/v0/caches"};
+  }
+  rpc GetCache(GetCacheRequest) returns (CacheResponse) {
+    option (google.api.http) = {get: "/v0/caches/{id}"};
+  }
+  rpc CreateCache(Cache) returns (CacheResponse) {
+    option (google.api.http) = {
+      post: "/v0/caches"
+      body: "*"
+    };
+  }
+  rpc UpdateCache(Cache) returns (CacheResponse) {
+    option (google.api.http) = {
+      put: "/v0/caches/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteCache(GetCacheRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/caches/{id}"};
+  }
+
+  // Rate limit methods
+  rpc ListRateLimits(google.protobuf.Empty) returns (ListRateLimitsResponse) {
+    option (google.api.http) = {get: "/v0/rate-limits"};
+  }
+  rpc GetRateLimit(GetRateLimitRequest) returns (RateLimitResponse) {
+    option (google.api.http) = {get: "/v0/rate-limits/{id}"};
+  }
+  rpc CreateRateLimit(RateLimit) returns (RateLimitResponse) {
+    option (google.api.http) = {
+      post: "/v0/rate-limits"
+      body: "*"
+    };
+  }
+  rpc UpdateRateLimit(RateLimit) returns (RateLimitResponse) {
+    option (google.api.http) = {
+      put: "/v0/rate-limits/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteRateLimit(GetRateLimitRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/rate-limits/{id}"};
+  }
+  rpc CheckRateLimit(RateLimitCheckRequest) returns (RateLimitCheckResponse) {}
+
+  // Buffer methods
+  rpc ListBuffers(google.protobuf.Empty) returns (ListBuffersResponse) {
+    option (google.api.http) = {get: "/v0/buffers"};
+  }
+  rpc GetBuffer(GetBufferRequest) returns (BufferResponse) {
+    option (google.api.http) = {get: "/v0/buffers/{id}"};
+  }
+  rpc CreateBuffer(Buffer) returns (BufferResponse) {
+    option (google.api.http) = {
+      post: "/v0/buffers"
+      body: "*"
+    };
+  }
+  rpc UpdateBuffer(Buffer) returns (BufferResponse) {
+    option (google.api.http) = {
+      put: "/v0/buffers/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteBuffer(GetBufferRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/buffers/{id}"};
+  }
+
+  // File methods
+  rpc ListFiles(google.protobuf.Empty) returns (ListFilesResponse) {
+    option (google.api.http) = {get: "/v0/files"};
+  }
+  rpc GetFile(GetFileRequest) returns (FileResponse) {
+    option (google.api.http) = {get: "/v0/files/{id}"};
+  }
+  rpc CreateFile(File) returns (FileResponse) {
+    option (google.api.http) = {
+      post: "/v0/files"
+      body: "*"
+    };
+  }
+  rpc UpdateFile(File) returns (FileResponse) {
+    option (google.api.http) = {
+      put: "/v0/files/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteFile(GetFileRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/files/{id}"};
+  }
+
+  // Observability methods
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {
+    option (google.api.http) = {get: "/v0/flows/{flow_id}/events"};
+  }
+  rpc IngestEvents(stream Event) returns (stream google.protobuf.Empty);
+  rpc IngestMetrics(MetricsRequest) returns (google.protobuf.Empty) {}
+
+  // Analytics methods
+  rpc GetAnalytics(GetAnalyticsRequest) returns (GetAnalyticsResponse) {
+    option (google.api.http) = {get: "/v0/analytics"};
+  }
+
+  // Settings methods
+  rpc GetMCPSettings(google.protobuf.Empty) returns (GetMCPSettingsResponse) {
+    option (google.api.http) = {get: "/v0/settings/mcp"};
+  }
+  rpc UpdateMCPProtected(UpdateMCPProtectedRequest) returns (UpdateMCPProtectedResponse) {
+    option (google.api.http) = {
+      put: "/v0/settings/mcp"
+      body: "*"
+    };
+  }
+  rpc ListAPITokens(google.protobuf.Empty) returns (ListAPITokensResponse) {
+    option (google.api.http) = {get: "/v0/settings/mcp/tokens"};
+  }
+  rpc CreateAPIToken(CreateAPITokenRequest) returns (CreateAPITokenResponse) {
+    option (google.api.http) = {
+      post: "/v0/settings/mcp/tokens"
+      body: "*"
+    };
+  }
+  rpc DeleteAPIToken(DeleteAPITokenRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/settings/mcp/tokens/{id}"};
+  }
+
+  // Connection methods
+  rpc ListProviders(google.protobuf.Empty) returns (ListProvidersResponse) {
+    option (google.api.http) = {get: "/v0/connections/providers"};
+  }
+  rpc ListConnections(google.protobuf.Empty) returns (ListConnectionsResponse) {
+    option (google.api.http) = {get: "/v0/connections"};
+  }
+  rpc DeleteConnection(ConnectionRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/connections/{name}"};
+  }
+  rpc GetConnectionToken(ConnectionRequest) returns (ConnectionTokenResponse) {}
+
+  // Setup methods
+  rpc GetSetupStatus(google.protobuf.Empty) returns (SetupStatusResponse) {
+    option (google.api.http) = {get: "/v0/setup/status"};
+  }
+  rpc CompleteSetup(google.protobuf.Empty) returns (CommonResponse) {
+    option (google.api.http) = {
+      post: "/v0/setup/complete"
+      body: "*"
+    };
+  }
+  rpc TestConnection(TestConnectionRequest) returns (TestConnectionResponse) {
+    option (google.api.http) = {
+      post: "/v0/setup/test-connection"
+      body: "*"
+    };
+  }
+  rpc TestShopifyConnection(TestShopifyConnectionRequest) returns (TestShopifyConnectionResponse) {
+    option (google.api.http) = {
+      post: "/v0/setup/test-shopify-connection"
+      body: "*"
+    };
+  }
+}

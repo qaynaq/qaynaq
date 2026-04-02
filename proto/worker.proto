@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "common.proto";
+
+
+package protorender;
+
+option go_package = "github.com/qaynaq/qaynaq/internal/protogen";
+
+message FlowFile {
+  string key = 1;
+  bytes content = 2;
+}
+
+message AssignFlowRequest {
+  int64 worker_flow_id = 1;
+  string config = 2;
+  repeated FlowFile files = 3;
+}
+
+message FetchFlowRequest {
+  int64 worker_flow_id = 1;
+}
+
+message FetchFlowResponse {
+  WorkerFlowStatus status = 1;
+}
+
+message CompleteFlowRequest {
+  int64 worker_flow_id = 1;
+}
+
+message IngestRequest {
+  int64 worker_flow_id = 1;
+  string method = 2;
+  string path = 3;
+  string content_type = 4;
+  bytes payload = 5;
+}
+
+message IngestResponse {
+  int32 statusCode = 1;
+  bytes response = 2;
+}
+
+service Worker {
+  rpc HealthCheck(google.protobuf.Empty) returns (CommonResponse) {}
+  rpc AssignFlow(AssignFlowRequest) returns (CommonResponse) {}
+  rpc FetchFlow(FetchFlowRequest) returns (FetchFlowResponse) {}
+  rpc CompleteFlow(CompleteFlowRequest) returns (CommonResponse) {}
+  rpc Ingest(IngestRequest) returns (IngestResponse) {}
+}

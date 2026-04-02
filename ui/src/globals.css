@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Sidebar collapse functionality */
+.sidebar-collapsed .main-content {
+  margin-left: 60px;
+}
+
+/* Transition for smooth collapse/expand */
+.sidebar,
+.main-content,
+header {
+  transition: all 0.3s ease;
+}
+
+.editor-with-line-numbers {
+  counter-reset: line;
+  width: 100%;
+}
+
+.editor-with-line-numbers textarea {
+  outline: none;
+  padding-left: 60px !important;
+  width: 100% !important;
+}
+
+.editor-with-line-numbers pre {
+  padding-left: 60px !important;
+  width: 100% !important;
+}
+
+.editor-with-line-numbers .editor-line-number {
+  position: absolute;
+  left: 0;
+  color: #858585;
+  text-align: right;
+  width: 40px;
+  font-size: 13px;
+}
+
+/* PrismJS Theme Overrides for Dark Mode */
+.dark .token.comment,
+.dark .token.prolog,
+.dark .token.doctype,
+.dark .token.cdata {
+  color: #8292a2;
+}
+
+.dark .token.punctuation {
+  color: #f8f8f2;
+}
+
+.dark .token.namespace {
+  opacity: 0.7;
+}
+
+.dark .token.property,
+.dark .token.tag,
+.dark .token.constant,
+.dark .token.symbol,
+.dark .token.deleted {
+  color: #f92672;
+}
+
+.dark .token.boolean,
+.dark .token.number {
+  color: #ae81ff;
+}
+
+.dark .token.selector,
+.dark .token.attr-name,
+.dark .token.string,
+.dark .token.char,
+.dark .token.builtin,
+.dark .token.inserted {
+  color: #a6e22e;
+}
+
+.dark .token.operator,
+.dark .token.entity,
+.dark .token.url,
+.dark .language-css .token.string,
+.dark .style .token.string,
+.dark .token.variable {
+  color: #f8f8f2;
+}
+
+.dark .token.atrule,
+.dark .token.attr-value,
+.dark .token.function,
+.dark .token.class-name {
+  color: #e6db74;
+}
+
+.dark .token.keyword {
+  color: #66d9ef;
+}
+
+.dark .token.regex,
+.dark .token.important {
+  color: #fd971f;
+}
+
+/* React Flow dark mode */
+.react-flow.dark {
+  --xy-background-color: hsl(var(--background));
+  --xy-node-background-color: hsl(var(--card));
+  --xy-node-border-color: hsl(var(--border));
+  --xy-edge-stroke: hsl(var(--muted-foreground));
+  --xy-minimap-background-color: hsl(var(--background));
+}
+
+/* React Flow edge animation */
+@keyframes dashmove {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+
+/* Glowing border animation */
+@keyframes glow-border {
+  0%, 100% {
+    border-color: hsl(var(--primary) / 0.15);
+    box-shadow: 0 0 8px hsl(var(--primary) / 0.06);
+  }
+  50% {
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 16px hsl(var(--primary) / 0.15);
+  }
+}
+.animate-glow-border {
+  animation: glow-border 2.5s ease-in-out infinite;
+}
+
+
+

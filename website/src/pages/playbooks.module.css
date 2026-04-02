@@ -1,0 +1,120 @@
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: var(--ifm-color-emphasis-600);
+  margin: 0 0 1.5rem;
+}
+
+.searchWrapper {
+  position: relative;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ifm-color-emphasis-500);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.6rem 0.75rem 0.6rem 2.5rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  background: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput::placeholder {
+  color: var(--ifm-color-emphasis-500);
+}
+
+.searchInput:focus {
+  border-color: var(--ifm-color-primary);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card:hover {
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  color: inherit;
+}
+
+[data-theme="dark"] .card:hover {
+  box-shadow: 0 2px 12px rgba(255, 255, 255, 0.06);
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.cardDescription {
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-600);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tag {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: var(--ifm-color-emphasis-100);
+  color: var(--ifm-color-emphasis-700);
+}
+
+.noResults {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--ifm-color-emphasis-500);
+  padding: 2rem 0;
+}
