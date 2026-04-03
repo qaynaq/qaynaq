@@ -54,10 +54,12 @@ export const shopifyPack: TemplatePack = {
       [
         param("limit", "Max orders to return (default 50, max 250)"),
         param("status", "Filter: open, closed, cancelled, any"),
+        param("since_id", "Return orders after this ID for pagination"),
       ],
       {
         limit: '${!this.limit.or("50")}',
         status: '${!this.status.or("")}',
+        since_id: '${!this.since_id.or("")}',
       },
     ),
     shopifyTool(
@@ -65,24 +67,42 @@ export const shopifyPack: TemplatePack = {
       "shopify_list_products",
       "List products from your Shopify store",
       "list_products",
-      [param("limit", "Max products to return (default 50, max 250)")],
-      { limit: '${!this.limit.or("50")}' },
+      [
+        param("limit", "Max products to return (default 50, max 250)"),
+        param("since_id", "Return products after this ID for pagination"),
+      ],
+      {
+        limit: '${!this.limit.or("50")}',
+        since_id: '${!this.since_id.or("")}',
+      },
     ),
     shopifyTool(
       "shopify_list_customers",
       "shopify_list_customers",
       "List customers from your Shopify store",
       "list_customers",
-      [param("limit", "Max customers to return (default 50, max 250)")],
-      { limit: '${!this.limit.or("50")}' },
+      [
+        param("limit", "Max customers to return (default 50, max 250)"),
+        param("since_id", "Return customers after this ID for pagination"),
+      ],
+      {
+        limit: '${!this.limit.or("50")}',
+        since_id: '${!this.since_id.or("")}',
+      },
     ),
     shopifyTool(
       "shopify_list_inventory_items",
       "shopify_list_inventory_items",
       "List inventory items from your Shopify store",
       "list_inventory_items",
-      [param("limit", "Max items to return (default 50, max 250)")],
-      { limit: '${!this.limit.or("50")}' },
+      [
+        param("limit", "Max items to return (default 50, max 250)"),
+        param("since_id", "Return items after this ID for pagination"),
+      ],
+      {
+        limit: '${!this.limit.or("50")}',
+        since_id: '${!this.since_id.or("")}',
+      },
     ),
     shopifyTool(
       "shopify_get_order",

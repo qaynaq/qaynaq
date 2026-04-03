@@ -18,6 +18,7 @@ Want to expose Shopify actions as MCP tools for AI assistants? Use the Shopify w
 | Order ID | string | - | Order ID for get_order |
 | Product ID | string | - | Product ID for get_product |
 | Customer ID | string | - | Customer ID for get_customer |
+| Since ID | string | - | Return items after this ID for pagination |
 | Rate Limit | string | - | Rate limit resource label |
 
 ## Authentication
@@ -59,6 +60,7 @@ List recent orders from the store.
 |-----------|-------------|
 | limit | Max orders to return (default 50, max 250) |
 | status | Filter: open, closed, cancelled, any |
+| since_id | Return orders after this ID for pagination |
 
 ### list_products
 
@@ -67,6 +69,7 @@ List products from the store.
 | Parameter | Description |
 |-----------|-------------|
 | limit | Max products to return (default 50, max 250) |
+| since_id | Return products after this ID for pagination |
 
 ### list_customers
 
@@ -75,6 +78,7 @@ List customers from the store.
 | Parameter | Description |
 |-----------|-------------|
 | limit | Max customers to return (default 50, max 250) |
+| since_id | Return customers after this ID for pagination |
 
 ### list_inventory_items
 
@@ -83,6 +87,7 @@ List inventory items from the store.
 | Parameter | Description |
 |-----------|-------------|
 | limit | Max items to return (default 50, max 250) |
+| since_id | Return items after this ID for pagination |
 
 ### get_order
 

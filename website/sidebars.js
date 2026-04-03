@@ -53,6 +53,7 @@ const sidebars = {
             "components/processors/google-calendar",
             "components/processors/google-drive",
             "components/processors/google-sheets",
+            "components/processors/shopify",
             "components/processors/mapping",
             "components/processors/json-schema",
             "components/processors/catch",

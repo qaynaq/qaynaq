@@ -33,6 +33,7 @@ type Processor struct {
 	orderID    *service.InterpolatedString
 	productID  *service.InterpolatedString
 	customerID *service.InterpolatedString
+	sinceID    *service.InterpolatedString
 
 	client *goshopify.Client
 	mgr    *service.Resources
@@ -97,6 +98,12 @@ func NewProcessorFromConfig(conf *service.ParsedConfig, mgr *service.Resources) 
 		}
 	}
 
+	if conf.Contains(spfSinceID) {
+		if p.sinceID, err = conf.FieldInterpolatedString(spfSinceID); err != nil {
+			return nil, err
+		}
+	}
+
 	// Create Shopify client with empty ApiKey (Custom App uses only access token)
 	app := goshopify.App{
 		ApiKey:   "",
@@ -119,6 +126,7 @@ type resolvedProcessorFields struct {
 	orderID    uint64
 	productID  uint64
 	customerID uint64
+	sinceID    uint64
 }
 
 func (p *Processor) resolveFields(msg *service.Message) (*resolvedProcessorFields, error) {
@@ -157,6 +165,13 @@ func (p *Processor) resolveFields(msg *service.Message) (*resolvedProcessorField
 		s, _ := p.customerID.TryString(msg)
 		if s != "" {
 			r.customerID, _ = strconv.ParseUint(s, 10, 64)
+		}
+	}
+
+	if p.sinceID != nil {
+		s, _ := p.sinceID.TryString(msg)
+		if s != "" {
+			r.sinceID, _ = strconv.ParseUint(s, 10, 64)
 		}
 	}
 
@@ -242,6 +257,9 @@ func (p *Processor) listOrders(ctx context.Context, f *resolvedProcessorFields) 
 			Limit: f.limit,
 		},
 	}
+	if f.sinceID > 0 {
+		options.SinceId = &f.sinceID
+	}
 	if f.status != "" {
 		options.Status = goshopify.OrderStatus(f.status)
 	}
@@ -270,6 +288,9 @@ func (p *Processor) listProducts(ctx context.Context, f *resolvedProcessorFields
 	options := &goshopify.ListOptions{
 		Limit: f.limit,
 	}
+	if f.sinceID > 0 {
+		options.SinceId = &f.sinceID
+	}
 
 	products, err := p.client.Product.List(ctx, options)
 	if err != nil {
@@ -295,6 +316,9 @@ func (p *Processor) listCustomers(ctx context.Context, f *resolvedProcessorField
 	options := &goshopify.ListOptions{
 		Limit: f.limit,
 	}
+	if f.sinceID > 0 {
+		options.SinceId = &f.sinceID
+	}
 
 	customers, err := p.client.Customer.List(ctx, options)
 	if err != nil {
@@ -319,6 +343,9 @@ func (p *Processor) listCustomers(ctx context.Context, f *resolvedProcessorField
 func (p *Processor) listInventoryItems(ctx context.Context, f *resolvedProcessorFields) (map[string]any, error) {
 	options := &goshopify.ListOptions{
 		Limit: f.limit,
+	}
+	if f.sinceID > 0 {
+		options.SinceId = &f.sinceID
 	}
 
 	inventoryItems, err := p.client.InventoryItem.List(ctx, options)

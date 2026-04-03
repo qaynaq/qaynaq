@@ -9,6 +9,7 @@ const (
 	spfOrderID    = "order_id"
 	spfProductID  = "product_id"
 	spfCustomerID = "customer_id"
+	spfSinceID    = "since_id"
 )
 
 const (
@@ -79,6 +80,10 @@ allowing dynamic values from the incoming message.`).
 			Optional()).
 		Field(service.NewInterpolatedStringField(spfCustomerID).
 			Description("Customer ID for get_customer action.").
+			Default("").
+			Optional()).
+		Field(service.NewInterpolatedStringField(spfSinceID).
+			Description("Return items after this ID for pagination. Used by all list actions.").
 			Default("").
 			Optional()).
 		Version("1.1.0")
