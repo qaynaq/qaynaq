@@ -2519,6 +2519,27 @@ function FlowBuilderContent({
         return { isValid: true, missingFields: [] };
       }
 
+      // flat: true schemas whose properties are all raw code (e.g. Bloblang mappings)
+      // store the field value verbatim, not as YAML. Skip yaml.load to avoid false
+      // "Invalid YAML format" errors when the code contains YAML-significant chars.
+      const isFlatCode =
+        schema.flat === true &&
+        Object.values(properties).every((p: any) => p?.type === "code");
+
+      if (isFlatCode) {
+        const hasContent = !!nodeData.configYaml && nodeData.configYaml.trim().length > 0;
+        if (hasContent) {
+          return { isValid: true, missingFields: [] };
+        }
+        const missingFields: string[] = [];
+        Object.entries(properties).forEach(([fieldKey, fieldSchema]) => {
+          if ((fieldSchema as any).required === true && missingFields.length === 0) {
+            missingFields.push(fieldKey);
+          }
+        });
+        return { isValid: missingFields.length === 0, missingFields };
+      }
+
       let configData: any = {};
       if (nodeData.configYaml && nodeData.configYaml.trim()) {
         try {
