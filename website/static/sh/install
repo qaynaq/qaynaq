@@ -44,7 +44,16 @@ install_qaynaq()
 		qaynaq_version=$1
 		qaynaq_install_path="/usr/local/bin"
 	elif [[ "$#" -eq 0 ]]; then
+		# /releases/latest excludes prereleases, so fall back to /releases (all, newest first)
+		# and pick the first tag_name if /latest returns nothing.
 		qaynaq_tag=$(curl -s https://api.github.com/repos/qaynaq/qaynaq/releases/latest | grep 'tag_name' | cut -d\" -f4)
+		if [[ -z "$qaynaq_tag" ]]; then
+			qaynaq_tag=$(curl -s https://api.github.com/repos/qaynaq/qaynaq/releases | grep 'tag_name' | head -n 1 | cut -d\" -f4)
+		fi
+		if [[ -z "$qaynaq_tag" ]]; then
+			echo "Aborted, could not determine latest Qaynaq release."
+			exit 1
+		fi
 		qaynaq_version=$(echo ${qaynaq_tag} | cut -c2-)
 		qaynaq_install_path="/usr/local/bin"
 	else
@@ -114,23 +123,25 @@ install_qaynaq()
 	qaynaq_file="qaynaq_${qaynaq_os}_${qaynaq_arch}${qaynaq_arm}${qaynaq_dl_ext}"
 	qaynaq_url="https://github.com/qaynaq/qaynaq/releases/download/${qaynaq_tag}/qaynaq_${qaynaq_version}_${qaynaq_os}_${qaynaq_arch}${qaynaq_arm}.tar.gz"
 
-	dl="/tmp/$qaynaq_file"
-	rm -rf -- "$dl"
+	# Extract into a dedicated temp directory so we don't collide with
+	# any pre-existing /tmp/qaynaq (e.g. the daemon's runtime dir).
+	qaynaq_tmp_dir="$(mktemp -d "${PREFIX:-}/tmp/qaynaq-install.XXXXXX")"
+	trap 'rm -rf -- "$qaynaq_tmp_dir"' EXIT
+	dl="$qaynaq_tmp_dir/$qaynaq_file"
 
 	curl -fsSL "$qaynaq_url" -o "$dl"
 
 	echo "Extracting..."
 	case "$qaynaq_file" in
-		*.tar.gz) tar -xzf "$dl" -C "$PREFIX/tmp/" "$qaynaq_bin" ;;
+		*.tar.gz) tar -xzf "$dl" -C "$qaynaq_tmp_dir/" "$qaynaq_bin" ;;
 	esac
-	chmod +x "$PREFIX/tmp/$qaynaq_bin"
+	chmod +x "$qaynaq_tmp_dir/$qaynaq_bin"
 
 	echo "Putting qaynaq in $qaynaq_install_path (may require password)"
 	if [ -n "$sudo_cmd" ] && [ -n "$(find "$qaynaq_install_path" -prune -user "$(id -u)")" ]; then
 		sudo_cmd=""
 	fi
-	$sudo_cmd mv "$PREFIX/tmp/$qaynaq_bin" "$qaynaq_install_path/$qaynaq_bin"
-	$sudo_cmd rm -- "$dl"
+	$sudo_cmd mv "$qaynaq_tmp_dir/$qaynaq_bin" "$qaynaq_install_path/$qaynaq_bin"
 
 	$qaynaq_install_path/$qaynaq_bin --version
 	if ! check_cmd qaynaq; then
