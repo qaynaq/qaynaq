@@ -34,6 +34,7 @@ import {
   NodeConfigPanel,
   type AllComponentSchemas,
 } from "./node-config-panel";
+import { ComponentPicker } from "./component-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -54,6 +55,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/toast";
 import { fetchBuffers } from "@/lib/api";
 import type { Buffer } from "@/lib/entities";
+import { getComponentIcon } from "@/lib/component-catalog";
 import * as yaml from "js-yaml";
 
 import { InputNode } from "./nodes/input-node";
@@ -3896,134 +3898,164 @@ function FlowBuilderContent({
 
       {/* Add node confirmation dialog */}
       <Dialog open={!!pendingNode} onOpenChange={(open: boolean) => { if (!open) setPendingNode(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              {pendingNode?.kind === "childCase" ? "Add Switch Case"
-                : pendingNode?.kind === "childProcessor" ? "Add Catch Processor"
-                : pendingNode?.kind === "childOutput" ? "Add Broker Output"
-                : pendingNode?.kind === "childInput" ? "Add Broker Input"
-                : pendingNode?.kind === "topLevel" ? `Add ${(pendingNode.topLevelType || "").charAt(0).toUpperCase() + (pendingNode.topLevelType || "").slice(1)}`
-                : "Add Processor"}
-            </DialogTitle>
-            <DialogDescription>
-              Configure the new node before adding it to the flow.
-            </DialogDescription>
-          </DialogHeader>
-          {pendingNode && (() => {
-            const isCase = pendingNode.kind === "childCase";
-            const hasComponents = pendingNode.availableComponents.length > 0;
-            const isDefault = isCase && !pendingNode.caseCheck;
-            const defaultConflict = isDefault && !!pendingNode.defaultExists;
-            const needsComponent = hasComponents && !pendingNode.componentId;
-            return (
-              <div className="space-y-4 mt-2">
-                {/* Label */}
-                {!isCase && (
-                  <div className="space-y-1">
-                    <Label htmlFor="pending-label" className="text-xs font-medium">Label</Label>
-                    <Input
-                      id="pending-label"
-                      value={pendingNode.label}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^[a-z0-9_-]*$/.test(val)) {
-                          setPendingNode({ ...pendingNode, label: val });
-                        }
-                      }}
-                      placeholder="Node label (e.g., my_kafka_input)"
-                    />
+        {pendingNode && (() => {
+          const isCase = pendingNode.kind === "childCase";
+          const hasComponents = pendingNode.availableComponents.length > 0;
+          const isDefault = isCase && !pendingNode.caseCheck;
+          const defaultConflict = isDefault && !!pendingNode.defaultExists;
+          const showPicker = hasComponents && !pendingNode.componentId;
+
+          const pickerType: "input" | "processor" | "output" =
+            pendingNode.topLevelType
+            ?? (pendingNode.kind === "childOutput" ? "output"
+                : pendingNode.kind === "childInput" ? "input"
+                : pendingNode.kind === "childCase" && !pendingNode.isProcessorSwitch ? "output"
+                : "processor");
+
+          const titleForKind =
+            pendingNode.kind === "childCase" ? "Add Switch Case"
+            : pendingNode.kind === "childProcessor" ? "Add Catch Processor"
+            : pendingNode.kind === "childOutput" ? "Add Broker Output"
+            : pendingNode.kind === "childInput" ? "Add Broker Input"
+            : pendingNode.kind === "topLevel" ? `Add ${(pendingNode.topLevelType || "").charAt(0).toUpperCase() + (pendingNode.topLevelType || "").slice(1)}`
+            : "Add Processor";
+
+          const title = showPicker
+            ? `${titleForKind}: choose a component`
+            : titleForKind;
+          const description = showPicker
+            ? "Pick the component to use. You won't be able to change it later without deleting the node."
+            : "Configure the new node before adding it to the flow.";
+
+          const SelectedIcon = pendingNode.componentId
+            ? getComponentIcon(pickerType, pendingNode.componentId)
+            : null;
+
+          return (
+            <DialogContent className={showPicker ? "max-w-2xl" : "max-w-sm"}>
+              <DialogHeader>
+                <DialogTitle>{title}</DialogTitle>
+                <DialogDescription>{description}</DialogDescription>
+              </DialogHeader>
+
+              {showPicker ? (
+                <div className="flex flex-col gap-3">
+                  <ComponentPicker
+                    type={pickerType}
+                    components={pendingNode.availableComponents}
+                    onSelect={(comp) => {
+                      setPendingNode({
+                        ...pendingNode,
+                        componentId: comp.id,
+                        component:
+                          comp.name === comp.component
+                            ? comp.component
+                            : `${comp.name} (${comp.component})`,
+                      });
+                    }}
+                  />
+                  <div className="flex justify-end pt-1">
+                    <Button variant="outline" onClick={() => setPendingNode(null)}>
+                      Cancel
+                    </Button>
                   </div>
-                )}
-
-                {/* Component selector */}
-                {hasComponents && (
-                  <div className="space-y-1">
-                    <Label htmlFor="pending-component" className="text-xs font-medium">Component</Label>
-                    <Select
-                      value={pendingNode.componentId || ""}
-                      onValueChange={(val) => {
-                        const comp = pendingNode.availableComponents.find((c) => c.id === val);
-                        setPendingNode({
-                          ...pendingNode,
-                          componentId: val,
-                          component: comp ? (comp.name === comp.component ? comp.component : `${comp.name} (${comp.component})`) : "",
-                        });
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select component" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {pendingNode.availableComponents.map((comp) => (
-                          <SelectItem key={comp.id} value={comp.id}>
-                            {comp.name === comp.component ? comp.component : `${comp.name} (${comp.component})`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Case-specific: check condition */}
-                {isCase && (
-                  <>
-                    <div className="space-y-1">
-                      <Label htmlFor="pending-case-check" className="text-xs font-medium">Check Condition</Label>
-                      <Input
-                        id="pending-case-check"
-                        placeholder='e.g. this.type == "foo"'
-                        value={pendingNode.caseCheck || ""}
-                        onChange={(e) => setPendingNode({ ...pendingNode, caseCheck: e.target.value })}
-                      />
-                      {defaultConflict ? (
-                        <p className="text-[10px] text-destructive">A default case already exists. Provide a condition or remove the existing default first.</p>
-                      ) : (
-                        <p className="text-[10px] text-muted-foreground">Bloblang condition. Leave empty for the default case.</p>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="pending-case-flag" className="text-xs font-medium">
-                          {pendingNode.isProcessorSwitch ? "Fallthrough" : "Continue"}
-                        </Label>
-                        <p className="text-[10px] text-muted-foreground">
-                          {pendingNode.isProcessorSwitch ? "Also execute subsequent cases." : "Also evaluate subsequent cases."}
-                        </p>
-                      </div>
-                      <input
-                        id="pending-case-flag"
-                        type="checkbox"
-                        checked={pendingNode.isProcessorSwitch ? pendingNode.caseFallthrough : pendingNode.caseContinue}
-                        onChange={(e) =>
-                          setPendingNode({
-                            ...pendingNode,
-                            ...(pendingNode.isProcessorSwitch
-                              ? { caseFallthrough: e.target.checked }
-                              : { caseContinue: e.target.checked }),
-                          })
-                        }
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setPendingNode(null)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    disabled={defaultConflict || needsComponent}
-                    onClick={handleConfirmAddNode}
-                  >
-                    Add to Flow
-                  </Button>
                 </div>
-              </div>
-            );
-          })()}
-        </DialogContent>
+              ) : (
+                <div className="mt-2 space-y-4">
+                  {hasComponents && SelectedIcon && (
+                    <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 p-2">
+                      <SelectedIcon className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1 text-sm">
+                        {pendingNode.component || pendingNode.componentId}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setPendingNode({ ...pendingNode, componentId: "", component: "" })
+                        }
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  )}
+
+                  {!isCase && (
+                    <div className="space-y-1">
+                      <Label htmlFor="pending-label" className="text-xs font-medium">Label</Label>
+                      <Input
+                        id="pending-label"
+                        value={pendingNode.label}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (/^[a-z0-9_-]*$/.test(val)) {
+                            setPendingNode({ ...pendingNode, label: val });
+                          }
+                        }}
+                        placeholder="Node label (e.g., my_kafka_input)"
+                      />
+                    </div>
+                  )}
+
+                  {isCase && (
+                    <>
+                      <div className="space-y-1">
+                        <Label htmlFor="pending-case-check" className="text-xs font-medium">Check Condition</Label>
+                        <Input
+                          id="pending-case-check"
+                          placeholder='e.g. this.type == "foo"'
+                          value={pendingNode.caseCheck || ""}
+                          onChange={(e) => setPendingNode({ ...pendingNode, caseCheck: e.target.value })}
+                        />
+                        {defaultConflict ? (
+                          <p className="text-[10px] text-destructive">A default case already exists. Provide a condition or remove the existing default first.</p>
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground">Bloblang condition. Leave empty for the default case.</p>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="pending-case-flag" className="text-xs font-medium">
+                            {pendingNode.isProcessorSwitch ? "Fallthrough" : "Continue"}
+                          </Label>
+                          <p className="text-[10px] text-muted-foreground">
+                            {pendingNode.isProcessorSwitch ? "Also execute subsequent cases." : "Also evaluate subsequent cases."}
+                          </p>
+                        </div>
+                        <input
+                          id="pending-case-flag"
+                          type="checkbox"
+                          checked={pendingNode.isProcessorSwitch ? pendingNode.caseFallthrough : pendingNode.caseContinue}
+                          onChange={(e) =>
+                            setPendingNode({
+                              ...pendingNode,
+                              ...(pendingNode.isProcessorSwitch
+                                ? { caseFallthrough: e.target.checked }
+                                : { caseContinue: e.target.checked }),
+                            })
+                          }
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setPendingNode(null)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      disabled={defaultConflict}
+                      onClick={handleConfirmAddNode}
+                    >
+                      Add to Flow
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          );
+        })()}
       </Dialog>
 
       {/* Context menu */}
