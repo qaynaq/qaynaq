@@ -34,11 +34,21 @@ func (t *telemetryManager) ShipLogs(ctx context.Context) {
 	retryDelay := time.Second
 
 	for {
+		if ctx.Err() != nil {
+			return
+		}
 		eventStreamClient, err := t.coordinatorConnection.GetClient().IngestEvents(ctx)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			log.Error().Err(err).Msg("Failed to create event stream client")
 			retryDelay *= 2
-			time.Sleep(min(retryDelay, EventStreamMaxDelay))
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(min(retryDelay, EventStreamMaxDelay)):
+			}
 			continue
 		}
 		retryDelay = time.Second
@@ -114,7 +124,11 @@ func (t *telemetryManager) ShipLogs(ctx context.Context) {
 		}
 	ReconnectEventStream:
 		log.Info().Msg("Attempting to reconnect flow...")
-		time.Sleep(retryDelay)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(retryDelay):
+		}
 	}
 }
 

@@ -2,15 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { InlineYamlEditor } from "@/components/inline-yaml-editor";
+import { getComponentIcon } from "@/lib/component-catalog";
 
 // Define FlowNodeData type locally since the file was deleted
 export interface FlowNodeData {
@@ -53,10 +47,6 @@ export function NodeConfigPanel({
 }: NodeConfigPanelProps) {
   const [nodeData, setNodeData] = useState<FlowNodeData | null>(null);
 
-  const availableBaseComponents: ComponentSchema[] = selectedNode && selectedNode.data.type && allComponentSchemas
-    ? allComponentSchemas[selectedNode.data.type as "input" | "processor" | "output"] || []
-    : [];
-
   useEffect(() => {
     if (selectedNode) {
       const currentData = selectedNode.data as FlowNodeData;
@@ -79,31 +69,16 @@ export function NodeConfigPanel({
   const handleDebouncedUpdate = useCallback(
     (field: keyof FlowNodeData, value: any) => {
       if (selectedNode && nodeData) {
-        const currentComponentId = field === 'componentId' ? value : nodeData.componentId;
-        const currentYaml = field === 'configYaml' ? value : nodeData.configYaml;
-
-        const updatedData = { 
-            ...nodeData, 
-            [field]: value 
+        const updatedData = {
+            ...nodeData,
+            [field]: value
         };
-        
-        if (field === 'componentId') {
-          const baseComp = availableBaseComponents.find(c => c.id === value);
-          updatedData.component = baseComp ? (baseComp.name === baseComp.component ? baseComp.component : `${baseComp.name} (${baseComp.component})`) : "";
-          if (value !== nodeData.componentId) {
-            updatedData.configYaml = "";
-          }
-        }
         setNodeData(updatedData);
         onUpdateNode(selectedNode.id, updatedData);
       }
     },
-    [selectedNode, nodeData, onUpdateNode, availableBaseComponents]
+    [selectedNode, nodeData, onUpdateNode]
   );
-
-  const handleBaseComponentChange = (componentId: string) => {
-    handleDebouncedUpdate("componentId", componentId);
-  };
 
   const getComponentSchema = (componentId: string, nodeType: "input" | "processor" | "output") => {
     const component = allComponentSchemas[nodeType]?.find(c => c.id === componentId);
@@ -183,22 +158,21 @@ export function NodeConfigPanel({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="base-component">Component</Label>
-            <Select
-              value={nodeData.componentId || ""}
-              onValueChange={handleBaseComponentChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select base component" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableBaseComponents.map((comp) => (
-                  <SelectItem key={comp.id} value={comp.id}>
-                    {comp.name === comp.component ? comp.component : `${comp.name} (${comp.component})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Component</Label>
+            {(() => {
+              const Icon = getComponentIcon(nodeData.type, nodeData.componentId);
+              return (
+                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    {nodeData.component || nodeData.componentId || "-"}
+                  </span>
+                </div>
+              );
+            })()}
+            <p className="text-[10px] text-muted-foreground">
+              Component is locked. Delete the node to pick a different one.
+            </p>
           </div>
         </div>
 
