@@ -1,0 +1,4 @@
+ui/** linguist-vendored
+website/** linguist-vendored
+internal/statik/statik.go linguist-generated
+internal/protogen/** linguist-generated
