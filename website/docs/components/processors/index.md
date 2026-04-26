@@ -14,6 +14,7 @@ Processors transform, validate, or route messages within a pipeline. They are ap
 | [Google Sheets](/docs/components/processors/google-sheets) | Google Sheets operations (spreadsheets, worksheets, rows, formatting) |
 | [Shopify](/docs/components/processors/shopify) | Shopify Admin API operations (orders, products, customers, inventory) |
 | [Mapping](/docs/components/processors/mapping) | Bloblang transformations |
+| [Command](/docs/components/processors/command) | Executes an external command, piping the message through stdin/stdout |
 | [JSON Schema](/docs/components/processors/json-schema) | Validates messages against a JSON schema |
 | [Catch](/docs/components/processors/catch) | Error handling — runs processors on failure |
 | [Switch](/docs/components/processors/switch) | Conditional processing based on message content |

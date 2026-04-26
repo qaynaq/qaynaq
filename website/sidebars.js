@@ -55,6 +55,7 @@ const sidebars = {
             "components/processors/google-sheets",
             "components/processors/shopify",
             "components/processors/mapping",
+            "components/processors/command",
             "components/processors/json-schema",
             "components/processors/catch",
             "components/processors/switch",

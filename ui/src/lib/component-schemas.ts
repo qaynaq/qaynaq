@@ -1678,6 +1678,26 @@ export const componentSchemas = {
         },
       },
     },
+    command: {
+      title: "Command",
+      description:
+        "Executes a command for each message, piping the message contents to stdin and replacing the message with stdout.",
+      properties: {
+        name: {
+          type: "input",
+          title: "Name",
+          description:
+            "The name of the command to execute. Supports interpolation functions, for example ${! @command } to read from a metadata field.",
+          required: true,
+        },
+        args_mapping: {
+          type: "code",
+          title: "Args Mapping",
+          description:
+            "A Bloblang mapping that should evaluate to an array of strings to use as command arguments. Example: '[ \"-c\", this.script_path ]'.",
+        },
+      },
+    },
     json_schema: {
       title: "JSON Schema",
       properties: {
@@ -3873,6 +3893,7 @@ export const componentLists = {
     "google_sheets",
     "branch",
     "mapping",
+    "command",
     "json_schema",
     "catch",
     "switch",
