@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/qaynaq/qaynaq/internal/api/coordinator"
@@ -32,13 +33,13 @@ type MCPSyncer interface {
 }
 
 type CoordinatorCLI struct {
-	api               *coordinator.CoordinatorAPI
-	executor          executor.CoordinatorExecutor
-	rateLimiterEngine interface{ Cleanup(time.Duration) error }
-	authManager       *auth.Manager
-	oauthHandler      *connection.OAuthHandler
-	mcpHandler        http.Handler
-	mcpSyncer         MCPSyncer
+	api                *coordinator.CoordinatorAPI
+	executor           executor.CoordinatorExecutor
+	rateLimiterEngine  interface{ Cleanup(time.Duration) error }
+	authManager        *auth.Manager
+	oauthHandler       *connection.OAuthHandler
+	mcpHandler         http.Handler
+	mcpSyncer          MCPSyncer
 	httpPort, grpcPort uint32
 }
 
@@ -294,7 +295,14 @@ func serveSpa(fs http.FileSystem, indexFile string) http.HandlerFunc {
 		f, err := fs.Open(reqPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				// File does not exist, serve index.html
+				// Missing asset requests must not fall back to index.html - the
+				// browser would receive HTML with text/html and reject the module.
+				// Returning 404 surfaces stale-hash references cleanly.
+				if strings.HasPrefix(reqPath, "/assets/") {
+					http.NotFound(w, r)
+					return
+				}
+				// File does not exist, serve index.html for SPA routes
 				index, err := fs.Open(indexFile)
 				if err != nil {
 					log.Error().Err(err).Str("file", indexFile).Msg("Failed to open index file from statikFS")
@@ -310,8 +318,10 @@ func serveSpa(fs http.FileSystem, indexFile string) http.HandlerFunc {
 					return
 				}
 
-				// Use ServeContent to handle content type, etag, etc.
-				http.ServeContent(w, r, fi.Name(), fi.ModTime(), index)
+				// Force revalidation so browsers don't serve a stale index.html
+				// that points at asset hashes from a previous build.
+				w.Header().Set("Cache-Control", "no-cache")
+				http.ServeContent(w, r, indexFile, fi.ModTime(), index)
 				return
 			} else {
 				// Other error opening the file
