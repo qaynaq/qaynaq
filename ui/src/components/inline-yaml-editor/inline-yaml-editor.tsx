@@ -526,6 +526,7 @@ export function InlineYamlEditor({
               value={state.value || ""}
               onChange={handleValueChange}
               previewMode={previewMode}
+              language={fieldSchema.language}
             />
           </Suspense>
         );
@@ -885,6 +886,7 @@ export function InlineYamlEditor({
                 value={value || ""}
                 onChange={handleFlatValueChange as (value: string) => void}
                 previewMode={previewMode}
+                language={flatFieldSchema.language}
               />
             </Suspense>
           ) : flatFieldSchema.type === "processor_list" ? (

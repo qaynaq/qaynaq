@@ -116,6 +116,7 @@ export function NestedPropertyInput({
             value={propValue || ""}
             onChange={updateValue}
             previewMode={previewMode}
+            language={propSchema.language}
           />
         </Suspense>
       );

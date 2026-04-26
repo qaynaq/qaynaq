@@ -1698,6 +1698,28 @@ export const componentSchemas = {
         },
       },
     },
+    python: {
+      title: "Python",
+      description:
+        "Executes a Python script for each message in a sandboxed WASM runtime. The message is exposed as 'this' and the result is read from 'root'.",
+      properties: {
+        script: {
+          type: "code",
+          language: "python",
+          title: "Script",
+          description:
+            "The Python script to execute. The incoming message is available as 'this'; assign the transformed result to 'root'.",
+          required: true,
+        },
+        imports: {
+          type: "array",
+          title: "Imports",
+          description:
+            "An optional list of Python modules to pre-import for the script.",
+          default: [],
+        },
+      },
+    },
     json_schema: {
       title: "JSON Schema",
       properties: {
@@ -3894,6 +3916,7 @@ export const componentLists = {
     "branch",
     "mapping",
     "command",
+    "python",
     "json_schema",
     "catch",
     "switch",
