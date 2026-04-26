@@ -21,6 +21,7 @@ import {
   Sparkles,
   Split,
   Terminal,
+  TerminalSquare,
   Wrench,
   Zap,
   Download,
@@ -152,6 +153,11 @@ const catalog: Record<NodeKind, Record<string, ComponentCatalogEntry>> = {
       icon: Terminal,
       description: "Execute a raw SQL query.",
     },
+    command: {
+      group: "System",
+      icon: TerminalSquare,
+      description: "Execute an external command and pipe message data through stdin/stdout.",
+    },
     sql_select: {
       group: "Database",
       icon: Search,
@@ -249,6 +255,7 @@ export function groupComponents<T extends { id: string }>(
     "AI",
     "Google",
     "E-commerce",
+    "System",
     "Transform",
     "Flow control",
     "Response",
