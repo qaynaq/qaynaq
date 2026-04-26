@@ -24,6 +24,7 @@ export interface FieldSchema {
   pattern?: string;
   patternMessage?: string;
   dataSource?: "caches" | "connections" | "secrets" | "rate_limits";
+  language?: string;
   properties?: Record<string, FieldSchema>;
 }
 

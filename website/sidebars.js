@@ -56,6 +56,7 @@ const sidebars = {
             "components/processors/shopify",
             "components/processors/mapping",
             "components/processors/command",
+            "components/processors/python",
             "components/processors/json-schema",
             "components/processors/catch",
             "components/processors/switch",

@@ -125,6 +125,7 @@ export function NestedProcessor({
                         onUpdate(index, "configYaml", yamlValue)
                       }
                       previewMode={previewMode}
+                      language={processorFlatFieldSchema.language}
                     />
                   </Suspense>
                 ) : (

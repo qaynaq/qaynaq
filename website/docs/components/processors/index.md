@@ -15,6 +15,7 @@ Processors transform, validate, or route messages within a pipeline. They are ap
 | [Shopify](/docs/components/processors/shopify) | Shopify Admin API operations (orders, products, customers, inventory) |
 | [Mapping](/docs/components/processors/mapping) | Bloblang transformations |
 | [Command](/docs/components/processors/command) | Executes an external command, piping the message through stdin/stdout |
+| [Python](/docs/components/processors/python) | Runs a Python script for each message in a sandboxed WASM runtime |
 | [JSON Schema](/docs/components/processors/json-schema) | Validates messages against a JSON schema |
 | [Catch](/docs/components/processors/catch) | Error handling — runs processors on failure |
 | [Switch](/docs/components/processors/switch) | Conditional processing based on message content |

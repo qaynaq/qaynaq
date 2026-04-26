@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Editor from "@monaco-editor/react";
+import Editor, { type Monaco } from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import { registerBloblangLanguage } from "@/lib/bloblang-language";
 
@@ -7,15 +7,23 @@ interface CodeEditorFieldProps {
   value: string;
   onChange: (value: string) => void;
   previewMode?: boolean;
+  language?: string;
 }
 
 export function CodeEditorField({
   value,
   onChange,
   previewMode = false,
+  language = "bloblang",
 }: CodeEditorFieldProps) {
   const { resolvedTheme } = useTheme();
   const [showTooltip, setShowTooltip] = useState(false);
+
+  const beforeMount = (monaco: Monaco) => {
+    if (language === "bloblang") {
+      registerBloblangLanguage(monaco);
+    }
+  };
 
   const displayValue = value
     ? value.length > 60
@@ -53,11 +61,11 @@ export function CodeEditorField({
     <div className="rounded-md border overflow-hidden">
       <Editor
         value={value}
-        language="bloblang"
+        language={language}
         theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
         onChange={(val) => onChange(val ?? "")}
         height="150px"
-        beforeMount={registerBloblangLanguage}
+        beforeMount={beforeMount}
         options={{
           minimap: { enabled: false },
           fontSize: 13,

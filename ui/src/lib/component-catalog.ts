@@ -24,6 +24,7 @@ import {
   TerminalSquare,
   Wrench,
   Zap,
+  Code2,
   Download,
   Workflow,
   Upload,
@@ -157,6 +158,11 @@ const catalog: Record<NodeKind, Record<string, ComponentCatalogEntry>> = {
       group: "System",
       icon: TerminalSquare,
       description: "Execute an external command and pipe message data through stdin/stdout.",
+    },
+    python: {
+      group: "System",
+      icon: Code2,
+      description: "Execute a Python script in a sandboxed WASM runtime to transform messages.",
     },
     sql_select: {
       group: "Database",
