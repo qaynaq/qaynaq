@@ -159,6 +159,15 @@ func main() {
 				EnvVars: []string{"AUTH_OAUTH2_SESSION_COOKIE_NAME"},
 				Value:   "qaynaq_session",
 			}),
+			// MCP OAuth (separate from app auth: this lets MCP clients
+			// such as Claude Desktop authenticate via the OAuth 2.1 flow
+			// defined in the MCP spec, with Qaynaq acting as the AS).
+			altsrc.NewBoolFlag(&cli.BoolFlag{
+				Name:    "mcp.oauth-enabled",
+				Usage:   "Enable OAuth 2.1 Authorization Server endpoints for MCP clients",
+				EnvVars: []string{"MCP_OAUTH_ENABLED"},
+				Value:   false,
+			}),
 		},
 		Before: func(ctx *cli.Context) error {
 			configFile := ctx.String("config")

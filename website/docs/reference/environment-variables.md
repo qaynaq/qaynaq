@@ -42,6 +42,14 @@ All Qaynaq settings can be configured via environment variables.
 
 See [Authentication](/docs/getting-started/authentication) for setup instructions.
 
+## MCP
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `MCP_OAUTH_ENABLED` | bool | `false` | Expose OAuth 2.1 Authorization Server endpoints so MCP clients (Claude Desktop, Cursor, etc.) can authenticate via the standard MCP OAuth flow |
+
+See [MCP OAuth](/docs/guides/mcp-oauth) for setup.
+
 ## Database
 
 | Variable | Type | Default | Description |

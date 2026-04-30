@@ -67,6 +67,11 @@ const (
 	Coordinator_ListAPITokens_FullMethodName          = "/protorender.Coordinator/ListAPITokens"
 	Coordinator_CreateAPIToken_FullMethodName         = "/protorender.Coordinator/CreateAPIToken"
 	Coordinator_DeleteAPIToken_FullMethodName         = "/protorender.Coordinator/DeleteAPIToken"
+	Coordinator_ListOAuthClients_FullMethodName       = "/protorender.Coordinator/ListOAuthClients"
+	Coordinator_DeleteOAuthClient_FullMethodName      = "/protorender.Coordinator/DeleteOAuthClient"
+	Coordinator_ListOAuthSessions_FullMethodName      = "/protorender.Coordinator/ListOAuthSessions"
+	Coordinator_RevokeOAuthSession_FullMethodName     = "/protorender.Coordinator/RevokeOAuthSession"
+	Coordinator_RevokeOAuthConsent_FullMethodName     = "/protorender.Coordinator/RevokeOAuthConsent"
 	Coordinator_ListProviders_FullMethodName          = "/protorender.Coordinator/ListProviders"
 	Coordinator_ListConnections_FullMethodName        = "/protorender.Coordinator/ListConnections"
 	Coordinator_DeleteConnection_FullMethodName       = "/protorender.Coordinator/DeleteConnection"
@@ -139,6 +144,11 @@ type CoordinatorClient interface {
 	ListAPITokens(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAPITokensResponse, error)
 	CreateAPIToken(ctx context.Context, in *CreateAPITokenRequest, opts ...grpc.CallOption) (*CreateAPITokenResponse, error)
 	DeleteAPIToken(ctx context.Context, in *DeleteAPITokenRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	ListOAuthClients(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListOAuthClientsResponse, error)
+	DeleteOAuthClient(ctx context.Context, in *DeleteOAuthClientRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	ListOAuthSessions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListOAuthSessionsResponse, error)
+	RevokeOAuthSession(ctx context.Context, in *RevokeOAuthSessionRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	RevokeOAuthConsent(ctx context.Context, in *RevokeOAuthConsentRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	// Connection methods
 	ListProviders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListProvidersResponse, error)
 	ListConnections(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListConnectionsResponse, error)
@@ -632,6 +642,56 @@ func (c *coordinatorClient) DeleteAPIToken(ctx context.Context, in *DeleteAPITok
 	return out, nil
 }
 
+func (c *coordinatorClient) ListOAuthClients(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListOAuthClientsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListOAuthClientsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ListOAuthClients_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) DeleteOAuthClient(ctx context.Context, in *DeleteOAuthClientRequest, opts ...grpc.CallOption) (*CommonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonResponse)
+	err := c.cc.Invoke(ctx, Coordinator_DeleteOAuthClient_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) ListOAuthSessions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListOAuthSessionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListOAuthSessionsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ListOAuthSessions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) RevokeOAuthSession(ctx context.Context, in *RevokeOAuthSessionRequest, opts ...grpc.CallOption) (*CommonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonResponse)
+	err := c.cc.Invoke(ctx, Coordinator_RevokeOAuthSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) RevokeOAuthConsent(ctx context.Context, in *RevokeOAuthConsentRequest, opts ...grpc.CallOption) (*CommonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonResponse)
+	err := c.cc.Invoke(ctx, Coordinator_RevokeOAuthConsent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *coordinatorClient) ListProviders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListProvidersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListProvidersResponse)
@@ -774,6 +834,11 @@ type CoordinatorServer interface {
 	ListAPITokens(context.Context, *emptypb.Empty) (*ListAPITokensResponse, error)
 	CreateAPIToken(context.Context, *CreateAPITokenRequest) (*CreateAPITokenResponse, error)
 	DeleteAPIToken(context.Context, *DeleteAPITokenRequest) (*CommonResponse, error)
+	ListOAuthClients(context.Context, *emptypb.Empty) (*ListOAuthClientsResponse, error)
+	DeleteOAuthClient(context.Context, *DeleteOAuthClientRequest) (*CommonResponse, error)
+	ListOAuthSessions(context.Context, *emptypb.Empty) (*ListOAuthSessionsResponse, error)
+	RevokeOAuthSession(context.Context, *RevokeOAuthSessionRequest) (*CommonResponse, error)
+	RevokeOAuthConsent(context.Context, *RevokeOAuthConsentRequest) (*CommonResponse, error)
 	// Connection methods
 	ListProviders(context.Context, *emptypb.Empty) (*ListProvidersResponse, error)
 	ListConnections(context.Context, *emptypb.Empty) (*ListConnectionsResponse, error)
@@ -934,6 +999,21 @@ func (UnimplementedCoordinatorServer) CreateAPIToken(context.Context, *CreateAPI
 }
 func (UnimplementedCoordinatorServer) DeleteAPIToken(context.Context, *DeleteAPITokenRequest) (*CommonResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteAPIToken not implemented")
+}
+func (UnimplementedCoordinatorServer) ListOAuthClients(context.Context, *emptypb.Empty) (*ListOAuthClientsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListOAuthClients not implemented")
+}
+func (UnimplementedCoordinatorServer) DeleteOAuthClient(context.Context, *DeleteOAuthClientRequest) (*CommonResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteOAuthClient not implemented")
+}
+func (UnimplementedCoordinatorServer) ListOAuthSessions(context.Context, *emptypb.Empty) (*ListOAuthSessionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListOAuthSessions not implemented")
+}
+func (UnimplementedCoordinatorServer) RevokeOAuthSession(context.Context, *RevokeOAuthSessionRequest) (*CommonResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeOAuthSession not implemented")
+}
+func (UnimplementedCoordinatorServer) RevokeOAuthConsent(context.Context, *RevokeOAuthConsentRequest) (*CommonResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeOAuthConsent not implemented")
 }
 func (UnimplementedCoordinatorServer) ListProviders(context.Context, *emptypb.Empty) (*ListProvidersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProviders not implemented")
@@ -1815,6 +1895,96 @@ func _Coordinator_DeleteAPIToken_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_ListOAuthClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListOAuthClients(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ListOAuthClients_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListOAuthClients(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_DeleteOAuthClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteOAuthClientRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).DeleteOAuthClient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_DeleteOAuthClient_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).DeleteOAuthClient(ctx, req.(*DeleteOAuthClientRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_ListOAuthSessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListOAuthSessions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ListOAuthSessions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListOAuthSessions(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_RevokeOAuthSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeOAuthSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).RevokeOAuthSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_RevokeOAuthSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).RevokeOAuthSession(ctx, req.(*RevokeOAuthSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_RevokeOAuthConsent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeOAuthConsentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).RevokeOAuthConsent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_RevokeOAuthConsent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).RevokeOAuthConsent(ctx, req.(*RevokeOAuthConsentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Coordinator_ListProviders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -2149,6 +2319,26 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteAPIToken",
 			Handler:    _Coordinator_DeleteAPIToken_Handler,
+		},
+		{
+			MethodName: "ListOAuthClients",
+			Handler:    _Coordinator_ListOAuthClients_Handler,
+		},
+		{
+			MethodName: "DeleteOAuthClient",
+			Handler:    _Coordinator_DeleteOAuthClient_Handler,
+		},
+		{
+			MethodName: "ListOAuthSessions",
+			Handler:    _Coordinator_ListOAuthSessions_Handler,
+		},
+		{
+			MethodName: "RevokeOAuthSession",
+			Handler:    _Coordinator_RevokeOAuthSession_Handler,
+		},
+		{
+			MethodName: "RevokeOAuthConsent",
+			Handler:    _Coordinator_RevokeOAuthConsent_Handler,
 		},
 		{
 			MethodName: "ListProviders",

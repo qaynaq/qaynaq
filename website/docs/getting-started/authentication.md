@@ -135,9 +135,11 @@ The MCP endpoint (`/mcp`) can be protected with API tokens, separate from the ma
 ### How It Works
 
 1. **Enable app authentication first** - MCP token management requires basic or OAuth2 authentication to be enabled on the application. Without app auth, the settings page is accessible to everyone.
-2. **Enable MCP protection** - In the Settings page, toggle "Require authentication" under the MCP Authentication section.
-3. **Create API tokens** - Create named tokens for each MCP client. The token value is shown only once - copy and store it securely.
+2. **Enable MCP protection** - Open **Settings > Authentication** and toggle "Require authentication".
+3. **Create API tokens** - Switch to the **API Tokens** tab and create one named token per MCP client. The token value is shown only once - copy and store it securely.
 4. **Configure your MCP client** - Pass the token to your MCP client using one of the methods below.
+
+For interactive clients that can complete an OAuth flow (Claude Desktop, Cursor), prefer [MCP OAuth](/docs/guides/mcp-oauth) over static tokens.
 
 ### Passing the Token
 
@@ -176,7 +178,7 @@ MCP clients can authenticate using either method:
 
 ### Token Management
 
-Tokens are managed through the Settings page in the web UI or via the API:
+Tokens are managed through **Settings > API Tokens** in the web UI or via the API:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -185,6 +187,12 @@ Tokens are managed through the Settings page in the web UI or via the API:
 | `/api/v0/settings/mcp/tokens` | GET | List all API tokens |
 | `/api/v0/settings/mcp/tokens` | POST | Create a new API token |
 | `/api/v0/settings/mcp/tokens/{id}` | DELETE | Delete a token |
+| `/api/v0/settings/mcp/oauth-sessions` | GET | List active OAuth sessions (when MCP OAuth is enabled) |
+| `/api/v0/settings/mcp/oauth-sessions/{id}` | DELETE | Revoke an OAuth session |
+| `/api/v0/settings/mcp/oauth-clients` | GET | List registered OAuth clients |
+| `/api/v0/settings/mcp/oauth-clients/{id}` | DELETE | Delete an OAuth client registration |
+| `/api/v0/settings/mcp/oauth-clients/{id}/consent` | DELETE | Revoke a client's consent and refresh tokens |
+| `/api/v0/mcp/oauth/consent-request` | GET, POST | Backing endpoints for the SPA consent page |
 
 Each token has a name, scopes, creation date, and last-used timestamp. The last-used time is tracked in memory and flushed to the database periodically, so there is no performance overhead on every MCP request.
 

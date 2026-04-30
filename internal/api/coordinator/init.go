@@ -50,12 +50,16 @@ type CoordinatorAPI struct {
 	fileRepo            persistence.FileRepository
 	settingRepo         persistence.SettingRepository
 	apiTokenRepo        persistence.APITokenRepository
+	oauthClientRepo     persistence.OAuthClientRepository
+	oauthRefreshRepo    persistence.OAuthRefreshTokenRepository
+	oauthConsentRepo    persistence.OAuthConsentRepository
 	rateLimiterEngine   *ratelimiter.Engine
 	aesgcm              *vault.AESGCM
 	analyticsProvider   analytics.Provider
 	flowWorkerMap     FlowWorkerMap
 	connManager       *connection.Manager
 	authType          config.AuthType
+	mcpOAuthEnabled   bool
 	cache             settingsCache
 	tokenUsage        tokenUsageTracker
 }
@@ -76,12 +80,16 @@ func NewCoordinatorAPI(
 	fileRepo persistence.FileRepository,
 	settingRepo persistence.SettingRepository,
 	apiTokenRepo persistence.APITokenRepository,
+	oauthClientRepo persistence.OAuthClientRepository,
+	oauthRefreshRepo persistence.OAuthRefreshTokenRepository,
+	oauthConsentRepo persistence.OAuthConsentRepository,
 	rateLimiterEngine *ratelimiter.Engine,
 	aesgcm *vault.AESGCM,
 	analyticsProvider analytics.Provider,
 	connManager *connection.Manager,
 	flowWorkerMap FlowWorkerMap,
 	authType config.AuthType,
+	mcpOAuthEnabled bool,
 ) *CoordinatorAPI {
 	return &CoordinatorAPI{
 		eventRepo:           eventRepo,
@@ -99,12 +107,16 @@ func NewCoordinatorAPI(
 		fileRepo:            fileRepo,
 		settingRepo:         settingRepo,
 		apiTokenRepo:        apiTokenRepo,
+		oauthClientRepo:     oauthClientRepo,
+		oauthRefreshRepo:    oauthRefreshRepo,
+		oauthConsentRepo:    oauthConsentRepo,
 		rateLimiterEngine:   rateLimiterEngine,
 		aesgcm:              aesgcm,
 		analyticsProvider:   analyticsProvider,
 		connManager:       connManager,
 		flowWorkerMap:     flowWorkerMap,
 		authType:          authType,
+		mcpOAuthEnabled:   mcpOAuthEnabled,
 		tokenUsage:        tokenUsageTracker{pending: make(map[int64]time.Time)},
 	}
 }

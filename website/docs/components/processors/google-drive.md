@@ -70,7 +70,7 @@ Service accounts have their own 15GB storage quota. Files created by a service a
 #### Step 3: Store the Credentials
 
 1. Open the downloaded JSON key file and copy its entire contents
-2. In Qaynaq, go to **Settings** > **Secrets**
+2. In Qaynaq, go to **Secrets**
 3. Create a new secret (e.g. key: `GOOGLE_DRIVE_SA`) and paste the JSON as the value
 4. In the Google Drive processor, select `GOOGLE_DRIVE_SA` from the Service Account JSON dropdown
 

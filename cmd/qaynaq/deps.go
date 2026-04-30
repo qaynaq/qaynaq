@@ -22,6 +22,7 @@ import (
 	"github.com/qaynaq/qaynaq/internal/executor"
 	executorcoordinator "github.com/qaynaq/qaynaq/internal/executor/coordinator"
 	mcppkg "github.com/qaynaq/qaynaq/internal/mcp"
+	mcpoauth "github.com/qaynaq/qaynaq/internal/mcp/oauth"
 	"github.com/qaynaq/qaynaq/internal/persistence"
 	"github.com/qaynaq/qaynaq/internal/ratelimiter"
 	"github.com/qaynaq/qaynaq/internal/vault"
@@ -121,16 +122,28 @@ func InitializeCoordinatorCommand(ctx *cli.Context) *intcli.CoordinatorCLI {
 	flowWorkerMap := executorcoordinator.NewFlowWorkerMap()
 	settingRepository := persistence.NewSettingRepository(db)
 	apiTokenRepository := persistence.NewAPITokenRepository(db)
+	oauthClientRepository := persistence.NewOAuthClientRepository(db)
+	oauthRefreshTokenRepository := persistence.NewOAuthRefreshTokenRepository(db)
+	oauthConsentRepository := persistence.NewOAuthConsentRepository(db)
 	connectionRepository := persistence.NewConnectionRepository(db)
 	connManager := connection.NewManager(connectionRepository, aesgcm)
-	coordinatorAPI := coordinator.NewCoordinatorAPI(eventRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, flowBufferRepository, flowProcessorRepository, workerRepository, workerFlowRepository, secretRepository, cacheRepository, bufferRepository, rateLimitRepository, fileRepository, settingRepository, apiTokenRepository, rateLimiterEngine, aesgcm, analyticsProvider, connManager, flowWorkerMap, authConfig.Type)
+	mcpOAuthEnabled := ctx.Bool("mcp.oauth-enabled")
+	coordinatorAPI := coordinator.NewCoordinatorAPI(eventRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, flowBufferRepository, flowProcessorRepository, workerRepository, workerFlowRepository, secretRepository, cacheRepository, bufferRepository, rateLimitRepository, fileRepository, settingRepository, apiTokenRepository, oauthClientRepository, oauthRefreshTokenRepository, oauthConsentRepository, rateLimiterEngine, aesgcm, analyticsProvider, connManager, flowWorkerMap, authConfig.Type, mcpOAuthEnabled)
 	coordinatorExecutor := executor.NewCoordinatorExecutor(workerRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, workerFlowRepository, fileRepository, flowWorkerMap)
 	oauthHandler := connection.NewOAuthHandler(connManager)
 	mcpHandler := mcppkg.NewMCPHandler(flowRepository, coordinatorExecutor, Version)
+
+	var mcpOAuthServer *mcpoauth.Server
+	if mcpOAuthEnabled {
+		sessionResolver := auth.NewSessionResolver(authManager)
+		mcpOAuthServer = mcpoauth.NewServer(oauthClientRepository, oauthRefreshTokenRepository, oauthConsentRepository, sessionResolver, secretConfig.Key)
+		log.Info().Msg("MCP OAuth Authorization Server enabled")
+	}
+
 	httpPort := uint32(ctx.Uint("http-port"))
 	grpcPort := uint32(ctx.Uint("grpc-port"))
 	sampledata.Init()
-	coordinatorCLI := intcli.NewCoordinatorCLI(coordinatorAPI, coordinatorExecutor, rateLimiterEngine, authManager, oauthHandler, mcpHandler, httpPort, grpcPort)
+	coordinatorCLI := intcli.NewCoordinatorCLI(coordinatorAPI, coordinatorExecutor, rateLimiterEngine, authManager, oauthHandler, mcpHandler, mcpOAuthServer, httpPort, grpcPort)
 	return coordinatorCLI
 }
 

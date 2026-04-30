@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Outlet,
+  Navigate,
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
@@ -34,7 +35,13 @@ import FlowEditPage from "./pages/flows/[id]/edit/page.tsx";
 import FlowEventsPage from "./pages/flows/[id]/events/page.tsx";
 import FlowNewPage from "./pages/flows/new/page.tsx";
 import FilesPage from "./pages/files/page.tsx";
-import SettingsPage from "./pages/settings/page.tsx";
+import SettingsLayout from "./pages/settings/layout.tsx";
+import AuthenticationSettings from "./pages/settings/authentication.tsx";
+import TokensSettings from "./pages/settings/tokens.tsx";
+import SessionsSettings from "./pages/settings/sessions.tsx";
+import ClientsSettings from "./pages/settings/clients.tsx";
+import OAuthConsentPage from "./pages/oauth/consent.tsx";
+import OAuthErrorPage from "./pages/oauth/error.tsx";
 
 const AppLayout: React.FC = () => {
   return (
@@ -83,6 +90,15 @@ function App() {
         <TokenHandler />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/oauth/error" element={<OAuthErrorPage />} />
+          <Route
+            path="/oauth/consent"
+            element={
+              <ProtectedRoute>
+                <OAuthConsentPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/"
             element={
@@ -112,7 +128,16 @@ function App() {
               element={<RateLimitEditPage />}
             />
             <Route path="files" element={<FilesPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings" element={<SettingsLayout />}>
+              <Route
+                index
+                element={<Navigate to="/settings/authentication" replace />}
+              />
+              <Route path="authentication" element={<AuthenticationSettings />} />
+              <Route path="tokens" element={<TokensSettings />} />
+              <Route path="sessions" element={<SessionsSettings />} />
+              <Route path="clients" element={<ClientsSettings />} />
+            </Route>
           </Route>
         </Routes>
       </AuthProvider>

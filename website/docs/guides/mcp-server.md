@@ -54,11 +54,15 @@ The MCP endpoint can be protected with API tokens, managed through the **Setting
 Token management requires application authentication to be enabled first (basic or OAuth2). See [Authentication](/docs/getting-started/authentication).
 :::
 
+:::tip
+For interactive clients (Claude Desktop, Cursor, IDE extensions), prefer OAuth instead of static tokens. See [MCP OAuth](/docs/guides/mcp-oauth) for setup. Both methods can be used simultaneously.
+:::
+
 ### Setup
 
-1. Navigate to **Settings** in the web UI.
-2. Toggle **Require authentication** under MCP Authentication.
-3. Click **Create Token** and give it a name (e.g., "Claude Desktop").
+1. Navigate to **Settings > Authentication** in the web UI.
+2. Toggle **Require authentication**.
+3. Switch to the **API Tokens** tab and click **Create Token**. Give it a name (e.g., "Claude Desktop").
 4. Copy the token - it is only shown once.
 
 ### Passing the Token
@@ -89,7 +93,7 @@ Authorization: Bearer at_your_token_here
 ```
 
 :::tip
-Create a separate token for each client. You can revoke access per client and track usage via the last-used timestamp in Settings.
+Create a separate token for each client. You can revoke access per client and track usage via the last-used timestamp in **Settings > API Tokens**.
 :::
 
 ## Verifying

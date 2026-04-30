@@ -90,6 +90,7 @@ const sidebars = {
       items: [
         "guides/google-oauth-setup",
         "guides/mcp-server",
+        "guides/mcp-oauth",
         {
           type: "category",
           label: "MCP Tool Packs",

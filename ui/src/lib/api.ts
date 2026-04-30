@@ -10,6 +10,9 @@ import {
   Analytics,
   MCPSettings,
   APIToken,
+  OAuthClients,
+  OAuthSessions,
+  OAuthConsentRequest,
 } from "./entities";
 import * as yaml from "js-yaml";
 
@@ -1469,4 +1472,104 @@ export async function deleteAPIToken(id: number): Promise<void> {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
+}
+
+export async function fetchOAuthClients(): Promise<OAuthClients> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/oauth-clients`, {
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function deleteOAuthClient(id: string): Promise<void> {
+  const response = await handleResponse(
+    await fetch(
+      `${API_BASE_URL}/settings/mcp/oauth-clients/${encodeURIComponent(id)}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+    ),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+}
+
+export async function fetchOAuthSessions(): Promise<OAuthSessions> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/oauth-sessions`, {
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function revokeOAuthSession(id: number): Promise<void> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/oauth-sessions/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+}
+
+export async function revokeOAuthConsent(clientID: string): Promise<void> {
+  const response = await handleResponse(
+    await fetch(
+      `${API_BASE_URL}/settings/mcp/oauth-clients/${encodeURIComponent(clientID)}/consent`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+    ),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+}
+
+export async function fetchOAuthConsentRequest(
+  requestID: string,
+): Promise<OAuthConsentRequest> {
+  const response = await handleResponse(
+    await fetch(
+      `${API_BASE_URL}/mcp/oauth/consent-request?request_id=${encodeURIComponent(requestID)}`,
+      {
+        headers: getAuthHeaders(),
+      },
+    ),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function decideOAuthConsent(
+  requestID: string,
+  decision: "allow" | "deny",
+): Promise<{ redirect_url: string }> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/mcp/oauth/consent-request`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ request_id: requestID, decision }),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
 }

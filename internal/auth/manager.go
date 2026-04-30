@@ -3,6 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/qaynaq/qaynaq/internal/config"
@@ -71,6 +73,7 @@ func (m *Manager) APIMiddleware(next http.Handler) http.Handler {
 func (m *Manager) SetupAuthRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/auth/info", m.HandleAuthInfo)
 	mux.HandleFunc("/auth/session", m.HandleSessionCheck)
+	mux.HandleFunc("/auth/exchange", m.HandleExchange)
 
 	if m.authType == config.AuthTypeBasic {
 		mux.HandleFunc("/auth/login", m.basicHandler.HandleLogin)
@@ -118,6 +121,52 @@ func (m *Manager) HandleSessionCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]bool{"authenticated": authenticated})
+}
+
+// HandleExchange writes the SPA's localStorage JWT (sent as a Bearer header)
+// into an HttpOnly session cookie so server-side handlers (notably the MCP
+// OAuth /authorize endpoint) can identify the user. Idempotent.
+func (m *Manager) HandleExchange(w http.ResponseWriter, r *http.Request) {
+	if m.authType == config.AuthTypeNone {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		http.Error(w, `{"error":"missing bearer token"}`, http.StatusUnauthorized)
+		return
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+
+	cookieName := "qaynaq_session"
+	switch m.authType {
+	case config.AuthTypeBasic:
+		if m.basicHandler == nil || !m.basicHandler.isValidSession(token) {
+			http.Error(w, `{"error":"invalid token"}`, http.StatusUnauthorized)
+			return
+		}
+	case config.AuthTypeOAuth2:
+		if m.oauth2Handler == nil || !m.oauth2Handler.isValidSession(token) {
+			http.Error(w, `{"error":"invalid token"}`, http.StatusUnauthorized)
+			return
+		}
+		cookieName = m.oauth2Handler.cookieName
+	default:
+		http.Error(w, `{"error":"unsupported auth type"}`, http.StatusBadRequest)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     cookieName,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int((24 * time.Hour).Seconds()),
+	})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (m *Manager) IsEnabled() bool {
