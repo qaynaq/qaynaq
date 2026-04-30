@@ -39,7 +39,7 @@ This processor uses **Custom App** authentication (Private Apps were deprecated 
 6. Click **Install app**
 7. Copy the **Admin API access token** (starts with `shpat_`)
 
-Store the access token as a secret in **Settings > Secrets**, then reference it in the config:
+Store the access token as a secret in **Secrets**, then reference it in the config:
 
 ```yaml
 processors:

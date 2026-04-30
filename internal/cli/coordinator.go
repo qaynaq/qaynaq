@@ -15,6 +15,7 @@ import (
 	"github.com/qaynaq/qaynaq/internal/connection"
 	"github.com/qaynaq/qaynaq/internal/executor"
 	mcppkg "github.com/qaynaq/qaynaq/internal/mcp"
+	mcpoauth "github.com/qaynaq/qaynaq/internal/mcp/oauth"
 	pb "github.com/qaynaq/qaynaq/internal/protogen"
 	_ "github.com/qaynaq/qaynaq/internal/statik"
 
@@ -40,14 +41,15 @@ type CoordinatorCLI struct {
 	oauthHandler       *connection.OAuthHandler
 	mcpHandler         http.Handler
 	mcpSyncer          MCPSyncer
+	mcpOAuthServer     *mcpoauth.Server
 	httpPort, grpcPort uint32
 }
 
 func NewCoordinatorCLI(api *coordinator.CoordinatorAPI, executor executor.CoordinatorExecutor, rateLimiterEngine interface{ Cleanup(time.Duration) error }, authManager *auth.Manager, oauthHandler *connection.OAuthHandler, mcpHandler interface {
 	http.Handler
 	MCPSyncer
-}, httpPort, grpcPort uint32) *CoordinatorCLI {
-	return &CoordinatorCLI{api, executor, rateLimiterEngine, authManager, oauthHandler, mcpHandler, mcpHandler, httpPort, grpcPort}
+}, mcpOAuthServer *mcpoauth.Server, httpPort, grpcPort uint32) *CoordinatorCLI {
+	return &CoordinatorCLI{api, executor, rateLimiterEngine, authManager, oauthHandler, mcpHandler, mcpHandler, mcpOAuthServer, httpPort, grpcPort}
 }
 
 func (c *CoordinatorCLI) Run(ctx context.Context) {
@@ -215,7 +217,12 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 	mainMux.HandleFunc("/connections/oauth/authorize", c.oauthHandler.HandleAuthorize)
 	mainMux.HandleFunc("/connections/oauth/callback", c.oauthHandler.HandleCallback)
 
-	protectedAPI := c.authManager.Middleware(mux)
+	apiMux := http.NewServeMux()
+	apiMux.Handle("/", mux)
+	if c.mcpOAuthServer != nil {
+		c.mcpOAuthServer.MountAPIRoutes(apiMux)
+	}
+	protectedAPI := c.authManager.Middleware(apiMux)
 	mainMux.Handle("/api/", http.StripPrefix("/api", protectedAPI))
 	mainMux.HandleFunc("/ingest/", func(w http.ResponseWriter, r *http.Request) {
 		statusCode, response, err := c.executor.ForwardRequestToWorker(r.Context(), r)
@@ -232,7 +239,14 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(`{"error":"not found"}`))
 	})
-	mcpWithAuth := mcppkg.AuthMiddleware(c.api, c.mcpHandler)
+	if c.mcpOAuthServer != nil {
+		c.mcpOAuthServer.MountRoutes(mainMux)
+	}
+	var mcpOAuthValidator mcppkg.OAuthValidator
+	if c.mcpOAuthServer != nil {
+		mcpOAuthValidator = c.mcpOAuthServer
+	}
+	mcpWithAuth := mcppkg.AuthMiddleware(c.api, mcpOAuthValidator, c.mcpHandler)
 	mainMux.Handle("/mcp", mcpWithAuth)
 	mainMux.Handle("/mcp/", mcpWithAuth)
 	mainMux.HandleFunc("/", serveSpa(statikFS, "/index.html"))
@@ -261,11 +275,18 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 			log.Info().Msg("Shutting down HTTP gateway server...")
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			if err := httpServer.Shutdown(shutdownCtx); err != nil {
-				log.Error().Err(err).Msg("HTTP gateway server graceful shutdown failed")
-				return err
+			if c.mcpOAuthServer != nil {
+				c.mcpOAuthServer.Shutdown(shutdownCtx)
 			}
-			log.Info().Msg("HTTP gateway server stopped gracefully")
+			if err := httpServer.Shutdown(shutdownCtx); err != nil {
+				// Streaming MCP connections block graceful drain; force-close.
+				log.Warn().Err(err).Msg("HTTP gateway graceful shutdown timed out, forcing close")
+				if closeErr := httpServer.Close(); closeErr != nil {
+					log.Error().Err(closeErr).Msg("HTTP gateway force close failed")
+				}
+			} else {
+				log.Info().Msg("HTTP gateway server stopped gracefully")
+			}
 			return ctx.Err()
 		}
 	})

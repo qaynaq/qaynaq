@@ -4953,6 +4953,8 @@ func (m *GetMCPSettingsResponse) validate(all bool) error {
 
 	}
 
+	// no validation rules for OauthEnabled
+
 	if len(errors) > 0 {
 		return GetMCPSettingsResponseMultiError(errors)
 	}
@@ -5900,6 +5902,953 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ListAPITokensResponseValidationError{}
+
+// Validate checks the field values on OAuthClient with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *OAuthClient) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on OAuthClient with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in OAuthClientMultiError, or
+// nil if none found.
+func (m *OAuthClient) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *OAuthClient) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for Name
+
+	if all {
+		switch v := interface{}(m.GetCreatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, OAuthClientValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, OAuthClientValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCreatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return OAuthClientValidationError{
+				field:  "CreatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Consented
+
+	if m.LastUsedAt != nil {
+
+		if all {
+			switch v := interface{}(m.GetLastUsedAt()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, OAuthClientValidationError{
+						field:  "LastUsedAt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, OAuthClientValidationError{
+						field:  "LastUsedAt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetLastUsedAt()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return OAuthClientValidationError{
+					field:  "LastUsedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return OAuthClientMultiError(errors)
+	}
+
+	return nil
+}
+
+// OAuthClientMultiError is an error wrapping multiple validation errors
+// returned by OAuthClient.ValidateAll() if the designated constraints aren't met.
+type OAuthClientMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m OAuthClientMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m OAuthClientMultiError) AllErrors() []error { return m }
+
+// OAuthClientValidationError is the validation error returned by
+// OAuthClient.Validate if the designated constraints aren't met.
+type OAuthClientValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OAuthClientValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e OAuthClientValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e OAuthClientValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e OAuthClientValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e OAuthClientValidationError) ErrorName() string { return "OAuthClientValidationError" }
+
+// Error satisfies the builtin error interface
+func (e OAuthClientValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOAuthClient.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OAuthClientValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OAuthClientValidationError{}
+
+// Validate checks the field values on ListOAuthClientsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListOAuthClientsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListOAuthClientsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListOAuthClientsResponseMultiError, or nil if none found.
+func (m *ListOAuthClientsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListOAuthClientsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetClients() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListOAuthClientsResponseValidationError{
+						field:  fmt.Sprintf("Clients[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListOAuthClientsResponseValidationError{
+						field:  fmt.Sprintf("Clients[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListOAuthClientsResponseValidationError{
+					field:  fmt.Sprintf("Clients[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for OauthEnabled
+
+	if len(errors) > 0 {
+		return ListOAuthClientsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListOAuthClientsResponseMultiError is an error wrapping multiple validation
+// errors returned by ListOAuthClientsResponse.ValidateAll() if the designated
+// constraints aren't met.
+type ListOAuthClientsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListOAuthClientsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListOAuthClientsResponseMultiError) AllErrors() []error { return m }
+
+// ListOAuthClientsResponseValidationError is the validation error returned by
+// ListOAuthClientsResponse.Validate if the designated constraints aren't met.
+type ListOAuthClientsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListOAuthClientsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListOAuthClientsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListOAuthClientsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListOAuthClientsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListOAuthClientsResponseValidationError) ErrorName() string {
+	return "ListOAuthClientsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListOAuthClientsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListOAuthClientsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListOAuthClientsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListOAuthClientsResponseValidationError{}
+
+// Validate checks the field values on DeleteOAuthClientRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteOAuthClientRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteOAuthClientRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteOAuthClientRequestMultiError, or nil if none found.
+func (m *DeleteOAuthClientRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteOAuthClientRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetId()) < 1 {
+		err := DeleteOAuthClientRequestValidationError{
+			field:  "Id",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return DeleteOAuthClientRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteOAuthClientRequestMultiError is an error wrapping multiple validation
+// errors returned by DeleteOAuthClientRequest.ValidateAll() if the designated
+// constraints aren't met.
+type DeleteOAuthClientRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteOAuthClientRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteOAuthClientRequestMultiError) AllErrors() []error { return m }
+
+// DeleteOAuthClientRequestValidationError is the validation error returned by
+// DeleteOAuthClientRequest.Validate if the designated constraints aren't met.
+type DeleteOAuthClientRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteOAuthClientRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteOAuthClientRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteOAuthClientRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteOAuthClientRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteOAuthClientRequestValidationError) ErrorName() string {
+	return "DeleteOAuthClientRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteOAuthClientRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteOAuthClientRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteOAuthClientRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteOAuthClientRequestValidationError{}
+
+// Validate checks the field values on RevokeOAuthConsentRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RevokeOAuthConsentRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RevokeOAuthConsentRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RevokeOAuthConsentRequestMultiError, or nil if none found.
+func (m *RevokeOAuthConsentRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RevokeOAuthConsentRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetClientId()) < 1 {
+		err := RevokeOAuthConsentRequestValidationError{
+			field:  "ClientId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return RevokeOAuthConsentRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// RevokeOAuthConsentRequestMultiError is an error wrapping multiple validation
+// errors returned by RevokeOAuthConsentRequest.ValidateAll() if the
+// designated constraints aren't met.
+type RevokeOAuthConsentRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RevokeOAuthConsentRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RevokeOAuthConsentRequestMultiError) AllErrors() []error { return m }
+
+// RevokeOAuthConsentRequestValidationError is the validation error returned by
+// RevokeOAuthConsentRequest.Validate if the designated constraints aren't met.
+type RevokeOAuthConsentRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RevokeOAuthConsentRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RevokeOAuthConsentRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RevokeOAuthConsentRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RevokeOAuthConsentRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RevokeOAuthConsentRequestValidationError) ErrorName() string {
+	return "RevokeOAuthConsentRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RevokeOAuthConsentRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRevokeOAuthConsentRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RevokeOAuthConsentRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RevokeOAuthConsentRequestValidationError{}
+
+// Validate checks the field values on OAuthSession with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *OAuthSession) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on OAuthSession with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in OAuthSessionMultiError, or
+// nil if none found.
+func (m *OAuthSession) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *OAuthSession) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for ClientId
+
+	// no validation rules for ClientName
+
+	// no validation rules for UserEmail
+
+	if all {
+		switch v := interface{}(m.GetCreatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, OAuthSessionValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, OAuthSessionValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCreatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return OAuthSessionValidationError{
+				field:  "CreatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetExpiresAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, OAuthSessionValidationError{
+					field:  "ExpiresAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, OAuthSessionValidationError{
+					field:  "ExpiresAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetExpiresAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return OAuthSessionValidationError{
+				field:  "ExpiresAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return OAuthSessionMultiError(errors)
+	}
+
+	return nil
+}
+
+// OAuthSessionMultiError is an error wrapping multiple validation errors
+// returned by OAuthSession.ValidateAll() if the designated constraints aren't met.
+type OAuthSessionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m OAuthSessionMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m OAuthSessionMultiError) AllErrors() []error { return m }
+
+// OAuthSessionValidationError is the validation error returned by
+// OAuthSession.Validate if the designated constraints aren't met.
+type OAuthSessionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OAuthSessionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e OAuthSessionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e OAuthSessionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e OAuthSessionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e OAuthSessionValidationError) ErrorName() string { return "OAuthSessionValidationError" }
+
+// Error satisfies the builtin error interface
+func (e OAuthSessionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOAuthSession.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OAuthSessionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OAuthSessionValidationError{}
+
+// Validate checks the field values on ListOAuthSessionsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListOAuthSessionsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListOAuthSessionsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListOAuthSessionsResponseMultiError, or nil if none found.
+func (m *ListOAuthSessionsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListOAuthSessionsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetSessions() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListOAuthSessionsResponseValidationError{
+						field:  fmt.Sprintf("Sessions[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListOAuthSessionsResponseValidationError{
+						field:  fmt.Sprintf("Sessions[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListOAuthSessionsResponseValidationError{
+					field:  fmt.Sprintf("Sessions[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for OauthEnabled
+
+	if len(errors) > 0 {
+		return ListOAuthSessionsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListOAuthSessionsResponseMultiError is an error wrapping multiple validation
+// errors returned by ListOAuthSessionsResponse.ValidateAll() if the
+// designated constraints aren't met.
+type ListOAuthSessionsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListOAuthSessionsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListOAuthSessionsResponseMultiError) AllErrors() []error { return m }
+
+// ListOAuthSessionsResponseValidationError is the validation error returned by
+// ListOAuthSessionsResponse.Validate if the designated constraints aren't met.
+type ListOAuthSessionsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListOAuthSessionsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListOAuthSessionsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListOAuthSessionsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListOAuthSessionsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListOAuthSessionsResponseValidationError) ErrorName() string {
+	return "ListOAuthSessionsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListOAuthSessionsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListOAuthSessionsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListOAuthSessionsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListOAuthSessionsResponseValidationError{}
+
+// Validate checks the field values on RevokeOAuthSessionRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RevokeOAuthSessionRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RevokeOAuthSessionRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RevokeOAuthSessionRequestMultiError, or nil if none found.
+func (m *RevokeOAuthSessionRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RevokeOAuthSessionRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetId() <= 0 {
+		err := RevokeOAuthSessionRequestValidationError{
+			field:  "Id",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return RevokeOAuthSessionRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// RevokeOAuthSessionRequestMultiError is an error wrapping multiple validation
+// errors returned by RevokeOAuthSessionRequest.ValidateAll() if the
+// designated constraints aren't met.
+type RevokeOAuthSessionRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RevokeOAuthSessionRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RevokeOAuthSessionRequestMultiError) AllErrors() []error { return m }
+
+// RevokeOAuthSessionRequestValidationError is the validation error returned by
+// RevokeOAuthSessionRequest.Validate if the designated constraints aren't met.
+type RevokeOAuthSessionRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RevokeOAuthSessionRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RevokeOAuthSessionRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RevokeOAuthSessionRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RevokeOAuthSessionRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RevokeOAuthSessionRequestValidationError) ErrorName() string {
+	return "RevokeOAuthSessionRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RevokeOAuthSessionRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRevokeOAuthSessionRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RevokeOAuthSessionRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RevokeOAuthSessionRequestValidationError{}
 
 // Validate checks the field values on ConnectionRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the

@@ -52,9 +52,10 @@ func (c *CoordinatorAPI) GetMCPSettings(_ context.Context, _ *emptypb.Empty) (*p
 	}
 
 	return &pb.GetMCPSettingsResponse{
-		Protected:   protected,
-		AuthEnabled: c.authType != config.AuthTypeNone,
-		Tokens:      c.toProtoTokens(tokens),
+		Protected:    protected,
+		AuthEnabled:  c.authType != config.AuthTypeNone,
+		Tokens:       c.toProtoTokens(tokens),
+		OauthEnabled: c.mcpOAuthEnabled,
 	}, nil
 }
 
@@ -199,6 +200,123 @@ func (c *CoordinatorAPI) FlushTokenUsage() {
 	} else {
 		log.Debug().Int("count", len(pending)).Msg("Flushed token usage data")
 	}
+}
+
+func (c *CoordinatorAPI) ListOAuthClients(_ context.Context, _ *emptypb.Empty) (*pb.ListOAuthClientsResponse, error) {
+	if !c.mcpOAuthEnabled {
+		return &pb.ListOAuthClientsResponse{OauthEnabled: false}, nil
+	}
+	clients, err := c.oauthClientRepo.List()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list oauth clients")
+		return nil, status.Error(codes.Internal, "failed to list oauth clients")
+	}
+	consented, err := c.oauthConsentRepo.ClientIDsWithAnyConsent()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to load consent state")
+		return nil, status.Error(codes.Internal, "failed to load consent state")
+	}
+	out := make([]*pb.OAuthClient, len(clients))
+	for i, cl := range clients {
+		oc := &pb.OAuthClient{
+			Id:           cl.ID,
+			Name:         cl.Name,
+			RedirectUris: cl.RedirectURIs,
+			CreatedAt:    timestamppb.New(cl.CreatedAt),
+			Consented:    consented[cl.ID],
+		}
+		if cl.LastUsedAt != nil {
+			oc.LastUsedAt = timestamppb.New(*cl.LastUsedAt)
+		}
+		out[i] = oc
+	}
+	return &pb.ListOAuthClientsResponse{Clients: out, OauthEnabled: true}, nil
+}
+
+// RevokeOAuthConsent removes the user's consent for a client and revokes the
+// client's refresh tokens. The client registration row is kept; the next
+// connection from this MCP client will prompt for consent again.
+func (c *CoordinatorAPI) RevokeOAuthConsent(_ context.Context, in *pb.RevokeOAuthConsentRequest) (*pb.CommonResponse, error) {
+	if err := in.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if !c.mcpOAuthEnabled {
+		return nil, status.Error(codes.FailedPrecondition, "MCP OAuth is not enabled")
+	}
+	if err := c.oauthConsentRepo.DeleteByClient(in.GetClientId()); err != nil {
+		log.Error().Err(err).Msg("Failed to delete oauth consent")
+		return nil, status.Error(codes.Internal, "failed to revoke consent")
+	}
+	if err := c.oauthRefreshRepo.DeleteByClient(in.GetClientId()); err != nil {
+		log.Error().Err(err).Msg("Failed to delete oauth refresh tokens")
+		return nil, status.Error(codes.Internal, "failed to revoke client sessions")
+	}
+	return &pb.CommonResponse{Message: "Consent revoked. The MCP client will prompt for consent on next connection."}, nil
+}
+
+// DeleteOAuthClient hard-deletes a client and all of its refresh tokens.
+// Refresh tokens are dropped first so in-flight access tokens stop being
+// accepted before the parent row is removed.
+func (c *CoordinatorAPI) DeleteOAuthClient(_ context.Context, in *pb.DeleteOAuthClientRequest) (*pb.CommonResponse, error) {
+	if err := in.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if !c.mcpOAuthEnabled {
+		return nil, status.Error(codes.FailedPrecondition, "MCP OAuth is not enabled")
+	}
+	if err := c.oauthRefreshRepo.DeleteByClient(in.GetId()); err != nil {
+		log.Error().Err(err).Msg("Failed to delete oauth refresh tokens for client")
+		return nil, status.Error(codes.Internal, "failed to delete client sessions")
+	}
+	if err := c.oauthConsentRepo.DeleteByClient(in.GetId()); err != nil {
+		log.Error().Err(err).Msg("Failed to delete oauth consents for client")
+		return nil, status.Error(codes.Internal, "failed to delete client consents")
+	}
+	if err := c.oauthClientRepo.Delete(in.GetId()); err != nil {
+		log.Error().Err(err).Msg("Failed to delete oauth client")
+		return nil, status.Error(codes.Internal, "failed to delete client")
+	}
+	return &pb.CommonResponse{Message: "Client deleted. The MCP client will need to register again on next connect."}, nil
+}
+
+func (c *CoordinatorAPI) ListOAuthSessions(_ context.Context, _ *emptypb.Empty) (*pb.ListOAuthSessionsResponse, error) {
+	if !c.mcpOAuthEnabled {
+		return &pb.ListOAuthSessionsResponse{OauthEnabled: false}, nil
+	}
+	sessions, err := c.oauthRefreshRepo.ListActiveSessions()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list oauth sessions")
+		return nil, status.Error(codes.Internal, "failed to list sessions")
+	}
+	out := make([]*pb.OAuthSession, len(sessions))
+	for i, s := range sessions {
+		out[i] = &pb.OAuthSession{
+			Id:         s.ID,
+			ClientId:   s.ClientID,
+			ClientName: s.ClientName,
+			UserEmail:  s.UserEmail,
+			CreatedAt:  timestamppb.New(s.CreatedAt),
+			ExpiresAt:  timestamppb.New(s.ExpiresAt),
+		}
+	}
+	return &pb.ListOAuthSessionsResponse{Sessions: out, OauthEnabled: true}, nil
+}
+
+// RevokeOAuthSession invalidates a single refresh token. The client's
+// access token keeps working until expiry; after that the SDK runs a fresh
+// auth flow against the same client_id.
+func (c *CoordinatorAPI) RevokeOAuthSession(_ context.Context, in *pb.RevokeOAuthSessionRequest) (*pb.CommonResponse, error) {
+	if err := in.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if !c.mcpOAuthEnabled {
+		return nil, status.Error(codes.FailedPrecondition, "MCP OAuth is not enabled")
+	}
+	if err := c.oauthRefreshRepo.Revoke(in.GetId()); err != nil {
+		log.Error().Err(err).Msg("Failed to revoke oauth session")
+		return nil, status.Error(codes.Internal, "failed to revoke session")
+	}
+	return &pb.CommonResponse{Message: "Session revoked. The user will be asked to log in again within an hour."}, nil
 }
 
 func (c *CoordinatorAPI) toProtoTokens(tokens []persistence.APIToken) []*pb.APIToken {

@@ -259,6 +259,7 @@ message GetMCPSettingsResponse {
   bool protected = 1 [json_name = "protected"];
   bool auth_enabled = 2 [json_name = "auth_enabled"];
   repeated APIToken tokens = 3 [json_name = "tokens"];
+  bool oauth_enabled = 4 [json_name = "oauth_enabled"];
 }
 
 message UpdateMCPProtectedRequest {
@@ -293,6 +294,48 @@ message DeleteAPITokenRequest {
 
 message ListAPITokensResponse {
   repeated APIToken tokens = 1 [json_name = "tokens"];
+}
+
+message OAuthClient {
+  string id = 1 [json_name = "id"];
+  string name = 2 [json_name = "name"];
+  repeated string redirect_uris = 3 [json_name = "redirect_uris"];
+  google.protobuf.Timestamp created_at = 4 [json_name = "created_at"];
+  optional google.protobuf.Timestamp last_used_at = 5 [json_name = "last_used_at"];
+  // True when the current user has approved this client. Per (user, client)
+  // boolean, computed at list time.
+  bool consented = 6 [json_name = "consented"];
+}
+
+message ListOAuthClientsResponse {
+  repeated OAuthClient clients = 1 [json_name = "clients"];
+  bool oauth_enabled = 2 [json_name = "oauth_enabled"];
+}
+
+message DeleteOAuthClientRequest {
+  string id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message RevokeOAuthConsentRequest {
+  string client_id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message OAuthSession {
+  int64 id = 1 [json_name = "id"];
+  string client_id = 2 [json_name = "client_id"];
+  string client_name = 3 [json_name = "client_name"];
+  string user_email = 4 [json_name = "user_email"];
+  google.protobuf.Timestamp created_at = 5 [json_name = "created_at"];
+  google.protobuf.Timestamp expires_at = 6 [json_name = "expires_at"];
+}
+
+message ListOAuthSessionsResponse {
+  repeated OAuthSession sessions = 1 [json_name = "sessions"];
+  bool oauth_enabled = 2 [json_name = "oauth_enabled"];
+}
+
+message RevokeOAuthSessionRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
 }
 
 message ConnectionRequest {
@@ -553,6 +596,21 @@ service Coordinator {
   }
   rpc DeleteAPIToken(DeleteAPITokenRequest) returns (CommonResponse) {
     option (google.api.http) = {delete: "/v0/settings/mcp/tokens/{id}"};
+  }
+  rpc ListOAuthClients(google.protobuf.Empty) returns (ListOAuthClientsResponse) {
+    option (google.api.http) = {get: "/v0/settings/mcp/oauth-clients"};
+  }
+  rpc DeleteOAuthClient(DeleteOAuthClientRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/settings/mcp/oauth-clients/{id}"};
+  }
+  rpc ListOAuthSessions(google.protobuf.Empty) returns (ListOAuthSessionsResponse) {
+    option (google.api.http) = {get: "/v0/settings/mcp/oauth-sessions"};
+  }
+  rpc RevokeOAuthSession(RevokeOAuthSessionRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/settings/mcp/oauth-sessions/{id}"};
+  }
+  rpc RevokeOAuthConsent(RevokeOAuthConsentRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/settings/mcp/oauth-clients/{client_id}/consent"};
   }
 
   // Connection methods

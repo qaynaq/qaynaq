@@ -45,6 +45,14 @@ auth:
   # oauth2-session-cookie-name: qaynaq_session
 
 # ====================
+# MCP OAuth
+# ====================
+# Expose OAuth 2.1 Authorization Server endpoints so MCP clients can
+# authenticate via the standard MCP OAuth flow instead of static tokens.
+mcp:
+  oauth-enabled: false
+
+# ====================
 # Worker Configuration
 # ====================
 

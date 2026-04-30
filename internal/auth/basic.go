@@ -69,7 +69,6 @@ func (h *BasicAuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate JWT token
 	token, err := h.jwtManager.GenerateToken(loginReq.Username, "", "basic")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate JWT token")
@@ -87,8 +86,14 @@ func (h *BasicAuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BasicAuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	// JWT is stateless, so we just return success
-	// The client should discard the token
+	// Clear the cookie set by /auth/exchange.
+	http.SetCookie(w, &http.Cookie{
+		Name:     h.cookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+	})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})

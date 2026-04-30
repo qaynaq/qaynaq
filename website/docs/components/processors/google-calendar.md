@@ -64,7 +64,7 @@ Service accounts are best for Google Workspace organizations with Domain-Wide De
 #### Step 3: Store the Credentials
 
 1. Open the downloaded JSON key file and copy its entire contents
-2. In Qaynaq, go to **Settings** > **Secrets**
+2. In Qaynaq, go to **Secrets**
 3. Create a new secret (e.g. key: `GOOGLE_CALENDAR_SA`) and paste the JSON as the value
 4. In the Google Calendar processor, select `GOOGLE_CALENDAR_SA` from the Service Account JSON dropdown
 

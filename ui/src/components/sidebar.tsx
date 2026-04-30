@@ -80,7 +80,7 @@ const menuItems = [
     ],
   },
   {
-    section: "Dashboard",
+    section: "",
     items: [
       {
         name: "Settings",
@@ -120,11 +120,11 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "sidebar bg-gray-50 dark:bg-gray-900 fixed top-2 bottom-2 overflow-y-auto border border-gray-200 dark:border-gray-800 rounded-xl transition-all duration-300 z-20",
+        "sidebar bg-gray-50 dark:bg-gray-900 fixed top-2 bottom-2 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800 rounded-xl transition-all duration-300 z-20",
         isCollapsed ? "w-[60px] left-2" : "w-[220px] left-2",
       )}
     >
-      <div className="h-14 flex items-center px-4 border-b border-gray-200 dark:border-gray-800">
+      <div className="h-14 flex items-center px-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
         <div className="flex items-center gap-2">
           <img src="/logo.png" alt="Qaynaq" className="h-6 w-6 flex-shrink-0 rounded" />
           {!isCollapsed && (
@@ -134,19 +134,25 @@ export function Sidebar() {
       </div>
 
       {/* Quick Create Button */}
-      <div className="px-3 py-3 border-b border-gray-200 dark:border-gray-800">
+      <div className="px-3 py-3 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
         <QuickCreate isCollapsed={isCollapsed} />
       </div>
 
       <TooltipProvider delayDuration={300}>
-        <div className="px-3 py-2">
+        <div className="px-3 py-2 flex flex-col flex-1 min-h-0 overflow-y-auto">
           {menuItems.map((section, sectionIndex) => (
-            <div key={section.section} className="mb-6">
-              {!isCollapsed ? (
+            <div
+              key={section.section || `section-${sectionIndex}`}
+              className={cn(
+                "mb-6",
+                !section.section && "mt-auto mb-0",
+              )}
+            >
+              {!isCollapsed && section.section ? (
                 <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-2">
                   {section.section}
                 </h2>
-              ) : sectionIndex > 0 ? (
+              ) : isCollapsed && sectionIndex > 0 ? (
                 <div className="h-px bg-gray-200 dark:bg-gray-800 my-4 mx-2"></div>
               ) : null}
               <div className="space-y-1">

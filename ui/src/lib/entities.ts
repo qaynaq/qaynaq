@@ -139,7 +139,45 @@ export type APIToken = {
 export type MCPSettings = {
   protected: boolean;
   auth_enabled: boolean;
+  oauth_enabled: boolean;
   tokens: APIToken[];
+};
+
+export type OAuthClient = {
+  id: string;
+  name: string;
+  redirect_uris: string[];
+  created_at: string;
+  last_used_at?: string;
+  consented: boolean;
+};
+
+export type OAuthConsentRequest = {
+  request_id: string;
+  client_id: string;
+  client_name: string;
+  redirect_uri: string;
+  scope: string;
+  user_email: string;
+};
+
+export type OAuthClients = {
+  oauth_enabled: boolean;
+  clients: OAuthClient[];
+};
+
+export type OAuthSession = {
+  id: number;
+  client_id: string;
+  client_name: string;
+  user_email: string;
+  created_at: string;
+  expires_at: string;
+};
+
+export type OAuthSessions = {
+  oauth_enabled: boolean;
+  sessions: OAuthSession[];
 };
 
 export type Analytics = {

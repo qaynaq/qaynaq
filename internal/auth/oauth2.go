@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -24,8 +25,13 @@ type OAuth2Handler struct {
 	allowedDomains map[string]bool
 	jwtManager     *JWTManager
 	cookieName     string
-	stateStore     map[string]time.Time
+	stateStore     map[string]stateEntry
 	stateStoreMux  sync.RWMutex
+}
+
+type stateEntry struct {
+	expiresAt time.Time
+	returnTo  string
 }
 
 type UserInfo struct {
@@ -64,7 +70,7 @@ func NewOAuth2Handler(cfg *config.AuthConfig, secretKey string) *OAuth2Handler {
 		allowedDomains: allowedDomains,
 		jwtManager:     NewJWTManager(secretKey, 24*time.Hour),
 		cookieName:     cfg.OAuth2SessionCookieName,
-		stateStore:     make(map[string]time.Time),
+		stateStore:     make(map[string]stateEntry),
 	}
 
 	go handler.cleanupExpiredStates()
@@ -105,8 +111,12 @@ func (h *OAuth2Handler) Middleware(next http.Handler) http.Handler {
 
 func (h *OAuth2Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	state := h.generateState()
+	returnTo := safeReturnTo(r.URL.Query().Get("return_to"))
 	h.stateStoreMux.Lock()
-	h.stateStore[state] = time.Now().Add(10 * time.Minute)
+	h.stateStore[state] = stateEntry{
+		expiresAt: time.Now().Add(10 * time.Minute),
+		returnTo:  returnTo,
+	}
 	h.stateStoreMux.Unlock()
 
 	url := h.config.AuthCodeURL(state, oauth2.AccessTypeOffline)
@@ -115,7 +125,8 @@ func (h *OAuth2Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
-	if !h.validateState(state) {
+	entry, ok := h.consumeState(state)
+	if !ok {
 		log.Error().Msg("Invalid OAuth2 state parameter")
 		http.Redirect(w, r, "/login?error=invalid_state", http.StatusTemporaryRedirect)
 		return
@@ -155,11 +166,25 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// HttpOnly cookie so /mcp/oauth/authorize can identify the user.
+	http.SetCookie(w, &http.Cookie{
+		Name:     h.cookieName,
+		Value:    jwtToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int((24 * time.Hour).Seconds()),
+	})
+
+	if entry.returnTo != "" {
+		http.Redirect(w, r, entry.returnTo, http.StatusTemporaryRedirect)
+		return
+	}
 	http.Redirect(w, r, fmt.Sprintf("/?token=%s", jwtToken), http.StatusTemporaryRedirect)
 }
 
 func (h *OAuth2Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	// JWT is stateless, so we just clear the cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     h.cookieName,
 		Value:    "",
@@ -244,26 +269,29 @@ func (h *OAuth2Handler) generateState() string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func (h *OAuth2Handler) validateState(state string) bool {
+func (h *OAuth2Handler) consumeState(state string) (stateEntry, bool) {
 	h.stateStoreMux.Lock()
 	defer h.stateStoreMux.Unlock()
 
-	expiresAt, exists := h.stateStore[state]
+	entry, exists := h.stateStore[state]
 	if !exists {
-		return false
+		return stateEntry{}, false
 	}
-
-	if time.Now().After(expiresAt) {
-		delete(h.stateStore, state)
-		return false
-	}
-
 	delete(h.stateStore, state)
-	return true
+	if time.Now().After(entry.expiresAt) {
+		return stateEntry{}, false
+	}
+	return entry, true
 }
 
 func (h *OAuth2Handler) redirectToLogin(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/auth/login", http.StatusTemporaryRedirect)
+	dest := "/auth/login"
+	if rt := r.URL.Query().Get("return_to"); rt != "" {
+		if safe := safeReturnTo(rt); safe != "" {
+			dest += "?return_to=" + url.QueryEscape(safe)
+		}
+	}
+	http.Redirect(w, r, dest, http.StatusTemporaryRedirect)
 }
 
 func (h *OAuth2Handler) cleanupExpiredStates() {
@@ -273,13 +301,27 @@ func (h *OAuth2Handler) cleanupExpiredStates() {
 	for range ticker.C {
 		h.stateStoreMux.Lock()
 		now := time.Now()
-		for state, expiresAt := range h.stateStore {
-			if now.After(expiresAt) {
+		for state, entry := range h.stateStore {
+			if now.After(entry.expiresAt) {
 				delete(h.stateStore, state)
 			}
 		}
 		h.stateStoreMux.Unlock()
 	}
+}
+
+// safeReturnTo accepts only same-origin paths to prevent open-redirect attacks.
+func safeReturnTo(raw string) string {
+	if raw == "" {
+		return ""
+	}
+	if !strings.HasPrefix(raw, "/") {
+		return ""
+	}
+	if strings.HasPrefix(raw, "//") {
+		return ""
+	}
+	return raw
 }
 
 func (h *OAuth2Handler) isValidSession(token string) bool {

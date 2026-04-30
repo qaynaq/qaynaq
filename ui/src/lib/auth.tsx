@@ -17,6 +17,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function exchangeSessionCookie(token: string): Promise<void> {
+  try {
+    await fetch("/auth/exchange", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
+    });
+  } catch (error) {
+    console.error("Session cookie exchange failed:", error);
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (savedToken) {
             setToken(savedToken);
             setIsAuthenticated(true);
+            // Mirror the localStorage token into a session cookie so
+            // cross-document navigations (MCP OAuth /authorize, server-side
+            // redirects) can identify the user. Best-effort.
+            void exchangeSessionCookie(savedToken);
           } else {
             setIsAuthenticated(false);
           }
@@ -69,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("qaynaq_token", newToken);
     setToken(newToken);
     setIsAuthenticated(true);
+    void exchangeSessionCookie(newToken);
   };
 
   const logout = async () => {
@@ -79,6 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           Authorization: `Bearer ${savedToken}`,
         },
+        // credentials:"include" is required so the browser sends our session
+        // cookie and accepts the Set-Cookie that clears it server-side.
+        credentials: "include",
       });
     }
     localStorage.removeItem("qaynaq_token");
