@@ -101,13 +101,16 @@ func (r *retryOn401) RoundTrip(req *http.Request) (*http.Response, error) {
 		return resp, err
 	}
 
-	// Cached token was rejected; force coordinator round-trip on the retry.
-	r.vp.InvalidateAccessToken(r.name)
+	// Cached token was rejected. Force coordinator to skip its cache and run a
+	// refresh exchange before the retry; otherwise coordinator would happily
+	// hand back the same revoked-but-not-yet-expired token.
+	if _, ferr := r.vp.ForceRefreshAccessToken(r.name); ferr != nil {
+		return resp, fmt.Errorf("connauth: 401 from upstream and force refresh failed: %w", ferr)
+	}
 
 	// Replay only if the body is replayable. Streaming bodies (e.g. large
-	// file uploads) can't be replayed, so return the 401 as-is and let the
-	// caller re-issue. The cache invalidation ensures the next call gets a
-	// fresh token regardless.
+	// file uploads) can't be rewound; return the 401 so the caller re-issues
+	// the request - the next attempt will use the freshly refreshed token.
 	if req.Body != nil && req.GetBody == nil {
 		return resp, nil
 	}

@@ -14,9 +14,9 @@ import (
 )
 
 type stubVault struct {
-	tokens         []string // sequence to return on each GetAccessToken call
+	tokens         []string // sequence to return on each token fetch
 	calls          int32
-	invalidations  int32
+	forceRefreshes int32
 	getAccessCalls int32
 }
 
@@ -25,20 +25,24 @@ func (s *stubVault) GetConnectionToken(string) (string, error) {
 	return "", nil
 }
 
-func (s *stubVault) GetAccessToken(string) (vault.AccessToken, error) {
-	idx := atomic.AddInt32(&s.getAccessCalls, 1) - 1
-	t := s.tokens[0]
+func (s *stubVault) tokenAt(idx int32) string {
 	if int(idx) < len(s.tokens) {
-		t = s.tokens[idx]
-	} else {
-		t = s.tokens[len(s.tokens)-1]
+		return s.tokens[idx]
 	}
-	atomic.AddInt32(&s.calls, 1)
-	return vault.AccessToken{AccessToken: t, ExpiresAt: time.Now().Add(1 * time.Hour)}, nil
+	return s.tokens[len(s.tokens)-1]
 }
 
-func (s *stubVault) InvalidateAccessToken(string) {
-	atomic.AddInt32(&s.invalidations, 1)
+func (s *stubVault) GetAccessToken(string) (vault.AccessToken, error) {
+	idx := atomic.AddInt32(&s.getAccessCalls, 1) - 1
+	atomic.AddInt32(&s.calls, 1)
+	return vault.AccessToken{AccessToken: s.tokenAt(idx), ExpiresAt: time.Now().Add(1 * time.Hour)}, nil
+}
+
+func (s *stubVault) ForceRefreshAccessToken(string) (vault.AccessToken, error) {
+	idx := atomic.AddInt32(&s.getAccessCalls, 1) - 1
+	atomic.AddInt32(&s.calls, 1)
+	atomic.AddInt32(&s.forceRefreshes, 1)
+	return vault.AccessToken{AccessToken: s.tokenAt(idx), ExpiresAt: time.Now().Add(1 * time.Hour)}, nil
 }
 
 func TestRetryOn401InvalidatesAndRetriesOnce(t *testing.T) {
@@ -72,8 +76,8 @@ func TestRetryOn401InvalidatesAndRetriesOnce(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("final status: want 200, got %d", resp.StatusCode)
 	}
-	if got := atomic.LoadInt32(&vp.invalidations); got != 1 {
-		t.Errorf("invalidations: want 1, got %d", got)
+	if got := atomic.LoadInt32(&vp.forceRefreshes); got != 1 {
+		t.Errorf("force refreshes: want 1, got %d", got)
 	}
 	if got := atomic.LoadInt32(&serverCalls); got != 2 {
 		t.Errorf("server calls: want 2, got %d", got)
@@ -100,8 +104,8 @@ func TestRetryOn401NotRetriedOnNon401(t *testing.T) {
 	if resp.StatusCode != http.StatusForbidden {
 		t.Errorf("status: want 403, got %d", resp.StatusCode)
 	}
-	if got := atomic.LoadInt32(&vp.invalidations); got != 0 {
-		t.Errorf("invalidations: want 0, got %d", got)
+	if got := atomic.LoadInt32(&vp.forceRefreshes); got != 0 {
+		t.Errorf("force refreshes: want 0, got %d", got)
 	}
 	if got := atomic.LoadInt32(&serverCalls); got != 1 {
 		t.Errorf("server calls: want 1, got %d", got)

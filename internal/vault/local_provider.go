@@ -72,8 +72,21 @@ func (p *LocalProvider) GetAccessToken(name string) (AccessToken, error) {
 	if v, ok := p.cacheLookup(name); ok {
 		return v, nil
 	}
+	return p.fetchAccessToken(name, false)
+}
 
-	resp, err := p.coordinatorGRPCClient.GetAccessToken(context.Background(), &pb.ConnectionRequest{Name: name})
+func (p *LocalProvider) ForceRefreshAccessToken(name string) (AccessToken, error) {
+	p.cacheMu.Lock()
+	delete(p.cache, name)
+	p.cacheMu.Unlock()
+	return p.fetchAccessToken(name, true)
+}
+
+func (p *LocalProvider) fetchAccessToken(name string, forceRefresh bool) (AccessToken, error) {
+	resp, err := p.coordinatorGRPCClient.GetAccessToken(context.Background(), &pb.AccessTokenRequest{
+		Name:         name,
+		ForceRefresh: forceRefresh,
+	})
 	if err != nil {
 		return AccessToken{}, err
 	}
@@ -85,12 +98,6 @@ func (p *LocalProvider) GetAccessToken(name string) (AccessToken, error) {
 
 	p.cacheStore(name, tok)
 	return tok, nil
-}
-
-func (p *LocalProvider) InvalidateAccessToken(name string) {
-	p.cacheMu.Lock()
-	delete(p.cache, name)
-	p.cacheMu.Unlock()
 }
 
 func (p *LocalProvider) cacheLookup(name string) (AccessToken, bool) {

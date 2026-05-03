@@ -350,21 +350,35 @@ var ErrConnectionNotFound = errors.New("connection not found")
 // Concurrent callers for the same name are serialized by a per-connection
 // mutex; the second caller through reads the just-persisted token instead of
 // triggering its own refresh.
-func (m *Manager) GetAccessToken(ctx context.Context, name string) (AccessToken, error) {
-	if v, ok := m.cacheGet(name); ok && time.Until(v.expiresAt) > refreshSafetyMargin {
-		return AccessToken{AccessToken: v.accessToken, ExpiresAt: v.expiresAt}, nil
+//
+// If forceRefresh is true, the cache and stored-token expiry checks are
+// skipped and a refresh exchange is performed unconditionally. Use this when
+// the caller has just received a 401 using a previously-returned token: the
+// stored token may still look valid by the clock but has been revoked or
+// rotated upstream.
+func (m *Manager) GetAccessToken(ctx context.Context, name string, forceRefresh bool) (AccessToken, error) {
+	if !forceRefresh {
+		if v, ok := m.cacheGet(name); ok && time.Until(v.expiresAt) > refreshSafetyMargin {
+			return AccessToken{AccessToken: v.accessToken, ExpiresAt: v.expiresAt}, nil
+		}
 	}
 
 	mu := m.connMutex(name)
 	mu.Lock()
 	defer mu.Unlock()
 
-	// Re-check after acquiring the lock - another goroutine may have refreshed.
-	if v, ok := m.cacheGet(name); ok && time.Until(v.expiresAt) > refreshSafetyMargin {
-		return AccessToken{AccessToken: v.accessToken, ExpiresAt: v.expiresAt}, nil
+	if forceRefresh {
+		// Drop any cached entry so loadAndMaybeRefreshLocked doesn't re-cache
+		// before deciding to refresh.
+		m.cacheInvalidate(name)
+	} else {
+		// Re-check after acquiring the lock - another goroutine may have refreshed.
+		if v, ok := m.cacheGet(name); ok && time.Until(v.expiresAt) > refreshSafetyMargin {
+			return AccessToken{AccessToken: v.accessToken, ExpiresAt: v.expiresAt}, nil
+		}
 	}
 
-	return m.loadAndMaybeRefreshLocked(ctx, name)
+	return m.loadAndMaybeRefreshLocked(ctx, name, forceRefresh)
 }
 
 // InvalidateAccessToken drops the cached entry for a connection, forcing the
@@ -381,11 +395,11 @@ func (m *Manager) RefreshIfExpiring(ctx context.Context, name string) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	_, err := m.loadAndMaybeRefreshLocked(ctx, name)
+	_, err := m.loadAndMaybeRefreshLocked(ctx, name, false)
 	return err
 }
 
-func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string) (AccessToken, error) {
+func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string, force bool) (AccessToken, error) {
 	conn, err := m.connRepo.GetByName(name)
 	if err != nil {
 		return AccessToken{}, fmt.Errorf("%w: %q", ErrConnectionNotFound, name)
@@ -396,7 +410,7 @@ func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string) (A
 		return AccessToken{}, err
 	}
 
-	if !token.Expiry.IsZero() && time.Until(token.Expiry) > refreshSafetyMargin {
+	if !force && !token.Expiry.IsZero() && time.Until(token.Expiry) > refreshSafetyMargin {
 		m.cachePut(name, cachedAccessToken{accessToken: token.AccessToken, expiresAt: token.Expiry})
 		return AccessToken{AccessToken: token.AccessToken, ExpiresAt: token.Expiry}, nil
 	}

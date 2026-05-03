@@ -155,7 +155,7 @@ type CoordinatorClient interface {
 	ListConnections(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListConnectionsResponse, error)
 	DeleteConnection(ctx context.Context, in *ConnectionRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	GetConnectionToken(ctx context.Context, in *ConnectionRequest, opts ...grpc.CallOption) (*ConnectionTokenResponse, error)
-	GetAccessToken(ctx context.Context, in *ConnectionRequest, opts ...grpc.CallOption) (*AccessTokenResponse, error)
+	GetAccessToken(ctx context.Context, in *AccessTokenRequest, opts ...grpc.CallOption) (*AccessTokenResponse, error)
 	// Setup methods
 	GetSetupStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetupStatusResponse, error)
 	CompleteSetup(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CommonResponse, error)
@@ -734,7 +734,7 @@ func (c *coordinatorClient) GetConnectionToken(ctx context.Context, in *Connecti
 	return out, nil
 }
 
-func (c *coordinatorClient) GetAccessToken(ctx context.Context, in *ConnectionRequest, opts ...grpc.CallOption) (*AccessTokenResponse, error) {
+func (c *coordinatorClient) GetAccessToken(ctx context.Context, in *AccessTokenRequest, opts ...grpc.CallOption) (*AccessTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AccessTokenResponse)
 	err := c.cc.Invoke(ctx, Coordinator_GetAccessToken_FullMethodName, in, out, cOpts...)
@@ -856,7 +856,7 @@ type CoordinatorServer interface {
 	ListConnections(context.Context, *emptypb.Empty) (*ListConnectionsResponse, error)
 	DeleteConnection(context.Context, *ConnectionRequest) (*CommonResponse, error)
 	GetConnectionToken(context.Context, *ConnectionRequest) (*ConnectionTokenResponse, error)
-	GetAccessToken(context.Context, *ConnectionRequest) (*AccessTokenResponse, error)
+	GetAccessToken(context.Context, *AccessTokenRequest) (*AccessTokenResponse, error)
 	// Setup methods
 	GetSetupStatus(context.Context, *emptypb.Empty) (*SetupStatusResponse, error)
 	CompleteSetup(context.Context, *emptypb.Empty) (*CommonResponse, error)
@@ -1040,7 +1040,7 @@ func (UnimplementedCoordinatorServer) DeleteConnection(context.Context, *Connect
 func (UnimplementedCoordinatorServer) GetConnectionToken(context.Context, *ConnectionRequest) (*ConnectionTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetConnectionToken not implemented")
 }
-func (UnimplementedCoordinatorServer) GetAccessToken(context.Context, *ConnectionRequest) (*AccessTokenResponse, error) {
+func (UnimplementedCoordinatorServer) GetAccessToken(context.Context, *AccessTokenRequest) (*AccessTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAccessToken not implemented")
 }
 func (UnimplementedCoordinatorServer) GetSetupStatus(context.Context, *emptypb.Empty) (*SetupStatusResponse, error) {
@@ -2074,7 +2074,7 @@ func _Coordinator_GetConnectionToken_Handler(srv interface{}, ctx context.Contex
 }
 
 func _Coordinator_GetAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConnectionRequest)
+	in := new(AccessTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -2086,7 +2086,7 @@ func _Coordinator_GetAccessToken_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: Coordinator_GetAccessToken_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CoordinatorServer).GetAccessToken(ctx, req.(*ConnectionRequest))
+		return srv.(CoordinatorServer).GetAccessToken(ctx, req.(*AccessTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -13,10 +13,11 @@ type VaultProvider interface {
 	GetSecret(key string) (string, error)
 	GetConnectionToken(name string) (string, error)
 	// GetAccessToken returns a cached access token if still valid, otherwise
-	// fetches a fresh one from coordinator. Callers should call
-	// InvalidateAccessToken on a 401 from the upstream API.
+	// fetches a fresh one from coordinator.
 	GetAccessToken(name string) (AccessToken, error)
-	// InvalidateAccessToken drops the cached entry, forcing the next
-	// GetAccessToken call to round-trip to coordinator.
-	InvalidateAccessToken(name string)
+	// ForceRefreshAccessToken drops the worker's cached entry and asks
+	// coordinator to skip its own cache and perform a refresh exchange.
+	// Use this after a 401 from the upstream API: the cached token may still
+	// look valid by the clock but has been revoked or rotated upstream.
+	ForceRefreshAccessToken(name string) (AccessToken, error)
 }

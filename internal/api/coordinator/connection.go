@@ -77,10 +77,10 @@ func (c *CoordinatorAPI) GetConnectionToken(_ context.Context, in *pb.Connection
 	return &pb.ConnectionTokenResponse{Data: data}, nil
 }
 
-func (c *CoordinatorAPI) GetAccessToken(ctx context.Context, in *pb.ConnectionRequest) (*pb.AccessTokenResponse, error) {
-	tok, err := c.connManager.GetAccessToken(ctx, in.GetName())
+func (c *CoordinatorAPI) GetAccessToken(ctx context.Context, in *pb.AccessTokenRequest) (*pb.AccessTokenResponse, error) {
+	tok, err := c.connManager.GetAccessToken(ctx, in.GetName(), in.GetForceRefresh())
 	if err != nil {
-		log.Error().Err(err).Str("name", in.GetName()).Msg("Failed to get access token")
+		log.Error().Err(err).Str("name", in.GetName()).Bool("force_refresh", in.GetForceRefresh()).Msg("Failed to get access token")
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
