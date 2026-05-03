@@ -2,16 +2,14 @@ package google_sheets
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 
-	"github.com/qaynaq/qaynaq/internal/connection"
+	"github.com/qaynaq/qaynaq/internal/connauth"
 )
 
 func (p *Processor) initSheetsService() (*sheets.Service, error) {
@@ -36,32 +34,12 @@ func (p *Processor) initSheetsService() (*sheets.Service, error) {
 
 			client = config.Client(ctx)
 		} else if p.oauthConnection != "" {
-			var connData connection.ConnectionData
-			if err := json.Unmarshal([]byte(p.oauthConnection), &connData); err != nil {
-				p.serviceInitErr = fmt.Errorf("failed to parse OAuth connection data: %w", err)
+			vp := connauth.Provider()
+			if vp == nil {
+				p.serviceInitErr = fmt.Errorf("vault provider not initialised")
 				return
 			}
-
-			endpoint, err := connection.GetEndpoint(connData.Provider)
-			if err != nil {
-				p.serviceInitErr = fmt.Errorf("failed to get OAuth endpoint: %w", err)
-				return
-			}
-
-			oauth2Config := &oauth2.Config{
-				ClientID:     connData.ClientID,
-				ClientSecret: connData.ClientSecret,
-				Endpoint:     endpoint,
-			}
-
-			token := &oauth2.Token{
-				AccessToken:  connData.Token.AccessToken,
-				RefreshToken: connData.Token.RefreshToken,
-				TokenType:    connData.Token.TokenType,
-				Expiry:       connData.Token.Expiry,
-			}
-
-			client = oauth2.NewClient(ctx, oauth2Config.TokenSource(ctx, token))
+			client = connauth.NewHTTPClient(ctx, vp, p.oauthConnection)
 		}
 
 		svc, err := sheets.NewService(ctx, option.WithHTTPClient(client))

@@ -360,6 +360,11 @@ message ConnectionTokenResponse {
   string data = 1;
 }
 
+message AccessTokenResponse {
+  string access_token = 1 [json_name = "access_token"];
+  google.protobuf.Timestamp expires_at = 2 [json_name = "expires_at"];
+}
+
 message SetupStatusResponse {
   bool first_run_complete = 1 [json_name = "first_run_complete"];
 }
@@ -624,6 +629,7 @@ service Coordinator {
     option (google.api.http) = {delete: "/v0/connections/{name}"};
   }
   rpc GetConnectionToken(ConnectionRequest) returns (ConnectionTokenResponse) {}
+  rpc GetAccessToken(ConnectionRequest) returns (AccessTokenResponse) {}
 
   // Setup methods
   rpc GetSetupStatus(google.protobuf.Empty) returns (SetupStatusResponse) {

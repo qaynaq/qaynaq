@@ -76,3 +76,16 @@ func (c *CoordinatorAPI) GetConnectionToken(_ context.Context, in *pb.Connection
 
 	return &pb.ConnectionTokenResponse{Data: data}, nil
 }
+
+func (c *CoordinatorAPI) GetAccessToken(ctx context.Context, in *pb.ConnectionRequest) (*pb.AccessTokenResponse, error) {
+	tok, err := c.connManager.GetAccessToken(ctx, in.GetName())
+	if err != nil {
+		log.Error().Err(err).Str("name", in.GetName()).Msg("Failed to get access token")
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.AccessTokenResponse{
+		AccessToken: tok.AccessToken,
+		ExpiresAt:   timestamppb.New(tok.ExpiresAt),
+	}, nil
+}

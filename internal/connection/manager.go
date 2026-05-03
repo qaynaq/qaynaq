@@ -1,10 +1,14 @@
 package connection
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
@@ -78,16 +82,62 @@ type ConnectionInfo struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 }
 
+// refreshSafetyMargin is how long before the stored expiry we proactively refresh.
+// Anything that returns a token will only return one valid for at least this long.
+const refreshSafetyMargin = 2 * time.Minute
+
+type cachedAccessToken struct {
+	accessToken string
+	expiresAt   time.Time
+}
+
 type Manager struct {
 	connRepo persistence.ConnectionRepository
 	aesgcm   *vault.AESGCM
+
+	// per-connection mutex serializes refresh exchanges so concurrent callers
+	// don't burn refresh-token rotations against each other.
+	refreshMu sync.Map // map[string]*sync.Mutex
+
+	// in-memory access-token cache populated on read/refresh; avoids decrypting
+	// the row on every GetAccessToken call.
+	cacheMu sync.RWMutex
+	cache   map[string]cachedAccessToken
 }
 
 func NewManager(connRepo persistence.ConnectionRepository, aesgcm *vault.AESGCM) *Manager {
 	return &Manager{
 		connRepo: connRepo,
 		aesgcm:   aesgcm,
+		cache:    make(map[string]cachedAccessToken),
 	}
+}
+
+func (m *Manager) connMutex(name string) *sync.Mutex {
+	if mu, ok := m.refreshMu.Load(name); ok {
+		return mu.(*sync.Mutex)
+	}
+	mu, _ := m.refreshMu.LoadOrStore(name, &sync.Mutex{})
+	return mu.(*sync.Mutex)
+}
+
+func (m *Manager) cacheGet(name string) (cachedAccessToken, bool) {
+	m.cacheMu.RLock()
+	defer m.cacheMu.RUnlock()
+	v, ok := m.cache[name]
+	return v, ok
+}
+
+func (m *Manager) cachePut(name string, v cachedAccessToken) {
+	m.cacheMu.Lock()
+	defer m.cacheMu.Unlock()
+	m.cache[name] = v
+}
+
+func (m *Manager) cacheInvalidate(name string) {
+	m.cacheMu.Lock()
+	defer m.cacheMu.Unlock()
+	delete(m.cache, name)
 }
 
 func (m *Manager) GetConnectionData(name string) (string, error) {
@@ -162,10 +212,17 @@ func (m *Manager) StoreConnection(name, provider string, cfg Config, token *oaut
 		Provider:        provider,
 		EncryptedConfig: encryptedConfig,
 		EncryptedToken:  encryptedToken,
+		ExpiresAt:       expiryPtr(token.Expiry),
 	}
 
-	_, err = m.connRepo.Create(conn)
-	return err
+	if _, err := m.connRepo.Create(conn); err != nil {
+		return err
+	}
+
+	if token.AccessToken != "" {
+		m.cachePut(name, cachedAccessToken{accessToken: token.AccessToken, expiresAt: token.Expiry})
+	}
+	return nil
 }
 
 func (m *Manager) ReauthorizeConnection(name string, cfg Config, token *oauth2.Token) error {
@@ -189,11 +246,20 @@ func (m *Manager) ReauthorizeConnection(name string, cfg Config, token *oauth2.T
 		return fmt.Errorf("failed to encrypt token: %w", err)
 	}
 
-	if err := m.connRepo.UpdateToken(name, encryptedToken); err != nil {
+	if err := m.connRepo.UpdateToken(name, encryptedToken, expiryPtr(token.Expiry)); err != nil {
 		return err
 	}
 
-	return m.connRepo.UpdateConfig(name, encryptedConfig)
+	if err := m.connRepo.UpdateConfig(name, encryptedConfig); err != nil {
+		return err
+	}
+
+	if token.AccessToken != "" {
+		m.cachePut(name, cachedAccessToken{accessToken: token.AccessToken, expiresAt: token.Expiry})
+	} else {
+		m.cacheInvalidate(name)
+	}
+	return nil
 }
 
 func (m *Manager) DeleteConnection(name string) error {
@@ -256,4 +322,153 @@ func GetEndpoint(provider string) (oauth2.Endpoint, error) {
 		return oauth2.Endpoint{}, fmt.Errorf("unsupported provider: %s", provider)
 	}
 	return ep, nil
+}
+
+func expiryPtr(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	v := t
+	return &v
+}
+
+// AccessToken is the thin shape returned to clients that just need a usable
+// bearer token. Refresh tokens never leave the coordinator.
+type AccessToken struct {
+	AccessToken string
+	ExpiresAt   time.Time
+}
+
+// ErrConnectionNotFound is returned when GetAccessToken is called for a name
+// that has no stored connection.
+var ErrConnectionNotFound = errors.New("connection not found")
+
+// GetAccessToken returns a fresh access token for the named connection. If the
+// cached/stored token is within refreshSafetyMargin of expiry, it refreshes
+// against the provider before returning.
+//
+// Concurrent callers for the same name are serialized by a per-connection
+// mutex; the second caller through reads the just-persisted token instead of
+// triggering its own refresh.
+func (m *Manager) GetAccessToken(ctx context.Context, name string) (AccessToken, error) {
+	if v, ok := m.cacheGet(name); ok && time.Until(v.expiresAt) > refreshSafetyMargin {
+		return AccessToken{AccessToken: v.accessToken, ExpiresAt: v.expiresAt}, nil
+	}
+
+	mu := m.connMutex(name)
+	mu.Lock()
+	defer mu.Unlock()
+
+	// Re-check after acquiring the lock - another goroutine may have refreshed.
+	if v, ok := m.cacheGet(name); ok && time.Until(v.expiresAt) > refreshSafetyMargin {
+		return AccessToken{AccessToken: v.accessToken, ExpiresAt: v.expiresAt}, nil
+	}
+
+	return m.loadAndMaybeRefreshLocked(ctx, name)
+}
+
+// InvalidateAccessToken drops the cached entry for a connection, forcing the
+// next GetAccessToken call to read the row (and refresh if needed). Called
+// when a downstream API returns 401 with the cached token.
+func (m *Manager) InvalidateAccessToken(name string) {
+	m.cacheInvalidate(name)
+}
+
+// RefreshIfExpiring is the entry point for the background job. Same path as
+// GetAccessToken's refresh branch but without returning the token.
+func (m *Manager) RefreshIfExpiring(ctx context.Context, name string) error {
+	mu := m.connMutex(name)
+	mu.Lock()
+	defer mu.Unlock()
+
+	_, err := m.loadAndMaybeRefreshLocked(ctx, name)
+	return err
+}
+
+func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string) (AccessToken, error) {
+	conn, err := m.connRepo.GetByName(name)
+	if err != nil {
+		return AccessToken{}, fmt.Errorf("%w: %q", ErrConnectionNotFound, name)
+	}
+
+	cfg, token, err := m.decryptRow(conn)
+	if err != nil {
+		return AccessToken{}, err
+	}
+
+	if !token.Expiry.IsZero() && time.Until(token.Expiry) > refreshSafetyMargin {
+		m.cachePut(name, cachedAccessToken{accessToken: token.AccessToken, expiresAt: token.Expiry})
+		return AccessToken{AccessToken: token.AccessToken, ExpiresAt: token.Expiry}, nil
+	}
+
+	if token.RefreshToken == "" {
+		return AccessToken{}, fmt.Errorf("connection %q has no refresh token; re-authorize required", name)
+	}
+
+	endpoint, err := GetEndpoint(conn.Provider)
+	if err != nil {
+		return AccessToken{}, fmt.Errorf("connection %q: %w", name, err)
+	}
+
+	oauth2Cfg := &oauth2.Config{
+		ClientID:     cfg.ClientID,
+		ClientSecret: cfg.ClientSecret,
+		Endpoint:     endpoint,
+	}
+
+	src := oauth2Cfg.TokenSource(ctx, token)
+	newToken, err := src.Token()
+	if err != nil {
+		return AccessToken{}, fmt.Errorf("failed to refresh token for %q: %w", name, err)
+	}
+
+	if newToken.RefreshToken == "" {
+		// Some providers (Google after first refresh) only return access tokens
+		// on subsequent refreshes; preserve the existing refresh token.
+		newToken.RefreshToken = token.RefreshToken
+	}
+
+	tokenJSON, err := json.Marshal(newToken)
+	if err != nil {
+		return AccessToken{}, fmt.Errorf("failed to marshal refreshed token: %w", err)
+	}
+	encryptedToken, err := m.aesgcm.Encrypt(string(tokenJSON))
+	if err != nil {
+		return AccessToken{}, fmt.Errorf("failed to encrypt refreshed token: %w", err)
+	}
+	if err := m.connRepo.UpdateToken(name, encryptedToken, expiryPtr(newToken.Expiry)); err != nil {
+		return AccessToken{}, fmt.Errorf("failed to persist refreshed token: %w", err)
+	}
+
+	m.cachePut(name, cachedAccessToken{accessToken: newToken.AccessToken, expiresAt: newToken.Expiry})
+
+	log.Debug().
+		Str("connection", name).
+		Time("expires_at", newToken.Expiry).
+		Msg("Refreshed OAuth access token")
+
+	return AccessToken{AccessToken: newToken.AccessToken, ExpiresAt: newToken.Expiry}, nil
+}
+
+func (m *Manager) decryptRow(conn *persistence.Connection) (*Config, *oauth2.Token, error) {
+	configJSON, err := m.aesgcm.Decrypt(conn.EncryptedConfig)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to decrypt connection config: %w", err)
+	}
+	tokenJSON, err := m.aesgcm.Decrypt(conn.EncryptedToken)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to decrypt connection token: %w", err)
+	}
+
+	var cfg Config
+	if err := json.Unmarshal([]byte(configJSON), &cfg); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse connection config: %w", err)
+	}
+
+	var token oauth2.Token
+	if err := json.Unmarshal([]byte(tokenJSON), &token); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse connection token: %w", err)
+	}
+
+	return &cfg, &token, nil
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/qaynaq/qaynaq/internal/api"
 	"github.com/qaynaq/qaynaq/internal/api/coordinator"
 	"github.com/qaynaq/qaynaq/internal/auth"
+	"github.com/qaynaq/qaynaq/internal/connauth"
 	"github.com/qaynaq/qaynaq/internal/connection"
 	intcli "github.com/qaynaq/qaynaq/internal/cli"
 	"github.com/qaynaq/qaynaq/internal/config"
@@ -127,6 +128,7 @@ func InitializeCoordinatorCommand(ctx *cli.Context) *intcli.CoordinatorCLI {
 	oauthConsentRepository := persistence.NewOAuthConsentRepository(db)
 	connectionRepository := persistence.NewConnectionRepository(db)
 	connManager := connection.NewManager(connectionRepository, aesgcm)
+	connRefreshJob := connection.NewRefreshJob(connManager)
 	mcpOAuthEnabled := ctx.Bool("mcp.oauth-enabled")
 	coordinatorAPI := coordinator.NewCoordinatorAPI(eventRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, flowBufferRepository, flowProcessorRepository, workerRepository, workerFlowRepository, secretRepository, cacheRepository, bufferRepository, rateLimitRepository, fileRepository, settingRepository, apiTokenRepository, oauthClientRepository, oauthRefreshTokenRepository, oauthConsentRepository, rateLimiterEngine, aesgcm, analyticsProvider, connManager, flowWorkerMap, authConfig.Type, mcpOAuthEnabled)
 	coordinatorExecutor := executor.NewCoordinatorExecutor(workerRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, workerFlowRepository, fileRepository, flowWorkerMap)
@@ -143,7 +145,7 @@ func InitializeCoordinatorCommand(ctx *cli.Context) *intcli.CoordinatorCLI {
 	httpPort := uint32(ctx.Uint("http-port"))
 	grpcPort := uint32(ctx.Uint("grpc-port"))
 	sampledata.Init()
-	coordinatorCLI := intcli.NewCoordinatorCLI(coordinatorAPI, coordinatorExecutor, rateLimiterEngine, authManager, oauthHandler, mcpHandler, mcpOAuthServer, httpPort, grpcPort)
+	coordinatorCLI := intcli.NewCoordinatorCLI(coordinatorAPI, coordinatorExecutor, rateLimiterEngine, authManager, oauthHandler, connRefreshJob, mcpHandler, mcpOAuthServer, httpPort, grpcPort)
 	return coordinatorCLI
 }
 
@@ -158,6 +160,7 @@ func InitializeWorkerCommand(appCtx context.Context, ctx *cli.Context) *intcli.W
 
 	grpcPort := uint32(ctx.Uint("grpc-port"))
 	vaultProvider := vault.NewLocalProvider(secretConfig, grpcConn)
+	connauth.SetVaultProvider(vaultProvider)
 	workerExecutor := executor.NewWorkerExecutor(appCtx, grpcConn, grpcPort, vaultProvider)
 	workerAPI := api.NewWorkerAPI(workerExecutor)
 	workerCLI := intcli.NewWorkerCLI(workerAPI, workerExecutor, grpcPort)
