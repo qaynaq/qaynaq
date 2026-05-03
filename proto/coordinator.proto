@@ -360,6 +360,19 @@ message ConnectionTokenResponse {
   string data = 1;
 }
 
+message AccessTokenRequest {
+  string name = 1;
+  // Set when the caller has just received a 401 from the upstream API using a
+  // previously-returned access token. Tells coordinator to skip its cache and
+  // any "stored token still valid" check, going straight to a refresh exchange.
+  bool force_refresh = 2 [json_name = "force_refresh"];
+}
+
+message AccessTokenResponse {
+  string access_token = 1 [json_name = "access_token"];
+  google.protobuf.Timestamp expires_at = 2 [json_name = "expires_at"];
+}
+
 message SetupStatusResponse {
   bool first_run_complete = 1 [json_name = "first_run_complete"];
 }
@@ -624,6 +637,7 @@ service Coordinator {
     option (google.api.http) = {delete: "/v0/connections/{name}"};
   }
   rpc GetConnectionToken(ConnectionRequest) returns (ConnectionTokenResponse) {}
+  rpc GetAccessToken(AccessTokenRequest) returns (AccessTokenResponse) {}
 
   // Setup methods
   rpc GetSetupStatus(google.protobuf.Empty) returns (SetupStatusResponse) {
