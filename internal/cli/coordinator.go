@@ -39,17 +39,18 @@ type CoordinatorCLI struct {
 	rateLimiterEngine  interface{ Cleanup(time.Duration) error }
 	authManager        *auth.Manager
 	oauthHandler       *connection.OAuthHandler
+	connRefreshJob     *connection.RefreshJob
 	mcpHandler         http.Handler
 	mcpSyncer          MCPSyncer
 	mcpOAuthServer     *mcpoauth.Server
 	httpPort, grpcPort uint32
 }
 
-func NewCoordinatorCLI(api *coordinator.CoordinatorAPI, executor executor.CoordinatorExecutor, rateLimiterEngine interface{ Cleanup(time.Duration) error }, authManager *auth.Manager, oauthHandler *connection.OAuthHandler, mcpHandler interface {
+func NewCoordinatorCLI(api *coordinator.CoordinatorAPI, executor executor.CoordinatorExecutor, rateLimiterEngine interface{ Cleanup(time.Duration) error }, authManager *auth.Manager, oauthHandler *connection.OAuthHandler, connRefreshJob *connection.RefreshJob, mcpHandler interface {
 	http.Handler
 	MCPSyncer
 }, mcpOAuthServer *mcpoauth.Server, httpPort, grpcPort uint32) *CoordinatorCLI {
-	return &CoordinatorCLI{api, executor, rateLimiterEngine, authManager, oauthHandler, mcpHandler, mcpHandler, mcpOAuthServer, httpPort, grpcPort}
+	return &CoordinatorCLI{api, executor, rateLimiterEngine, authManager, oauthHandler, connRefreshJob, mcpHandler, mcpHandler, mcpOAuthServer, httpPort, grpcPort}
 }
 
 func (c *CoordinatorCLI) Run(ctx context.Context) {
@@ -142,6 +143,11 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 				c.mcpSyncer.SyncTools()
 			}
 		}
+	})
+
+	g.Go(func() error {
+		c.connRefreshJob.Run(ctx)
+		return ctx.Err()
 	})
 
 	tokenUsageTicker := time.NewTicker(5 * time.Minute)

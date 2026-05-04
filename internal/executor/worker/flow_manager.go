@@ -100,13 +100,12 @@ func (m *flowManager) AddFlow(workerFlowID int64, config string) error {
 	streamBuilder.SetLogger(slogLogger)
 
 	streamBuilder.SetEnvVarLookupFunc(func(key string) (string, bool) {
+		// QAYNAQ_CONN_<name> resolves to the connection name itself. Components
+		// receive the name and call vault.GetAccessToken(name) at request time so
+		// the access token is always fresh and refresh-token rotations stay
+		// consistent across the system.
 		if connName, ok := strings.CutPrefix(key, "QAYNAQ_CONN_"); ok {
-			token, err := m.vaultProvider.GetConnectionToken(connName)
-			if err != nil {
-				log.Error().Err(err).Str("connection", key).Msg("Failed to get connection token")
-				return "", false
-			}
-			return token, true
+			return connName, true
 		}
 		secret, err := m.vaultProvider.GetSecret(key)
 		if err != nil {
