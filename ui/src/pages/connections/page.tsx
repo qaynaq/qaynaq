@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table";
-import { Plus, Link2, Eye, EyeOff, ExternalLink, RefreshCw, Search } from "lucide-react";
+import { Plus, Link2, Eye, EyeOff, ExternalLink, RefreshCw, Search, Check, ChevronsUpDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,14 +26,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Connection } from "@/lib/entities";
 import { fetchConnections, deleteConnection, fetchProviders, type Provider } from "@/lib/api";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useRelativeTime } from "@/lib/utils";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn, useRelativeTime } from "@/lib/utils";
 
 const RelativeTime = ({ dateString }: { dateString: string }) => {
   const relativeTime = useRelativeTime(dateString);
@@ -56,11 +58,14 @@ export default function ConnectionsPage() {
   const [showReAuthSecret, setShowReAuthSecret] = useState(false);
   const [scopeSearch, setScopeSearch] = useState("");
   const [selectedScopes, setSelectedScopes] = useState<Set<string>>(new Set());
+  const [providerPickerOpen, setProviderPickerOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     provider: "",
     clientId: "",
     clientSecret: "",
+    shop: "",
+    cloudId: "",
   });
 
   const handleDelete = async (conn: Connection) => {
@@ -102,6 +107,7 @@ export default function ConnectionsPage() {
     clientSecret: string,
     scopes: string[],
     onSuccess: () => void,
+    extras?: { shop?: string; cloudId?: string },
   ) => {
     const params = new URLSearchParams({
       provider,
@@ -111,6 +117,12 @@ export default function ConnectionsPage() {
     });
     if (scopes.length > 0) {
       params.set("scopes", scopes.join(","));
+    }
+    if (extras?.shop) {
+      params.set("shop", extras.shop);
+    }
+    if (extras?.cloudId) {
+      params.set("cloud_id", extras.cloudId);
     }
 
     const popup = window.open(
@@ -150,17 +162,42 @@ export default function ConnectionsPage() {
   };
 
   const handleAuthorize = () => {
+    const provider = providers.find((p) => p.id === formData.provider);
+    const requiresScope = (provider?.scopes.length ?? 0) > 0;
+
     if (
       !formData.name.trim() ||
       !formData.provider ||
       !formData.clientId.trim() ||
       !formData.clientSecret.trim() ||
-      selectedScopes.size === 0
+      (requiresScope && selectedScopes.size === 0)
     ) {
       addToast({
         id: "validation-error",
         title: "Validation Error",
-        description: "Name, Provider, Client ID, Client Secret, and at least one scope are required.",
+        description: requiresScope
+          ? "Name, Provider, Client ID, Client Secret, and at least one scope are required."
+          : "Name, Provider, Client ID, and Client Secret are required.",
+        variant: "error",
+      });
+      return;
+    }
+
+    if (provider?.requires_shop && !formData.shop.trim()) {
+      addToast({
+        id: "validation-error",
+        title: "Validation Error",
+        description: "Shop domain is required for this provider (e.g., my-store).",
+        variant: "error",
+      });
+      return;
+    }
+
+    if (provider?.requires_cloud_id && !formData.cloudId.trim()) {
+      addToast({
+        id: "validation-error",
+        title: "Validation Error",
+        description: "Cloud ID is required for this provider.",
         variant: "error",
       });
       return;
@@ -173,11 +210,15 @@ export default function ConnectionsPage() {
       formData.clientSecret.trim(),
       Array.from(selectedScopes),
       () => {
-        setFormData({ name: "", provider: "", clientId: "", clientSecret: "" });
+        setFormData({ name: "", provider: "", clientId: "", clientSecret: "", shop: "", cloudId: "" });
         setSelectedScopes(new Set());
         setScopeSearch("");
         setShowSecret(false);
         setIsModalOpen(false);
+      },
+      {
+        shop: formData.shop.trim() || undefined,
+        cloudId: formData.cloudId.trim() || undefined,
       },
     );
   };
@@ -195,27 +236,44 @@ export default function ConnectionsPage() {
   };
 
   const submitReauthorize = () => {
-    if (!reAuthConn || !reAuthData.clientId.trim() || reAuthScopes.size === 0) {
+    if (!reAuthConn) return;
+    const provider = providers.find((p) => p.id === reAuthConn.provider);
+    const requiresScope = (provider?.scopes.length ?? 0) > 0;
+
+    if (!reAuthData.clientId.trim() || (requiresScope && reAuthScopes.size === 0)) {
       addToast({
         id: "validation-error",
         title: "Validation Error",
-        description: "Client ID and at least one scope are required.",
+        description: requiresScope
+          ? "Client ID and at least one scope are required."
+          : "Client ID is required.",
         variant: "error",
       });
       return;
     }
 
-    openOAuthPopup(reAuthConn.provider, reAuthConn.name, reAuthData.clientId.trim(), reAuthData.clientSecret.trim(), Array.from(reAuthScopes), () => {
-      setReAuthOpen(false);
-      setReAuthConn(null);
-      setReAuthData({ clientId: "", clientSecret: "" });
-      setReAuthScopes(new Set());
-      setReAuthScopeSearch("");
-    });
+    openOAuthPopup(
+      reAuthConn.provider,
+      reAuthConn.name,
+      reAuthData.clientId.trim(),
+      reAuthData.clientSecret.trim(),
+      Array.from(reAuthScopes),
+      () => {
+        setReAuthOpen(false);
+        setReAuthConn(null);
+        setReAuthData({ clientId: "", clientSecret: "" });
+        setReAuthScopes(new Set());
+        setReAuthScopeSearch("");
+      },
+      {
+        shop: reAuthConn.shop || undefined,
+        cloudId: reAuthConn.cloudId || undefined,
+      },
+    );
   };
 
   const resetForm = () => {
-    setFormData({ name: "", provider: "", clientId: "", clientSecret: "" });
+    setFormData({ name: "", provider: "", clientId: "", clientSecret: "", shop: "", cloudId: "" });
     setSelectedScopes(new Set());
     setScopeSearch("");
     setShowSecret(false);
@@ -247,9 +305,11 @@ export default function ConnectionsPage() {
     {
       key: "provider" as keyof Connection,
       title: "Provider",
-      render: (value: string) => (
-        <span className="capitalize">{value || "Unknown"}</span>
-      ),
+      render: (value: string) => {
+        const match = providers.find((p) => p.id === value);
+        const label = match?.display_name || (value ? value.charAt(0).toUpperCase() + value.slice(1) : "Unknown");
+        return <span>{label}</span>;
+      },
     },
     {
       key: "createdAt" as keyof Connection,
@@ -283,6 +343,20 @@ export default function ConnectionsPage() {
   useEffect(() => {
     loadConnections();
   }, []);
+
+  // Provider list rendered in pickers and the table. Sorted by display name
+  // (case-insensitive) so users can scan alphabetically across 12+ providers.
+  const sortedProviders = [...providers].sort((a, b) => {
+    const an = (a.display_name || a.id).toLowerCase();
+    const bn = (b.display_name || b.id).toLowerCase();
+    return an.localeCompare(bn);
+  });
+
+  const selectedProvider = sortedProviders.find((p) => p.id === formData.provider);
+  const selectedProviderLabel = selectedProvider
+    ? selectedProvider.display_name ||
+      selectedProvider.id.charAt(0).toUpperCase() + selectedProvider.id.slice(1)
+    : "Select a provider...";
 
   return (
     <div className="p-6">
@@ -321,28 +395,65 @@ export default function ConnectionsPage() {
 
               <div className="space-y-2">
                 <Label>Provider</Label>
-                <Select
-                  value={formData.provider}
-                  onValueChange={(val) => {
-                    setFormData({ ...formData, provider: val });
-                    const provider = providers.find((p) => p.id === val);
-                    if (provider) {
-                      setSelectedScopes(new Set(provider.scopes.map((s) => s.scope)));
-                    }
-                    setScopeSearch("");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a provider..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providers.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.id.charAt(0).toUpperCase() + p.id.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={providerPickerOpen} onOpenChange={setProviderPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={providerPickerOpen}
+                      className={cn(
+                        "w-full justify-between font-normal",
+                        !formData.provider && "text-muted-foreground",
+                      )}
+                    >
+                      {selectedProviderLabel}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[--radix-popover-trigger-width] p-0"
+                    align="start"
+                    collisionPadding={16}
+                    // Radix Dialog's react-remove-scroll blocks wheel events on
+                    // portaled content. Stop propagation so the CommandList
+                    // can receive scroll events while the dialog is open.
+                    onWheel={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                  >
+                    <Command>
+                      <CommandInput placeholder="Search providers..." />
+                      <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain">
+                        <CommandEmpty>No provider found.</CommandEmpty>
+                        <CommandGroup>
+                          {sortedProviders.map((p) => {
+                            const label =
+                              p.display_name || p.id.charAt(0).toUpperCase() + p.id.slice(1);
+                            return (
+                              <CommandItem
+                                key={p.id}
+                                value={`${label} ${p.id}`}
+                                onSelect={() => {
+                                  setFormData({ ...formData, provider: p.id });
+                                  setSelectedScopes(new Set(p.scopes.map((s) => s.scope)));
+                                  setScopeSearch("");
+                                  setProviderPickerOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.provider === p.id ? "opacity-100" : "opacity-0",
+                                  )}
+                                />
+                                {label}
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
@@ -392,7 +503,53 @@ export default function ConnectionsPage() {
 
               {formData.provider && (() => {
                 const provider = providers.find((p) => p.id === formData.provider);
-                if (!provider) return null;
+                if (!provider?.requires_shop) return null;
+                return (
+                  <div className="space-y-2">
+                    <Label htmlFor="conn-shop">Shop domain</Label>
+                    <Input
+                      id="conn-shop"
+                      type="text"
+                      placeholder="my-store"
+                      value={formData.shop}
+                      onChange={(e) =>
+                        setFormData({ ...formData, shop: e.target.value.toLowerCase() })
+                      }
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      The subdomain of your Shopify store (e.g., <code>my-store</code> for <code>my-store.myshopify.com</code>).
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {formData.provider && (() => {
+                const provider = providers.find((p) => p.id === formData.provider);
+                if (!provider?.requires_cloud_id) return null;
+                return (
+                  <div className="space-y-2">
+                    <Label htmlFor="conn-cloud-id">Cloud ID</Label>
+                    <Input
+                      id="conn-cloud-id"
+                      type="text"
+                      placeholder="00000000-0000-0000-0000-000000000000"
+                      value={formData.cloudId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, cloudId: e.target.value })
+                      }
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Find your Cloud ID at <code>https://YOUR-SITE.atlassian.net/_edge/tenant_info</code>.
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {formData.provider && (() => {
+                const provider = providers.find((p) => p.id === formData.provider);
+                if (!provider || provider.scopes.length === 0) return null;
                 const filtered = provider.scopes.filter(
                   (s) =>
                     !scopeSearch ||
@@ -627,7 +784,7 @@ export default function ConnectionsPage() {
 
             {reAuthConn && (() => {
               const provider = providers.find((p) => p.id === reAuthConn.provider);
-              if (!provider) return null;
+              if (!provider || provider.scopes.length === 0) return null;
               const filtered = provider.scopes.filter(
                 (s) =>
                   !reAuthScopeSearch ||

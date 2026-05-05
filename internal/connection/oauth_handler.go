@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -20,6 +21,10 @@ type pendingAuth struct {
 	Provider     string
 	Config       Config
 	OAuth2Config *oauth2.Config
+	// CodeVerifier holds the PKCE verifier for this flow. Populated only for
+	// providers that require PKCE; sent to the token endpoint on exchange.
+	// Lives in memory only - dies with the 10-min state TTL. Never persisted.
+	CodeVerifier string
 	ExpiresAt    time.Time
 }
 
@@ -64,6 +69,34 @@ func (h *OAuthHandler) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Shopify uses per-shop URLs: substitute {shop} into the auth/token URLs
+	// before building the oauth2.Config so the redirect goes to the correct
+	// store. Validate the shop name strictly to prevent URL injection - a
+	// value like "evil.com/x" would otherwise turn into a phishing redirect.
+	var shop string
+	if ProviderUsesShopTemplate(provider) {
+		shop = strings.TrimSpace(r.URL.Query().Get("shop"))
+		if err := ValidateShopSubdomain(shop); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		endpoint = substituteEndpointTemplate(endpoint, shop)
+	}
+
+	// Atlassian needs a Cloud ID to construct API URLs. We collect it now
+	// and store it on the connection so consumers don't have to look it up
+	// later. Atlassian's accessible-resources endpoint can return multiple
+	// sites; manual entry lets the user pick which one this connection
+	// addresses.
+	var cloudID string
+	if ProviderRequiresCloudID(provider) {
+		cloudID = strings.TrimSpace(r.URL.Query().Get("cloud_id"))
+		if err := ValidateCloudID(cloudID); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
 	scopesParam := r.URL.Query().Get("scopes")
 	var scopes []string
 	if scopesParam != "" {
@@ -76,7 +109,7 @@ func (h *OAuthHandler) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	if len(scopes) == 0 {
 		scopes = GetDefaultScopes(provider)
 	}
-	if len(scopes) == 0 {
+	if len(scopes) == 0 && !ProviderAcceptsNoScopes(provider) {
 		http.Error(w, "at least one scope is required", http.StatusBadRequest)
 		return
 	}
@@ -98,18 +131,40 @@ func (h *OAuthHandler) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		RedirectURL:  redirectURL,
 	}
 
+	authOpts, codeVerifier := buildAuthorizeOpts(provider, oauth2Config)
+
 	state := generateState()
 	h.stateStoreMux.Lock()
 	h.stateStore[state] = &pendingAuth{
-		Name:         name,
-		Provider:     provider,
-		Config:       Config{ClientID: clientID, ClientSecret: clientSecret, Scopes: scopes},
+		Name:     name,
+		Provider: provider,
+		Config: Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			Scopes:       scopes,
+			Shop:         shop,
+			CloudID:      cloudID,
+		},
 		OAuth2Config: oauth2Config,
+		CodeVerifier: codeVerifier,
 		ExpiresAt:    time.Now().Add(10 * time.Minute),
 	}
 	h.stateStoreMux.Unlock()
 
-	var authOpts []oauth2.AuthCodeOption
+	url := oauth2Config.AuthCodeURL(state, authOpts...)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+// buildAuthorizeOpts returns the AuthCodeOptions for a provider's authorize
+// URL, plus the PKCE code_verifier (if PKCE is required) so the caller can
+// store it for the callback. It also mutates oauth2Config.Scopes when a
+// provider requires the scopes to live in a different URL parameter (Slack
+// puts user scopes in "user_scope=", Asana MCP rejects any "scope=" at all).
+//
+// This replaces the old `switch provider` branch in HandleAuthorize. New
+// providers add an entry here; the rest of the OAuth flow stays generic.
+func buildAuthorizeOpts(provider string, oauth2Config *oauth2.Config) ([]oauth2.AuthCodeOption, string) {
+	var opts []oauth2.AuthCodeOption
 
 	switch provider {
 	case "slack":
@@ -117,16 +172,78 @@ func (h *OAuthHandler) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		// "user_scope" or the auth flow tries to install a bot.
 		userScopes := strings.Join(oauth2Config.Scopes, ",")
 		oauth2Config.Scopes = nil
-		authOpts = append(authOpts, oauth2.SetAuthURLParam("user_scope", userScopes))
+		opts = append(opts, oauth2.SetAuthURLParam("user_scope", userScopes))
+
+	case "asana":
+		// Asana rotates refresh tokens on every refresh. prompt=consent
+		// forces the user-consent screen so refresh_token is reliably issued.
+		opts = append(opts, oauth2.SetAuthURLParam("prompt", "consent"))
+
+	case "asana_mcp":
+		// Asana MCP rejects any scope= parameter. The resource= param binds
+		// the token to the MCP server endpoint instead of generic API access.
+		oauth2Config.Scopes = nil
+		opts = append(opts, oauth2.SetAuthURLParam("resource", "https://mcp.asana.com/v2"))
+
+	case "atlassian":
+		// audience= is required by Atlassian's OAuth 2.0 (3LO) flow.
+		// prompt=consent ensures refresh tokens are issued (combined with
+		// the offline_access scope which the user must include).
+		opts = append(opts, oauth2.SetAuthURLParam("audience", "api.atlassian.com"))
+		opts = append(opts, oauth2.SetAuthURLParam("prompt", "consent"))
+
+	case "linear":
+		// actor=user issues a user-bound token (vs. an app actor token from
+		// the client_credentials grant, which we don't use here).
+		opts = append(opts, oauth2.SetAuthURLParam("actor", "user"))
+
+	case "notion":
+		// Notion uses owner=user to bind the integration to the authorizing
+		// user's workspace.
+		opts = append(opts, oauth2.SetAuthURLParam("owner", "user"))
+
+	case "github", "github_mcp", "hubspot", "sentry", "shopify", "slack_mcp":
+		// Standard OAuth 2.0/2.1: no provider-specific authorize params
+		// beyond PKCE (handled below). slack_mcp uses Slack's MCP-dedicated
+		// endpoints (oauth/v2_user/authorize + oauth.v2.user.access) which
+		// return a clean top-level token response - unlike regular slack,
+		// no user_scope handling or authed_user nesting.
+
 	default:
-		// access_type=offline + prompt=consent forces Google to issue a refresh
-		// token even on re-consent.
-		authOpts = append(authOpts, oauth2.AccessTypeOffline)
-		authOpts = append(authOpts, oauth2.SetAuthURLParam("prompt", "consent"))
+		// Google and any unrecognized provider: access_type=offline +
+		// prompt=consent forces issuance of a refresh token even on re-consent.
+		opts = append(opts, oauth2.AccessTypeOffline)
+		opts = append(opts, oauth2.SetAuthURLParam("prompt", "consent"))
 	}
 
-	url := oauth2Config.AuthCodeURL(state, authOpts...)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	// PKCE plumbing: required for github_mcp/sentry/shopify per their
+	// current docs (May 2026). Compute SHA-256 challenge from a random
+	// verifier; verifier is sent on token exchange.
+	var codeVerifier string
+	if ProviderRequiresPKCE(provider) {
+		codeVerifier = generateCodeVerifier()
+		challenge := computeCodeChallenge(codeVerifier)
+		opts = append(opts, oauth2.SetAuthURLParam("code_challenge", challenge))
+		opts = append(opts, oauth2.SetAuthURLParam("code_challenge_method", "S256"))
+	}
+
+	return opts, codeVerifier
+}
+
+// generateCodeVerifier returns a random 32-byte URL-safe string for PKCE.
+// RFC 7636 requires 43-128 characters of [A-Z][a-z][0-9]-._~. Base64URL of
+// 32 random bytes lands at 43 chars after stripping padding.
+func generateCodeVerifier() string {
+	b := make([]byte, 32)
+	_, _ = rand.Read(b)
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+// computeCodeChallenge returns the S256 PKCE challenge for a given verifier.
+// SHA-256 the verifier, base64url-encode (no padding) per RFC 7636.
+func computeCodeChallenge(verifier string) string {
+	sum := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
 func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
@@ -178,8 +295,12 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
+		var exchangeOpts []oauth2.AuthCodeOption
+		if pending.CodeVerifier != "" {
+			exchangeOpts = append(exchangeOpts, oauth2.SetAuthURLParam("code_verifier", pending.CodeVerifier))
+		}
 		var err error
-		token, err = pending.OAuth2Config.Exchange(context.Background(), code)
+		token, err = pending.OAuth2Config.Exchange(context.Background(), code, exchangeOpts...)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to exchange OAuth2 code for token")
 			w.Header().Set("Content-Type", "text/html")

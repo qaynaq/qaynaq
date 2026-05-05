@@ -7757,6 +7757,10 @@ func (m *ConnectionInfo) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Shop
+
+	// no validation rules for CloudId
+
 	if len(errors) > 0 {
 		return ConnectionInfoMultiError(errors)
 	}
@@ -9013,6 +9017,12 @@ func (m *Provider) validate(all bool) error {
 	// no validation rules for SetupUrl
 
 	// no validation rules for SetupLabel
+
+	// no validation rules for DisplayName
+
+	// no validation rules for RequiresShop
+
+	// no validation rules for RequiresCloudId
 
 	if len(errors) > 0 {
 		return ProviderMultiError(errors)

@@ -565,6 +565,8 @@ export async function fetchConnections(): Promise<Connection[]> {
         scopes: conn.scopes || [],
         clientId: conn.client_id || "",
         clientSecretHint: conn.client_secret_hint || "",
+        shop: conn.shop || undefined,
+        cloudId: conn.cloud_id || undefined,
         createdAt: conn.created_at
           ? new Date(conn.created_at).toLocaleString()
           : "Unknown",
@@ -609,9 +611,12 @@ export type ProviderScope = {
 
 export type Provider = {
   id: string;
+  display_name?: string;
   scopes: ProviderScope[];
   setup_url?: string;
   setup_label?: string;
+  requires_shop?: boolean;
+  requires_cloud_id?: boolean;
 };
 
 export async function fetchProviders(): Promise<Provider[]> {
