@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # MCP Server
 
-Qaynaq's coordinator includes a built-in [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `/mcp`. Any flow with the [MCP Tool](/docs/components/inputs/mcp-tool) input becomes a tool that AI assistants can discover and call. Tools sync automatically every 5 seconds.
+Qaynaq's coordinator includes a built-in [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `/mcp`. Any flow with the [MCP Tool](/docs/components/inputs/mcp-tool) input becomes a tool that AI assistants can discover and call. Tools sync automatically every 30 seconds. To also expose tools from external MCP servers on the same `/mcp` endpoint, see [MCP Server Proxy](/docs/guides/mcp-server-proxy).
 
 ## Connecting Clients
 
