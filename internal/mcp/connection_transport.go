@@ -32,14 +32,19 @@ func (t *connectionTransport) RoundTrip(req *http.Request) (*http.Response, erro
 	if err != nil {
 		return nil, fmt.Errorf("connection %q: %w", t.connectionName, err)
 	}
-	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
 
+	// http.RoundTripper contract: do not modify the input request. Clone
+	// before setting Authorization, and snapshot the body via GetBody (or by
+	// buffering once) so we can replay on retry without touching req.Body.
 	bodyBytes, err := snapshotBody(req)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := t.base.RoundTrip(req)
+	firstReq := cloneRequestForSend(req, bodyBytes)
+	firstReq.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+
+	resp, err := t.base.RoundTrip(firstReq)
 	if err != nil || resp.StatusCode != http.StatusUnauthorized {
 		return resp, err
 	}
@@ -55,26 +60,20 @@ func (t *connectionTransport) RoundTrip(req *http.Request) (*http.Response, erro
 		_ = resp.Body.Close()
 	}
 
-	retryReq := req.Clone(req.Context())
-	retryReq.Header.Set("Authorization", "Bearer "+freshTok.AccessToken)
-	if bodyBytes != nil {
-		retryReq.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-	} else if req.Body != nil && req.GetBody == nil {
+	if bodyBytes == nil && req.Body != nil && req.GetBody == nil {
 		return resp, errors.New("connection: 401 from upstream and request body is not replayable")
-	} else if req.GetBody != nil {
-		body, gerr := req.GetBody()
-		if gerr != nil {
-			return nil, fmt.Errorf("connection: failed to rewind body for retry: %w", gerr)
-		}
-		retryReq.Body = body
 	}
+
+	retryReq := cloneRequestForSend(req, bodyBytes)
+	retryReq.Header.Set("Authorization", "Bearer "+freshTok.AccessToken)
 
 	return t.base.RoundTrip(retryReq)
 }
 
-// snapshotBody buffers the request body once so the retry can replay it.
-// Returns nil for nil-body requests or when the caller already provided a
-// replayable body via req.GetBody.
+// snapshotBody buffers req.Body once for replay, returning the bytes. Returns
+// nil for nil-body requests or when the caller already provided a replayable
+// body via req.GetBody. Does NOT mutate the input request - the buffered
+// bytes are returned and used to construct fresh body readers per attempt.
 func snapshotBody(req *http.Request) ([]byte, error) {
 	if req.Body == nil || req.GetBody != nil {
 		return nil, nil
@@ -84,6 +83,21 @@ func snapshotBody(req *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("connection: failed to buffer request body: %w", err)
 	}
-	req.Body = io.NopCloser(bytes.NewReader(buf))
 	return buf, nil
+}
+
+// cloneRequestForSend returns a clone of req with a fresh Body reader. If
+// bodyBytes is non-nil it's used; otherwise GetBody is invoked; otherwise
+// the body is left as-is (nil-body case).
+func cloneRequestForSend(req *http.Request, bodyBytes []byte) *http.Request {
+	r := req.Clone(req.Context())
+	switch {
+	case bodyBytes != nil:
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	case req.GetBody != nil:
+		if body, err := req.GetBody(); err == nil {
+			r.Body = body
+		}
+	}
+	return r
 }

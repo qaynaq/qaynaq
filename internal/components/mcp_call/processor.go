@@ -181,6 +181,9 @@ func (p *Processor) Close(ctx context.Context) error {
 	defer p.mcpMu.Unlock()
 
 	if p.mcpClient != nil {
+		if err := p.mcpClient.Close(); err != nil {
+			p.logger.Debugf("Failed to close MCP client: %v", err)
+		}
 		p.mcpClient = nil
 	}
 	return nil

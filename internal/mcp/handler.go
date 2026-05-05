@@ -102,18 +102,21 @@ func (h *MCPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *MCPHandler) SyncTools() {
 	nativeTools, nativeToolMap := h.syncNativeTools()
-	upstreamTools := h.syncUpstreamServers(nativeToolMap)
+	upstreamTools, reconnected := h.syncUpstreamServers(nativeToolMap)
 	allTools := append(nativeTools, upstreamTools...)
 
 	// Skip SetTools when nothing changed - it would needlessly notify clients.
+	// But if any upstream rotated its client, we MUST re-register tool handlers
+	// even if tool names are identical, otherwise the previously-registered
+	// handlers still close over the old (now closed) client.
 	hash := computeToolsHash(allTools)
-	if hash == h.lastToolsHash {
-		return
-	}
-
 	h.mu.Lock()
+	skip := !reconnected && hash == h.lastToolsHash
 	h.lastToolsHash = hash
 	h.mu.Unlock()
+	if skip {
+		return
+	}
 
 	h.mcpServer.SetTools(allTools...)
 
@@ -121,6 +124,7 @@ func (h *MCPHandler) SyncTools() {
 		Int("native_count", len(nativeTools)).
 		Int("upstream_count", len(upstreamTools)).
 		Int("total_count", len(allTools)).
+		Bool("reconnected", reconnected).
 		Msg("MCP tools synced")
 }
 
@@ -175,27 +179,30 @@ func (h *MCPHandler) syncNativeTools() ([]server.ServerTool, map[string]int64) {
 	return newTools, newToolMap
 }
 
-func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) []server.ServerTool {
+// syncUpstreamServers returns the registered upstream tools and a flag
+// indicating whether any upstream client was created or rotated this pass.
+// The flag forces SetTools even when tool names are unchanged, since the
+// previously-registered handlers close over the now-closed client.
+func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]server.ServerTool, bool) {
 	if h.serverRepo == nil {
-		return nil
+		return nil, false
 	}
 
 	servers, err := h.serverRepo.ListByStatus("active")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list MCP servers for upstream sync")
-		return nil
+		return nil, false
 	}
 
 	if len(servers) == 0 {
 		h.mu.Lock()
+		removed := len(h.upstreams) > 0
 		for name, us := range h.upstreams {
-			if us.client != nil {
-				us.client = nil
-			}
+			closeUpstreamClient(us)
 			delete(h.upstreams, name)
 		}
 		h.mu.Unlock()
-		return nil
+		return nil, removed
 	}
 
 	activeNames := make(map[string]bool, len(servers))
@@ -205,12 +212,12 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) []ser
 
 	// Drop upstream entries for servers that have been removed from the DB.
 	h.mu.Lock()
+	rotated := false
 	for name, us := range h.upstreams {
 		if !activeNames[name] {
-			if us.client != nil {
-				us.client = nil
-			}
+			closeUpstreamClient(us)
 			delete(h.upstreams, name)
+			rotated = true
 		}
 	}
 	h.mu.Unlock()
@@ -219,8 +226,9 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) []ser
 	defer cancel()
 
 	type serverResult struct {
-		name  string
-		tools []server.ServerTool
+		name        string
+		tools       []server.ServerTool
+		reconnected bool
 	}
 
 	var resultMu sync.Mutex
@@ -230,12 +238,10 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) []ser
 
 	for _, srv := range servers {
 		g.Go(func() error {
-			tools := h.syncOneUpstream(gCtx, &srv, nativeToolNames)
-			if len(tools) > 0 {
-				resultMu.Lock()
-				results = append(results, serverResult{name: srv.Name, tools: tools})
-				resultMu.Unlock()
-			}
+			tools, reconnected := h.syncOneUpstream(gCtx, &srv, nativeToolNames)
+			resultMu.Lock()
+			results = append(results, serverResult{name: srv.Name, tools: tools, reconnected: reconnected})
+			resultMu.Unlock()
 			// Never fail the group - one bad server shouldn't block the rest.
 			return nil
 		})
@@ -246,12 +252,18 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) []ser
 	var allUpstreamTools []server.ServerTool
 	for _, r := range results {
 		allUpstreamTools = append(allUpstreamTools, r.tools...)
+		if r.reconnected {
+			rotated = true
+		}
 	}
 
-	return allUpstreamTools
+	return allUpstreamTools, rotated
 }
 
-func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPServer, nativeToolNames map[string]int64) []server.ServerTool {
+// syncOneUpstream returns the tools registered for srv plus a flag that's
+// true when this call rotated the underlying mcp client (handlers registered
+// elsewhere now close over a stale pointer).
+func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPServer, nativeToolNames map[string]int64) ([]server.ServerTool, bool) {
 	h.mu.RLock()
 	existing := h.upstreams[srv.Name]
 	h.mu.RUnlock()
@@ -262,7 +274,7 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 	if existing != nil && existing.failureCount >= maxUpstreamFailures {
 		if !existing.failedAt.IsZero() && time.Since(existing.failedAt) < upstreamCircuitCooldown {
 			log.Debug().Str("server", srv.Name).Msg("Upstream server circuit-broken, skipping")
-			return nil
+			return nil, false
 		}
 		log.Debug().Str("server", srv.Name).Msg("Upstream server cooldown elapsed, allowing retry")
 	}
@@ -273,15 +285,13 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 	var client *mcpclient.Client
 
 	if needReconnect {
-		if existing != nil && existing.client != nil {
-			existing.client = nil
-		}
+		closeUpstreamClient(existing)
 
 		newClient, err := ConnectMCPClient(ctx, srv.URL, auth.headers, auth.httpClient)
 		if err != nil {
 			log.Warn().Err(err).Str("server", srv.Name).Str("url", srv.URL).Msg("Failed to connect to upstream MCP server")
 			h.recordUpstreamFailure(srv, err)
-			return nil
+			return nil, false
 		}
 		client = newClient
 	} else {
@@ -292,7 +302,7 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 	if err != nil {
 		log.Warn().Err(err).Str("server", srv.Name).Msg("Failed to list tools from upstream MCP server")
 		h.recordUpstreamFailure(srv, err)
-		return nil
+		return nil, needReconnect
 	}
 
 	var tools []server.ServerTool
@@ -341,7 +351,7 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 
 	log.Debug().Str("server", srv.Name).Int("tool_count", len(tools)).Msg("Upstream MCP server synced")
 
-	return tools
+	return tools, needReconnect
 }
 
 func (h *MCPHandler) recordUpstreamFailure(srv *persistence.MCPServer, err error) {
@@ -426,13 +436,23 @@ func (h *MCPHandler) createUpstreamToolHandler(client *mcpclient.Client, origina
 func (h *MCPHandler) ResetUpstreamServer(serverName string) {
 	h.mu.Lock()
 	if us, ok := h.upstreams[serverName]; ok {
-		us.failureCount = 0
-		if us.client != nil {
-			us.client = nil
-		}
+		closeUpstreamClient(us)
 	}
 	delete(h.upstreams, serverName)
 	h.mu.Unlock()
+}
+
+// closeUpstreamClient closes the upstream MCP client (terminating its
+// listener goroutine and the upstream session) and nils the field. Safe to
+// call with a nil us or nil us.client.
+func closeUpstreamClient(us *upstreamServer) {
+	if us == nil || us.client == nil {
+		return
+	}
+	if err := us.client.Close(); err != nil {
+		log.Debug().Err(err).Str("server", us.name).Msg("Failed to close upstream MCP client")
+	}
+	us.client = nil
 }
 
 // upstreamAuth is everything syncOneUpstream needs to connect to an upstream

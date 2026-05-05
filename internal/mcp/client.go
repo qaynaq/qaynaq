@@ -10,15 +10,23 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// ConnectMCPClient opens a streamable-HTTP MCP session. If httpClient is non-nil
-// it is used as the underlying transport (e.g. one that injects auth headers
-// and retries on 401); otherwise the static headers map is attached to every
-// request.
+// ConnectMCPClient opens a streamable-HTTP MCP session. If httpClient is
+// non-nil it is used as the underlying transport (e.g. one that injects
+// auth headers and retries on 401); otherwise headers (if any) are attached
+// statically to every request via mcp-go's default client.
+//
+// The resulting client always reads JSON responses through a bounded reader
+// (see boundedJSONTransport) to stop a malicious upstream from OOMing the
+// process with a multi-GB response. SSE streams are not bounded here.
 func ConnectMCPClient(ctx context.Context, url string, headers map[string]string, httpClient *http.Client) (*mcpclient.Client, error) {
-	var opts []transport.StreamableHTTPCOption
 	if httpClient != nil {
-		opts = append(opts, transport.WithHTTPBasicClient(httpClient))
-	} else if len(headers) > 0 {
+		httpClient = withBoundedJSON(httpClient)
+	} else {
+		httpClient = withBoundedJSON(nil)
+	}
+
+	opts := []transport.StreamableHTTPCOption{transport.WithHTTPBasicClient(httpClient)}
+	if len(headers) > 0 {
 		opts = append(opts, transport.WithHTTPHeaders(headers))
 	}
 
