@@ -87,7 +87,7 @@ func (p *Processor) initClient() (*mcpclient.Client, error) {
 
 	p.logger.Debugf("Connecting to MCP server at %s", p.serverURL)
 	headers := mcphelper.BuildAuthHeaders(p.authHeader, p.authValue)
-	client, err := mcphelper.ConnectMCPClient(context.Background(), p.serverURL, headers)
+	client, err := mcphelper.ConnectMCPClient(context.Background(), p.serverURL, headers, nil)
 	if err != nil {
 		return nil, err
 	}

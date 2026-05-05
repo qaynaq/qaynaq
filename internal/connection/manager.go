@@ -123,8 +123,6 @@ type cachedAccessToken struct {
 	expiresAt   time.Time
 }
 
-type TokenRefreshedFn func(connectionName string)
-
 type Manager struct {
 	connRepo persistence.ConnectionRepository
 	aesgcm   *vault.AESGCM
@@ -135,9 +133,6 @@ type Manager struct {
 
 	cacheMu sync.RWMutex
 	cache   map[string]cachedAccessToken
-
-	listenersMu    sync.RWMutex
-	refreshListens []TokenRefreshedFn
 }
 
 func NewManager(connRepo persistence.ConnectionRepository, aesgcm *vault.AESGCM) *Manager {
@@ -145,26 +140,6 @@ func NewManager(connRepo persistence.ConnectionRepository, aesgcm *vault.AESGCM)
 		connRepo: connRepo,
 		aesgcm:   aesgcm,
 		cache:    make(map[string]cachedAccessToken),
-	}
-}
-
-// OnTokenRefreshed registers a listener invoked synchronously after a
-// successful refresh + persist. Callbacks should be cheap.
-func (m *Manager) OnTokenRefreshed(fn TokenRefreshedFn) {
-	if fn == nil {
-		return
-	}
-	m.listenersMu.Lock()
-	m.refreshListens = append(m.refreshListens, fn)
-	m.listenersMu.Unlock()
-}
-
-func (m *Manager) notifyTokenRefreshed(name string) {
-	m.listenersMu.RLock()
-	listeners := append([]TokenRefreshedFn(nil), m.refreshListens...)
-	m.listenersMu.RUnlock()
-	for _, fn := range listeners {
-		fn(name)
 	}
 }
 
@@ -510,7 +485,6 @@ func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string, fo
 	}
 
 	m.cachePut(name, cachedAccessToken{accessToken: newToken.AccessToken, expiresAt: newToken.Expiry})
-	m.notifyTokenRefreshed(name)
 
 	log.Debug().
 		Str("connection", name).

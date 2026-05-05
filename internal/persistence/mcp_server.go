@@ -31,9 +31,6 @@ type MCPServerRepository interface {
 	Delete(id int64) error
 	UpdateSyncStatus(id int64, toolCount int, lastError string) error
 	UpdateStatus(id int64, status string) error
-	// ReactivateByConnection flips errored servers tied to the connection
-	// back to active. Returns rows affected.
-	ReactivateByConnection(connectionName string) (int64, error)
 }
 
 type mcpServerRepository struct {
@@ -96,12 +93,3 @@ func (r *mcpServerRepository) UpdateStatus(id int64, status string) error {
 	return r.db.Model(&MCPServer{}).Where("id = ?", id).Update("status", status).Error
 }
 
-func (r *mcpServerRepository) ReactivateByConnection(connectionName string) (int64, error) {
-	if connectionName == "" {
-		return 0, nil
-	}
-	res := r.db.Model(&MCPServer{}).
-		Where("connection_name = ? AND status = ?", connectionName, "error").
-		Updates(map[string]any{"status": "active", "last_error": ""})
-	return res.RowsAffected, res.Error
-}

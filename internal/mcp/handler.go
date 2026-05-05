@@ -34,15 +34,17 @@ type toolConfig struct {
 }
 
 type upstreamServer struct {
-	client         *mcpclient.Client
-	serverID       int64
-	name           string
-	url            string
-	authHeader     string
-	authValue      string
-	connectionName string
-	tools          []mcp.Tool
-	failureCount   int
+	client   *mcpclient.Client
+	serverID int64
+	name     string
+	url      string
+	// authKey is an opaque value that changes only when we need to reconnect
+	// (e.g. token-auth value changed, connection name changed). For
+	// connection-typed servers it intentionally does NOT change on token
+	// rotation - the transport handles fresh tokens per request.
+	authKey      string
+	tools        []mcp.Tool
+	failureCount int
 	// failedAt is set when the breaker trips. Past upstreamCircuitCooldown the
 	// next sync attempt is allowed through.
 	failedAt time.Time
@@ -88,10 +90,6 @@ func NewMCPHandler(flowRepo persistence.FlowRepository, serverRepo persistence.M
 		connManager: connManager,
 		toolFlowMap: make(map[string]int64),
 		upstreams:   make(map[string]*upstreamServer),
-	}
-
-	if connManager != nil {
-		connManager.OnTokenRefreshed(h.resetUpstreamsForConnection)
 	}
 
 	h.SyncTools()
@@ -269,13 +267,8 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 		log.Debug().Str("server", srv.Name).Msg("Upstream server cooldown elapsed, allowing retry")
 	}
 
-	needReconnect := existing == nil || existing.url != srv.URL
-
-	authHeader, authValue := h.resolveAuth(ctx, srv)
-
-	if existing != nil && existing.authValue != authValue {
-		needReconnect = true
-	}
+	auth := h.resolveAuth(srv)
+	needReconnect := existing == nil || existing.url != srv.URL || existing.authKey != auth.key
 
 	var client *mcpclient.Client
 
@@ -284,8 +277,7 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 			existing.client = nil
 		}
 
-		headers := BuildAuthHeaders(authHeader, authValue)
-		newClient, err := ConnectMCPClient(ctx, srv.URL, headers)
+		newClient, err := ConnectMCPClient(ctx, srv.URL, auth.headers, auth.httpClient)
 		if err != nil {
 			log.Warn().Err(err).Str("server", srv.Name).Str("url", srv.URL).Msg("Failed to connect to upstream MCP server")
 			h.recordUpstreamFailure(srv, err)
@@ -333,15 +325,13 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 
 	h.mu.Lock()
 	h.upstreams[srv.Name] = &upstreamServer{
-		client:         client,
-		serverID:       srv.ID,
-		name:           srv.Name,
-		url:            srv.URL,
-		authHeader:     srv.AuthHeader,
-		authValue:      authValue,
-		connectionName: srv.ConnectionName,
-		tools:          upstreamToolDefs,
-		failureCount:   0,
+		client:       client,
+		serverID:     srv.ID,
+		name:         srv.Name,
+		url:          srv.URL,
+		authKey:      auth.key,
+		tools:        upstreamToolDefs,
+		failureCount: 0,
 	}
 	h.mu.Unlock()
 
@@ -358,10 +348,9 @@ func (h *MCPHandler) recordUpstreamFailure(srv *persistence.MCPServer, err error
 	h.mu.Lock()
 	existing := h.upstreams[srv.Name]
 	if existing == nil {
-		existing = &upstreamServer{name: srv.Name, serverID: srv.ID, connectionName: srv.ConnectionName}
+		existing = &upstreamServer{name: srv.Name, serverID: srv.ID}
 		h.upstreams[srv.Name] = existing
 	}
-	existing.connectionName = srv.ConnectionName
 	existing.failureCount++
 	failCount := existing.failureCount
 	if failCount >= maxUpstreamFailures {
@@ -446,63 +435,40 @@ func (h *MCPHandler) ResetUpstreamServer(serverName string) {
 	h.mu.Unlock()
 }
 
-// resetUpstreamsForConnection clears the in-memory circuit breaker and flips
-// errored DB rows back to active for any MCP server tied to the given
-// connection. Wired to connection.Manager's token-refreshed event so a
-// successful refresh re-arms servers that were stuck on stale-credential 401s.
-func (h *MCPHandler) resetUpstreamsForConnection(connectionName string) {
-	if connectionName == "" {
-		return
-	}
-
-	h.mu.Lock()
-	for name, us := range h.upstreams {
-		if us.connectionName != connectionName {
-			continue
-		}
-		log.Debug().Str("server", name).Str("connection", connectionName).Msg("Connection refreshed - clearing upstream circuit breaker")
-		if us.client != nil {
-			us.client = nil
-		}
-		delete(h.upstreams, name)
-	}
-	h.mu.Unlock()
-
-	if h.serverRepo != nil {
-		if n, err := h.serverRepo.ReactivateByConnection(connectionName); err != nil {
-			log.Warn().Err(err).Str("connection", connectionName).Msg("Failed to reactivate MCP servers after connection refresh")
-		} else if n > 0 {
-			log.Debug().Int64("count", n).Str("connection", connectionName).Msg("Reactivated MCP servers after connection refresh")
-		}
-	}
+// upstreamAuth is everything syncOneUpstream needs to connect to an upstream
+// MCP server: a stable key for change detection (so we don't reconnect on
+// every token rotation), optional static headers, and an optional custom
+// HTTP client for connection-typed auth (where token refresh + 401 retry
+// happen inside the transport).
+type upstreamAuth struct {
+	key        string
+	headers    map[string]string
+	httpClient *http.Client
 }
 
-// resolveAuth returns the (header, value) pair for the upstream server's
-// auth_type. "connection" goes through connection.Manager.GetAccessToken,
-// which auto-refreshes near expiry; "token" decrypts the stored static value.
-func (h *MCPHandler) resolveAuth(ctx context.Context, srv *persistence.MCPServer) (header, value string) {
+func (h *MCPHandler) resolveAuth(srv *persistence.MCPServer) upstreamAuth {
 	switch srv.AuthType {
 	case "token":
 		if srv.EncryptedAuthValue != "" && h.aesgcm != nil {
 			decrypted, err := h.aesgcm.Decrypt(srv.EncryptedAuthValue)
 			if err != nil {
 				log.Warn().Err(err).Str("server", srv.Name).Msg("Failed to decrypt auth value")
-				return "", ""
+				return upstreamAuth{}
 			}
-			return srv.AuthHeader, decrypted
+			return upstreamAuth{
+				key:     "token:" + srv.AuthHeader + "\x00" + decrypted,
+				headers: BuildAuthHeaders(srv.AuthHeader, decrypted),
+			}
 		}
 	case "connection":
 		if srv.ConnectionName != "" && h.connManager != nil {
-			tok, err := h.connManager.GetAccessToken(ctx, srv.ConnectionName, false)
-			if err != nil {
-				log.Warn().Err(err).Str("server", srv.Name).Str("connection", srv.ConnectionName).Msg("Failed to get access token for MCP server auth")
-				return "", ""
+			return upstreamAuth{
+				key:        "connection:" + srv.ConnectionName,
+				httpClient: newConnectionHTTPClient(h.connManager, srv.ConnectionName),
 			}
-			// Empty header -> sent as Authorization: Bearer.
-			return "", tok.AccessToken
 		}
 	}
-	return "", ""
+	return upstreamAuth{}
 }
 
 func computeToolsHash(tools []server.ServerTool) string {
