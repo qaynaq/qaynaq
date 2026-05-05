@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table";
-import { Plus, Link2, Eye, EyeOff, ExternalLink, RefreshCw, Search } from "lucide-react";
+import { Plus, Link2, Eye, EyeOff, ExternalLink, RefreshCw, Search, Check, ChevronsUpDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,14 +26,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Connection } from "@/lib/entities";
 import { fetchConnections, deleteConnection, fetchProviders, type Provider } from "@/lib/api";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useRelativeTime } from "@/lib/utils";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn, useRelativeTime } from "@/lib/utils";
 
 const RelativeTime = ({ dateString }: { dateString: string }) => {
   const relativeTime = useRelativeTime(dateString);
@@ -56,6 +58,7 @@ export default function ConnectionsPage() {
   const [showReAuthSecret, setShowReAuthSecret] = useState(false);
   const [scopeSearch, setScopeSearch] = useState("");
   const [selectedScopes, setSelectedScopes] = useState<Set<string>>(new Set());
+  const [providerPickerOpen, setProviderPickerOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     provider: "",
@@ -341,6 +344,20 @@ export default function ConnectionsPage() {
     loadConnections();
   }, []);
 
+  // Provider list rendered in pickers and the table. Sorted by display name
+  // (case-insensitive) so users can scan alphabetically across 12+ providers.
+  const sortedProviders = [...providers].sort((a, b) => {
+    const an = (a.display_name || a.id).toLowerCase();
+    const bn = (b.display_name || b.id).toLowerCase();
+    return an.localeCompare(bn);
+  });
+
+  const selectedProvider = sortedProviders.find((p) => p.id === formData.provider);
+  const selectedProviderLabel = selectedProvider
+    ? selectedProvider.display_name ||
+      selectedProvider.id.charAt(0).toUpperCase() + selectedProvider.id.slice(1)
+    : "Select a provider...";
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -378,28 +395,65 @@ export default function ConnectionsPage() {
 
               <div className="space-y-2">
                 <Label>Provider</Label>
-                <Select
-                  value={formData.provider}
-                  onValueChange={(val) => {
-                    setFormData({ ...formData, provider: val });
-                    const provider = providers.find((p) => p.id === val);
-                    if (provider) {
-                      setSelectedScopes(new Set(provider.scopes.map((s) => s.scope)));
-                    }
-                    setScopeSearch("");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a provider..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providers.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.display_name || p.id.charAt(0).toUpperCase() + p.id.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={providerPickerOpen} onOpenChange={setProviderPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={providerPickerOpen}
+                      className={cn(
+                        "w-full justify-between font-normal",
+                        !formData.provider && "text-muted-foreground",
+                      )}
+                    >
+                      {selectedProviderLabel}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[--radix-popover-trigger-width] p-0"
+                    align="start"
+                    collisionPadding={16}
+                    // Radix Dialog's react-remove-scroll blocks wheel events on
+                    // portaled content. Stop propagation so the CommandList
+                    // can receive scroll events while the dialog is open.
+                    onWheel={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                  >
+                    <Command>
+                      <CommandInput placeholder="Search providers..." />
+                      <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain">
+                        <CommandEmpty>No provider found.</CommandEmpty>
+                        <CommandGroup>
+                          {sortedProviders.map((p) => {
+                            const label =
+                              p.display_name || p.id.charAt(0).toUpperCase() + p.id.slice(1);
+                            return (
+                              <CommandItem
+                                key={p.id}
+                                value={`${label} ${p.id}`}
+                                onSelect={() => {
+                                  setFormData({ ...formData, provider: p.id });
+                                  setSelectedScopes(new Set(p.scopes.map((s) => s.scope)));
+                                  setScopeSearch("");
+                                  setProviderPickerOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.provider === p.id ? "opacity-100" : "opacity-0",
+                                  )}
+                                />
+                                {label}
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">

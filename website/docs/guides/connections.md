@@ -15,6 +15,7 @@ your workers never see refresh tokens.
 |---|---|---|
 | Google | `google` | Google Workspace APIs (Calendar, Drive, Gmail, Sheets, Docs, Slides) |
 | Slack | `slack` | User tokens (`user_scope`); supports rotation |
+| Slack MCP | `slack_mcp` | Official Slack remote MCP (`https://mcp.slack.com/mcp`). PKCE required. |
 | Asana | `asana` | Regular Asana API |
 | Asana MCP | `asana_mcp` | Asana's MCP server. Scopeless. Uses `resource=https://mcp.asana.com/v2`. |
 | Atlassian (Jira & Confluence) | `atlassian` | OAuth 2.0 (3LO). Requires Cloud ID. |
@@ -53,6 +54,27 @@ Create an app at [api.slack.com/apps](https://api.slack.com/apps). Use the
 **Basic Information** page for Client ID / Client Secret. Qaynaq uses `user_scope=`
 to issue user tokens (not bot tokens). Token rotation is supported automatically when
 your app has it enabled.
+
+### Slack MCP
+
+Slack publishes an official remote MCP server at `https://mcp.slack.com/mcp`. The
+Qaynaq `slack_mcp` provider connects to it via OAuth 2.1 + PKCE — a different
+endpoint pair than regular `slack`:
+
+- Authorize: `https://slack.com/oauth/v2_user/authorize`
+- Token: `https://slack.com/api/oauth.v2.user.access`
+
+Use the same Slack App you create at [api.slack.com/apps](https://api.slack.com/apps).
+The user scopes you check in Qaynaq must also be requested in the app's OAuth & Permissions
+page (under **User Token Scopes**). The MCP-published scope set includes Slack canvases
+and a richer search surface (`search:read.users`, `search:read.mpim`, `search:read.im`).
+
+Unlike regular `slack`, the MCP endpoint returns access tokens at the top level of the
+OAuth response — no `authed_user` nesting — so this provider does not need any special
+token-extraction handling.
+
+PKCE is required by the OAuth 2.1 spec and Slack's MCP metadata. Qaynaq generates the
+S256 challenge automatically.
 
 ### Asana (regular)
 

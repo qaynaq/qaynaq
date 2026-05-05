@@ -28,6 +28,16 @@ var providerEndpoints = map[string]oauth2.Endpoint{
 		AuthURL:  "https://slack.com/oauth/v2/authorize",
 		TokenURL: "https://slack.com/api/oauth.v2.access",
 	},
+	// slack_mcp connects to Slack's official remote MCP server at
+	// https://mcp.slack.com/mcp. Unlike regular slack, this flow uses
+	// dedicated user-token endpoints that return tokens at the top level
+	// (no authed_user nesting) - so it does NOT need exchangeSlackUserToken.
+	// Endpoints sourced from
+	// https://mcp.slack.com/.well-known/oauth-authorization-server.
+	"slack_mcp": {
+		AuthURL:  "https://slack.com/oauth/v2_user/authorize",
+		TokenURL: "https://slack.com/api/oauth.v2.user.access",
+	},
 	"asana": {
 		AuthURL:  "https://app.asana.com/-/oauth_authorize",
 		TokenURL: "https://app.asana.com/-/oauth_token",
@@ -96,6 +106,10 @@ var ProviderSetups = map[string]ProviderSetup{
 		URL:   "https://api.slack.com/apps",
 		Label: "Create a Slack App and get Client ID / Client Secret from Basic Information.",
 	},
+	"slack_mcp": {
+		URL:   "https://api.slack.com/apps",
+		Label: "Create a Slack App for MCP. Approve the requested user scopes from this picker. PKCE is required.",
+	},
 	"asana": {
 		URL:   "https://app.asana.com/0/my-apps",
 		Label: "Create an Asana app and copy the Client ID / Client Secret from the app's settings.",
@@ -145,6 +159,7 @@ var ProviderSetups = map[string]ProviderSetup{
 var ProviderDisplayNames = map[string]string{
 	"google":     "Google",
 	"slack":      "Slack",
+	"slack_mcp":  "Slack MCP",
 	"asana":      "Asana",
 	"asana_mcp":  "Asana MCP",
 	"atlassian":  "Atlassian (Jira & Confluence)",
@@ -171,6 +186,27 @@ var ProviderScopes = map[string][]ProviderScope{
 		{Scope: "reactions:read", Label: "Reactions (Read)", Description: "View emoji reactions"},
 		{Scope: "reactions:write", Label: "Reactions (Write)", Description: "Add and remove emoji reactions"},
 		{Scope: "files:read", Label: "Files (Read)", Description: "View files shared in channels"},
+	},
+	// slack_mcp scopes are exactly the set published by Slack's
+	// .well-known/oauth-authorization-server endpoint. Different from regular
+	// `slack` - includes canvases:* and search:read.users.
+	"slack_mcp": {
+		{Scope: "search:read.public", Label: "Search (Public)", Description: "Search messages in public channels"},
+		{Scope: "search:read.private", Label: "Search (Private)", Description: "Search messages in private channels"},
+		{Scope: "search:read.mpim", Label: "Search (Group DMs)", Description: "Search messages in multi-party DMs"},
+		{Scope: "search:read.im", Label: "Search (DMs)", Description: "Search messages in direct messages"},
+		{Scope: "search:read.files", Label: "Search (Files)", Description: "Search files"},
+		{Scope: "search:read.users", Label: "Search (Users)", Description: "Search users"},
+		{Scope: "chat:write", Label: "Chat (Write)", Description: "Send messages"},
+		{Scope: "channels:history", Label: "Channel History", Description: "View messages in public channels"},
+		{Scope: "groups:history", Label: "Group History", Description: "View messages in private channels"},
+		{Scope: "mpim:history", Label: "Group DM History", Description: "View messages in multi-party DMs"},
+		{Scope: "im:history", Label: "DM History", Description: "View messages in direct messages"},
+		{Scope: "canvases:read", Label: "Canvases (Read)", Description: "Read Slack canvases"},
+		{Scope: "canvases:write", Label: "Canvases (Write)", Description: "Create and edit Slack canvases"},
+		{Scope: "users:read", Label: "Users (Read)", Description: "View users and their info"},
+		{Scope: "users:read.email", Label: "Users (Email)", Description: "View user email addresses"},
+		{Scope: "reactions:write", Label: "Reactions (Write)", Description: "Add and remove emoji reactions"},
 	},
 	"google": {
 		{Scope: "https://www.googleapis.com/auth/calendar", Label: "Google Calendar", Description: "Manage events and calendars"},
@@ -260,6 +296,7 @@ var pkceProviders = map[string]bool{
 	"github_mcp": true,
 	"sentry":     true,
 	"shopify":    true,
+	"slack_mcp":  true,
 }
 
 // noRefreshProviders never refresh - the access token doesn't expire (e.g.,

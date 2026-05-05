@@ -202,9 +202,12 @@ func buildAuthorizeOpts(provider string, oauth2Config *oauth2.Config) ([]oauth2.
 		// user's workspace.
 		opts = append(opts, oauth2.SetAuthURLParam("owner", "user"))
 
-	case "github", "github_mcp", "hubspot", "sentry", "shopify":
+	case "github", "github_mcp", "hubspot", "sentry", "shopify", "slack_mcp":
 		// Standard OAuth 2.0/2.1: no provider-specific authorize params
-		// beyond PKCE (handled below).
+		// beyond PKCE (handled below). slack_mcp uses Slack's MCP-dedicated
+		// endpoints (oauth/v2_user/authorize + oauth.v2.user.access) which
+		// return a clean top-level token response - unlike regular slack,
+		// no user_scope handling or authed_user nesting.
 
 	default:
 		// Google and any unrecognized provider: access_type=offline +

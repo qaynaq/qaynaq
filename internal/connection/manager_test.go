@@ -25,9 +25,10 @@ func TestProviderRequiresPKCE(t *testing.T) {
 		"github_mcp": true,
 		"sentry":     true,
 		"shopify":    true,
+		"slack_mcp":  true,
 		"github":     false,
 		"google":     false,
-		"slack":      false,
+		"slack":      false, // regular slack doesn't use PKCE
 	}
 	for provider, want := range cases {
 		if got := ProviderRequiresPKCE(provider); got != want {
@@ -58,6 +59,7 @@ func TestGetDisplayName(t *testing.T) {
 	cases := map[string]string{
 		"asana_mcp":  "Asana MCP",
 		"github_mcp": "GitHub MCP",
+		"slack_mcp":  "Slack MCP",
 		"atlassian":  "Atlassian (Jira & Confluence)",
 		// unregistered: falls back to slug
 		"unknown_provider": "unknown_provider",

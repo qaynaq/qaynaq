@@ -120,6 +120,35 @@ func TestAuthorize_GitHubMCP_PKCE(t *testing.T) {
 	}
 }
 
+func TestAuthorize_SlackMCP_StandardWithPKCE(t *testing.T) {
+	u, verifier := authorizeURLFor(t, "slack_mcp", []string{"chat:write", "search:read.public"}, "")
+
+	// Critical: slack_mcp uses Slack's MCP-dedicated endpoint, not the
+	// regular /oauth/v2/authorize - so it must NOT mangle scopes into
+	// user_scope= the way regular `slack` does.
+	if u.Query().Get("user_scope") != "" {
+		t.Errorf("slack_mcp must NOT use user_scope= (that's regular slack's quirk)")
+	}
+	scope := u.Query().Get("scope")
+	if !strings.Contains(scope, "chat:write") || !strings.Contains(scope, "search:read.public") {
+		t.Errorf("slack_mcp scope = %q, expected standard scope= param", scope)
+	}
+	// Endpoint must hit the MCP-dedicated authorize URL.
+	if u.Path != "/oauth/v2_user/authorize" {
+		t.Errorf("slack_mcp authorize path = %q, want /oauth/v2_user/authorize", u.Path)
+	}
+	// PKCE required per the metadata at .well-known/oauth-authorization-server.
+	if u.Query().Get("code_challenge") == "" {
+		t.Errorf("slack_mcp should have code_challenge")
+	}
+	if u.Query().Get("code_challenge_method") != "S256" {
+		t.Errorf("slack_mcp code_challenge_method should be S256")
+	}
+	if verifier == "" {
+		t.Errorf("slack_mcp should have PKCE verifier")
+	}
+}
+
 func TestAuthorize_Sentry_PKCE(t *testing.T) {
 	u, verifier := authorizeURLFor(t, "sentry", []string{"org:read"}, "")
 	if u.Query().Get("code_challenge") == "" {
