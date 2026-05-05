@@ -40,6 +40,7 @@ import AuthenticationSettings from "./pages/settings/authentication.tsx";
 import TokensSettings from "./pages/settings/tokens.tsx";
 import SessionsSettings from "./pages/settings/sessions.tsx";
 import ClientsSettings from "./pages/settings/clients.tsx";
+import MCPServersPage from "./pages/mcp-servers/page.tsx";
 import OAuthConsentPage from "./pages/oauth/consent.tsx";
 import OAuthErrorPage from "./pages/oauth/error.tsx";
 
@@ -138,6 +139,7 @@ function App() {
               <Route path="sessions" element={<SessionsSettings />} />
               <Route path="clients" element={<ClientsSettings />} />
             </Route>
+            <Route path="mcp-servers" element={<MCPServersPage />} />
           </Route>
         </Routes>
       </AuthProvider>

@@ -9,6 +9,7 @@ import {
   FileEntry,
   Analytics,
   MCPSettings,
+  MCPServer,
   APIToken,
   OAuthClients,
   OAuthSessions,
@@ -609,6 +610,8 @@ export type ProviderScope = {
 export type Provider = {
   id: string;
   scopes: ProviderScope[];
+  setup_url?: string;
+  setup_label?: string;
 };
 
 export async function fetchProviders(): Promise<Provider[]> {
@@ -1572,4 +1575,53 @@ export async function decideOAuthConsent(
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   return response.json();
+}
+
+// MCP Server management
+
+export async function fetchMCPServers(): Promise<MCPServer[]> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/servers`, {
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.data || [];
+}
+
+export async function createMCPServer(params: {
+  name: string;
+  url: string;
+  auth_type?: string;
+  auth_header?: string;
+  auth_value?: string;
+  connection_name?: string;
+}): Promise<MCPServer> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/servers`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    }),
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function deleteMCPServer(id: number): Promise<void> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/servers/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
 }

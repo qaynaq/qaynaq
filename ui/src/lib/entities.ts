@@ -180,6 +180,21 @@ export type OAuthSessions = {
   sessions: OAuthSession[];
 };
 
+export type MCPServer = {
+  id: number;
+  name: string;
+  url: string;
+  auth_type: string;
+  auth_header: string;
+  connection_name: string;
+  status: string;
+  tool_count: number;
+  last_error: string;
+  last_sync_at?: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Analytics = {
   total_flows: number;
   flows_by_status: FlowStatusCount[];

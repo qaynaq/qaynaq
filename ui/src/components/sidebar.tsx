@@ -9,6 +9,7 @@ import {
   Link2,
   Gauge,
   FileText,
+  Server,
   Settings,
 } from "lucide-react";
 
@@ -56,6 +57,11 @@ const menuItems = [
         name: "Connections",
         href: "/connections",
         icon: Link2,
+      },
+      {
+        name: "MCP Servers",
+        href: "/mcp-servers",
+        icon: Server,
       },
       {
         name: "Caches",

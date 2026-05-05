@@ -130,7 +130,7 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 		}
 	})
 
-	mcpSyncTicker := time.NewTicker(5 * time.Second)
+	mcpSyncTicker := time.NewTicker(30 * time.Second)
 	defer mcpSyncTicker.Stop()
 
 	g.Go(func() error {

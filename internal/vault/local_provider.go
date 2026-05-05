@@ -12,9 +12,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-// localCacheSafetyMargin: worker won't return a cached access token if it's
-// closer than this to expiry. Slightly tighter than coordinator's margin so
-// the worker calls coordinator before coordinator's own cache goes stale.
+// Slightly tighter than coordinator's refreshSafetyMargin so the worker
+// hits coordinator before coordinator's own cache goes stale.
 const localCacheSafetyMargin = 90 * time.Second
 
 type LocalProvider struct {

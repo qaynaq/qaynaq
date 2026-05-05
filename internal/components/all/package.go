@@ -7,5 +7,6 @@ import (
 	_ "github.com/qaynaq/qaynaq/internal/components/google_calendar"
 	_ "github.com/qaynaq/qaynaq/internal/components/google_drive"
 	_ "github.com/qaynaq/qaynaq/internal/components/google_sheets"
+	_ "github.com/qaynaq/qaynaq/internal/components/mcp_call"
 	_ "github.com/qaynaq/qaynaq/internal/components/shopify"
 )

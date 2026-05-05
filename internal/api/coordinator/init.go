@@ -58,6 +58,7 @@ type CoordinatorAPI struct {
 	analyticsProvider   analytics.Provider
 	flowWorkerMap     FlowWorkerMap
 	connManager       *connection.Manager
+	mcpServerRepo     persistence.MCPServerRepository
 	authType          config.AuthType
 	mcpOAuthEnabled   bool
 	cache             settingsCache
@@ -88,6 +89,7 @@ func NewCoordinatorAPI(
 	analyticsProvider analytics.Provider,
 	connManager *connection.Manager,
 	flowWorkerMap FlowWorkerMap,
+	mcpServerRepo persistence.MCPServerRepository,
 	authType config.AuthType,
 	mcpOAuthEnabled bool,
 ) *CoordinatorAPI {
@@ -115,6 +117,7 @@ func NewCoordinatorAPI(
 		analyticsProvider:   analyticsProvider,
 		connManager:       connManager,
 		flowWorkerMap:     flowWorkerMap,
+		mcpServerRepo:     mcpServerRepo,
 		authType:          authType,
 		mcpOAuthEnabled:   mcpOAuthEnabled,
 		tokenUsage:        tokenUsageTracker{pending: make(map[int64]time.Time)},

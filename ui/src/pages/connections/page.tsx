@@ -290,7 +290,7 @@ export default function ConnectionsPage() {
         <div>
           <h1 className="text-2xl font-bold">Connections</h1>
           <p className="text-muted-foreground">
-            Manage OAuth connections for Google and other services
+            Manage OAuth connections for external services
           </p>
         </div>
         <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
@@ -350,7 +350,7 @@ export default function ConnectionsPage() {
                 <Input
                   id="client-id"
                   type="text"
-                  placeholder="From GCP Console > APIs & Services > Credentials"
+                  placeholder="OAuth Client ID"
                   value={formData.clientId}
                   onChange={(e) =>
                     setFormData({ ...formData, clientId: e.target.value })
@@ -466,23 +466,33 @@ export default function ConnectionsPage() {
                 );
               })()}
 
-              <p className="text-xs text-muted-foreground">
-                Create an OAuth Client ID (Web application type) in{" "}
-                <a
-                  href="https://console.cloud.google.com/apis/credentials"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline inline-flex items-center gap-1"
-                >
-                  GCP Console
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-                . Add{" "}
-                <code className="text-xs bg-muted px-1 rounded">
-                  {window.location.origin}/connections/oauth/callback
-                </code>{" "}
-                as an authorized redirect URI.
-              </p>
+              {formData.provider && (() => {
+                const provider = providers.find((p) => p.id === formData.provider);
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    {provider?.setup_label && provider?.setup_url ? (
+                      <>
+                        {provider.setup_label}{" "}
+                        <a
+                          href={provider.setup_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline inline-flex items-center gap-1"
+                        >
+                          Open
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                        .{" "}
+                      </>
+                    ) : null}
+                    Add{" "}
+                    <code className="text-xs bg-muted px-1 rounded">
+                      {window.location.origin}/connections/oauth/callback
+                    </code>{" "}
+                    as a redirect URI.
+                  </p>
+                );
+              })()}
 
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={handleCancel}>
@@ -578,7 +588,7 @@ export default function ConnectionsPage() {
               <Input
                 id="reauth-client-id"
                 type="text"
-                placeholder="Client ID from GCP Console"
+                placeholder="OAuth Client ID"
                 value={reAuthData.clientId}
                 onChange={(e) =>
                   setReAuthData({ ...reAuthData, clientId: e.target.value })

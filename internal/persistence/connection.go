@@ -75,10 +75,13 @@ func (r *connectionRepository) UpdateToken(name, encryptedToken string, expiresA
 		Error
 }
 
+// ListExpiringBefore returns connections whose token expires before
+// threshold. NULL expires_at means a non-expiring token (Slack without
+// rotation), which is excluded.
 func (r *connectionRepository) ListExpiringBefore(threshold time.Time) ([]Connection, error) {
 	var connections []Connection
 	err := r.db.
-		Where("expires_at IS NULL OR expires_at < ?", threshold).
+		Where("expires_at IS NOT NULL AND expires_at < ?", threshold).
 		Find(&connections).
 		Error
 	if err != nil {

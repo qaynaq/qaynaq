@@ -6850,6 +6850,721 @@ var _ interface {
 	ErrorName() string
 } = RevokeOAuthSessionRequestValidationError{}
 
+// Validate checks the field values on MCPServerInfo with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *MCPServerInfo) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on MCPServerInfo with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in MCPServerInfoMultiError, or
+// nil if none found.
+func (m *MCPServerInfo) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *MCPServerInfo) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for Name
+
+	// no validation rules for Url
+
+	// no validation rules for AuthType
+
+	// no validation rules for AuthHeader
+
+	// no validation rules for ConnectionName
+
+	// no validation rules for Status
+
+	// no validation rules for ToolCount
+
+	// no validation rules for LastError
+
+	if all {
+		switch v := interface{}(m.GetCreatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, MCPServerInfoValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, MCPServerInfoValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCreatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return MCPServerInfoValidationError{
+				field:  "CreatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetUpdatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, MCPServerInfoValidationError{
+					field:  "UpdatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, MCPServerInfoValidationError{
+					field:  "UpdatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetUpdatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return MCPServerInfoValidationError{
+				field:  "UpdatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if m.LastSyncAt != nil {
+
+		if all {
+			switch v := interface{}(m.GetLastSyncAt()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, MCPServerInfoValidationError{
+						field:  "LastSyncAt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, MCPServerInfoValidationError{
+						field:  "LastSyncAt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetLastSyncAt()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return MCPServerInfoValidationError{
+					field:  "LastSyncAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return MCPServerInfoMultiError(errors)
+	}
+
+	return nil
+}
+
+// MCPServerInfoMultiError is an error wrapping multiple validation errors
+// returned by MCPServerInfo.ValidateAll() if the designated constraints
+// aren't met.
+type MCPServerInfoMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m MCPServerInfoMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m MCPServerInfoMultiError) AllErrors() []error { return m }
+
+// MCPServerInfoValidationError is the validation error returned by
+// MCPServerInfo.Validate if the designated constraints aren't met.
+type MCPServerInfoValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e MCPServerInfoValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e MCPServerInfoValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e MCPServerInfoValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e MCPServerInfoValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e MCPServerInfoValidationError) ErrorName() string { return "MCPServerInfoValidationError" }
+
+// Error satisfies the builtin error interface
+func (e MCPServerInfoValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sMCPServerInfo.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = MCPServerInfoValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = MCPServerInfoValidationError{}
+
+// Validate checks the field values on ListMCPServersResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListMCPServersResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListMCPServersResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListMCPServersResponseMultiError, or nil if none found.
+func (m *ListMCPServersResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListMCPServersResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetData() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListMCPServersResponseValidationError{
+						field:  fmt.Sprintf("Data[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListMCPServersResponseValidationError{
+						field:  fmt.Sprintf("Data[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListMCPServersResponseValidationError{
+					field:  fmt.Sprintf("Data[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ListMCPServersResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListMCPServersResponseMultiError is an error wrapping multiple validation
+// errors returned by ListMCPServersResponse.ValidateAll() if the designated
+// constraints aren't met.
+type ListMCPServersResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListMCPServersResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListMCPServersResponseMultiError) AllErrors() []error { return m }
+
+// ListMCPServersResponseValidationError is the validation error returned by
+// ListMCPServersResponse.Validate if the designated constraints aren't met.
+type ListMCPServersResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListMCPServersResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListMCPServersResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListMCPServersResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListMCPServersResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListMCPServersResponseValidationError) ErrorName() string {
+	return "ListMCPServersResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListMCPServersResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListMCPServersResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListMCPServersResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListMCPServersResponseValidationError{}
+
+// Validate checks the field values on CreateMCPServerRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateMCPServerRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateMCPServerRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateMCPServerRequestMultiError, or nil if none found.
+func (m *CreateMCPServerRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateMCPServerRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
+		err := CreateMCPServerRequestValidationError{
+			field:  "Name",
+			reason: "value length must be between 1 and 100 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetUrl()) < 1 {
+		err := CreateMCPServerRequestValidationError{
+			field:  "Url",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for AuthType
+
+	// no validation rules for AuthHeader
+
+	// no validation rules for AuthValue
+
+	// no validation rules for ConnectionName
+
+	if len(errors) > 0 {
+		return CreateMCPServerRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateMCPServerRequestMultiError is an error wrapping multiple validation
+// errors returned by CreateMCPServerRequest.ValidateAll() if the designated
+// constraints aren't met.
+type CreateMCPServerRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateMCPServerRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateMCPServerRequestMultiError) AllErrors() []error { return m }
+
+// CreateMCPServerRequestValidationError is the validation error returned by
+// CreateMCPServerRequest.Validate if the designated constraints aren't met.
+type CreateMCPServerRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateMCPServerRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateMCPServerRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateMCPServerRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateMCPServerRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateMCPServerRequestValidationError) ErrorName() string {
+	return "CreateMCPServerRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateMCPServerRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateMCPServerRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateMCPServerRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateMCPServerRequestValidationError{}
+
+// Validate checks the field values on UpdateMCPServerRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateMCPServerRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateMCPServerRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateMCPServerRequestMultiError, or nil if none found.
+func (m *UpdateMCPServerRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateMCPServerRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetId() <= 0 {
+		err := UpdateMCPServerRequestValidationError{
+			field:  "Id",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Name
+
+	// no validation rules for Url
+
+	// no validation rules for AuthType
+
+	// no validation rules for AuthHeader
+
+	// no validation rules for AuthValue
+
+	// no validation rules for ConnectionName
+
+	if len(errors) > 0 {
+		return UpdateMCPServerRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateMCPServerRequestMultiError is an error wrapping multiple validation
+// errors returned by UpdateMCPServerRequest.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateMCPServerRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateMCPServerRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateMCPServerRequestMultiError) AllErrors() []error { return m }
+
+// UpdateMCPServerRequestValidationError is the validation error returned by
+// UpdateMCPServerRequest.Validate if the designated constraints aren't met.
+type UpdateMCPServerRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateMCPServerRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateMCPServerRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateMCPServerRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateMCPServerRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateMCPServerRequestValidationError) ErrorName() string {
+	return "UpdateMCPServerRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateMCPServerRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateMCPServerRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateMCPServerRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateMCPServerRequestValidationError{}
+
+// Validate checks the field values on DeleteMCPServerRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteMCPServerRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteMCPServerRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteMCPServerRequestMultiError, or nil if none found.
+func (m *DeleteMCPServerRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteMCPServerRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetId() <= 0 {
+		err := DeleteMCPServerRequestValidationError{
+			field:  "Id",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return DeleteMCPServerRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteMCPServerRequestMultiError is an error wrapping multiple validation
+// errors returned by DeleteMCPServerRequest.ValidateAll() if the designated
+// constraints aren't met.
+type DeleteMCPServerRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteMCPServerRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteMCPServerRequestMultiError) AllErrors() []error { return m }
+
+// DeleteMCPServerRequestValidationError is the validation error returned by
+// DeleteMCPServerRequest.Validate if the designated constraints aren't met.
+type DeleteMCPServerRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteMCPServerRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteMCPServerRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteMCPServerRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteMCPServerRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteMCPServerRequestValidationError) ErrorName() string {
+	return "DeleteMCPServerRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteMCPServerRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteMCPServerRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteMCPServerRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteMCPServerRequestValidationError{}
+
 // Validate checks the field values on ConnectionRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
@@ -8294,6 +9009,10 @@ func (m *Provider) validate(all bool) error {
 		}
 
 	}
+
+	// no validation rules for SetupUrl
+
+	// no validation rules for SetupLabel
 
 	if len(errors) > 0 {
 		return ProviderMultiError(errors)

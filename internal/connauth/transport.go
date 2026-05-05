@@ -1,15 +1,7 @@
-// Package connauth provides shared HTTP plumbing for components that
-// authenticate with a Qaynaq OAuth connection. The package wraps
-// vault.GetAccessToken with:
-//
-//   - an oauth2.TokenSource shim so existing Google API clients work
-//     unchanged (they call NewClient(ctx, ts)), but the underlying token is
-//     fetched from coordinator instead of refreshed locally
-//   - a RoundTripper that transparently invalidates the cached token on a
-//     401 response and retries once with a fresh token
-//
-// Refresh tokens never reach this layer; coordinator owns them. Workers
-// only ever see access tokens with their expiry timestamps.
+// Package connauth wires Bento components into Qaynaq's vault-backed OAuth
+// flow: an oauth2.TokenSource that pulls from coordinator instead of
+// refreshing locally, plus a RoundTripper that force-refreshes and retries
+// once on a 401. Refresh tokens never reach this layer.
 package connauth
 
 import (
@@ -24,10 +16,9 @@ import (
 	"github.com/qaynaq/qaynaq/internal/vault"
 )
 
-// Worker scope: there is exactly one VaultProvider per process and component
-// constructors don't receive it directly through Bento's service.Resources.
-// SetVaultProvider is called at worker boot to register the singleton, and
-// components use Provider() to fetch it lazily inside their constructors.
+// Singleton: Bento's service.Resources doesn't surface our VaultProvider, and
+// there's exactly one per worker. SetVaultProvider runs at worker boot;
+// component constructors call Provider() lazily.
 var (
 	providerMu sync.RWMutex
 	provider   vault.VaultProvider
@@ -45,9 +36,6 @@ func Provider() vault.VaultProvider {
 	return provider
 }
 
-// TokenSource returns an oauth2.TokenSource that fetches access tokens for
-// the given Qaynaq connection name via the vault provider. Token() never
-// includes a refresh token - those stay on coordinator.
 func TokenSource(vp vault.VaultProvider, name string) oauth2.TokenSource {
 	return &vaultTokenSource{vp: vp, name: name}
 }
@@ -69,19 +57,12 @@ func (s *vaultTokenSource) Token() (*oauth2.Token, error) {
 	}, nil
 }
 
-// NewHTTPClient returns an *http.Client that:
-//   - sets Authorization: Bearer <token> using vault.GetAccessToken
-//   - on a 401 response, invalidates the cached token and retries the
-//     request once with a fresh token
-//
-// The retry loop only fires for 401, only once. Any other status (including
-// 403) is returned as-is. Non-replayable bodies (streams that can't be
-// reset) are not retried; the original 401 is returned.
+// NewHTTPClient returns a client that signs requests with a vault-issued
+// access token and force-refreshes + retries once on 401. Non-401 responses
+// pass through; non-replayable bodies are not retried.
 func NewHTTPClient(_ context.Context, vp vault.VaultProvider, name string) *http.Client {
-	// Use the raw TokenSource (not ReuseTokenSource) so every request hits
-	// vault.GetAccessToken, which has its own cache. After
-	// InvalidateAccessToken the next Token() call returns a fresh value.
-	// ReuseTokenSource would shadow the invalidation with its own cache.
+	// Raw TokenSource (not ReuseTokenSource): the vault has its own cache,
+	// and ReuseTokenSource would shadow our InvalidateAccessToken.
 	base := &oauth2.Transport{
 		Source: TokenSource(vp, name),
 		Base:   http.DefaultTransport,
@@ -101,21 +82,17 @@ func (r *retryOn401) RoundTrip(req *http.Request) (*http.Response, error) {
 		return resp, err
 	}
 
-	// Cached token was rejected. Force coordinator to skip its cache and run a
-	// refresh exchange before the retry; otherwise coordinator would happily
-	// hand back the same revoked-but-not-yet-expired token.
+	// Force coordinator to bypass its cache; otherwise it'd hand back the
+	// same revoked-but-not-yet-expired token we just got rejected with.
 	if _, ferr := r.vp.ForceRefreshAccessToken(r.name); ferr != nil {
 		return resp, fmt.Errorf("connauth: 401 from upstream and force refresh failed: %w", ferr)
 	}
 
-	// Replay only if the body is replayable. Streaming bodies (e.g. large
-	// file uploads) can't be rewound; return the 401 so the caller re-issues
-	// the request - the next attempt will use the freshly refreshed token.
+	// Streaming bodies can't be rewound for retry; surface the original 401.
 	if req.Body != nil && req.GetBody == nil {
 		return resp, nil
 	}
 
-	// Drain and close the 401 body before retrying.
 	if resp.Body != nil {
 		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
