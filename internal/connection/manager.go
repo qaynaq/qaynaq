@@ -18,6 +18,10 @@ import (
 
 var providerEndpoints = map[string]oauth2.Endpoint{
 	"google": google.Endpoint,
+	"slack": {
+		AuthURL:  "https://slack.com/oauth/v2/authorize",
+		TokenURL: "https://slack.com/api/oauth.v2.access",
+	},
 }
 
 type ProviderScope struct {
@@ -26,7 +30,37 @@ type ProviderScope struct {
 	Description string `json:"description"`
 }
 
+type ProviderSetup struct {
+	URL   string `json:"setup_url"`
+	Label string `json:"setup_label"`
+}
+
+var ProviderSetups = map[string]ProviderSetup{
+	"google": {
+		URL:   "https://console.cloud.google.com/apis/credentials",
+		Label: "Create an OAuth Client ID (Web application type) in GCP Console.",
+	},
+	"slack": {
+		URL:   "https://api.slack.com/apps",
+		Label: "Create a Slack App and get Client ID / Client Secret from Basic Information.",
+	},
+}
+
 var ProviderScopes = map[string][]ProviderScope{
+	"slack": {
+		{Scope: "search:read.public", Label: "Search (Public)", Description: "Search messages in public channels"},
+		{Scope: "search:read.private", Label: "Search (Private)", Description: "Search messages in private channels"},
+		{Scope: "search:read.files", Label: "Search (Files)", Description: "Search files"},
+		{Scope: "channels:history", Label: "Channel History", Description: "View messages in public channels"},
+		{Scope: "groups:history", Label: "Group History", Description: "View messages in private channels"},
+		{Scope: "chat:write", Label: "Chat (Write)", Description: "Send messages"},
+		{Scope: "users:read", Label: "Users (Read)", Description: "View users and their info"},
+		{Scope: "users:read.email", Label: "Users (Email)", Description: "View user email addresses"},
+		{Scope: "channels:read", Label: "Channels (Read)", Description: "View channels and their info"},
+		{Scope: "reactions:read", Label: "Reactions (Read)", Description: "View emoji reactions"},
+		{Scope: "reactions:write", Label: "Reactions (Write)", Description: "Add and remove emoji reactions"},
+		{Scope: "files:read", Label: "Files (Read)", Description: "View files shared in channels"},
+	},
 	"google": {
 		{Scope: "https://www.googleapis.com/auth/calendar", Label: "Google Calendar", Description: "Manage events and calendars"},
 		{Scope: "https://www.googleapis.com/auth/contacts.readonly", Label: "Google Contacts", Description: "Read contacts (People API)"},
@@ -82,8 +116,6 @@ type ConnectionInfo struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 }
 
-// refreshSafetyMargin is how long before the stored expiry we proactively refresh.
-// Anything that returns a token will only return one valid for at least this long.
 const refreshSafetyMargin = 2 * time.Minute
 
 type cachedAccessToken struct {
@@ -95,12 +127,10 @@ type Manager struct {
 	connRepo persistence.ConnectionRepository
 	aesgcm   *vault.AESGCM
 
-	// per-connection mutex serializes refresh exchanges so concurrent callers
-	// don't burn refresh-token rotations against each other.
+	// Serializes refresh exchanges per connection so concurrent callers don't
+	// burn refresh-token rotations against each other.
 	refreshMu sync.Map // map[string]*sync.Mutex
 
-	// in-memory access-token cache populated on read/refresh; avoids decrypting
-	// the row on every GetAccessToken call.
 	cacheMu sync.RWMutex
 	cache   map[string]cachedAccessToken
 }
@@ -332,33 +362,25 @@ func expiryPtr(t time.Time) *time.Time {
 	return &v
 }
 
-// AccessToken is the thin shape returned to clients that just need a usable
-// bearer token. Refresh tokens never leave the coordinator.
+// AccessToken is the thin shape returned to callers. Refresh tokens never
+// leave the coordinator.
 type AccessToken struct {
 	AccessToken string
 	ExpiresAt   time.Time
 }
 
-// ErrConnectionNotFound is returned when GetAccessToken is called for a name
-// that has no stored connection.
 var ErrConnectionNotFound = errors.New("connection not found")
 
-// GetAccessToken returns a fresh access token for the named connection. If the
-// cached/stored token is within refreshSafetyMargin of expiry, it refreshes
-// against the provider before returning.
+// GetAccessToken returns a usable access token for the named connection,
+// refreshing against the provider if the stored one is within
+// refreshSafetyMargin of expiry. Concurrent callers for the same name are
+// serialized by a per-connection mutex.
 //
-// Concurrent callers for the same name are serialized by a per-connection
-// mutex; the second caller through reads the just-persisted token instead of
-// triggering its own refresh.
-//
-// If forceRefresh is true, the cache and stored-token expiry checks are
-// skipped and a refresh exchange is performed unconditionally. Use this when
-// the caller has just received a 401 using a previously-returned token: the
-// stored token may still look valid by the clock but has been revoked or
-// rotated upstream.
+// forceRefresh skips the cache and stored-token validity checks - use it
+// when the caller has just received a 401 using a previously-returned token.
 func (m *Manager) GetAccessToken(ctx context.Context, name string, forceRefresh bool) (AccessToken, error) {
 	if !forceRefresh {
-		if v, ok := m.cacheGet(name); ok && time.Until(v.expiresAt) > refreshSafetyMargin {
+		if v, ok := m.cacheGet(name); ok && cachedTokenStillValid(v) {
 			return AccessToken{AccessToken: v.accessToken, ExpiresAt: v.expiresAt}, nil
 		}
 	}
@@ -368,12 +390,10 @@ func (m *Manager) GetAccessToken(ctx context.Context, name string, forceRefresh 
 	defer mu.Unlock()
 
 	if forceRefresh {
-		// Drop any cached entry so loadAndMaybeRefreshLocked doesn't re-cache
-		// before deciding to refresh.
 		m.cacheInvalidate(name)
 	} else {
-		// Re-check after acquiring the lock - another goroutine may have refreshed.
-		if v, ok := m.cacheGet(name); ok && time.Until(v.expiresAt) > refreshSafetyMargin {
+		// Another goroutine may have refreshed while we waited on the mutex.
+		if v, ok := m.cacheGet(name); ok && cachedTokenStillValid(v) {
 			return AccessToken{AccessToken: v.accessToken, ExpiresAt: v.expiresAt}, nil
 		}
 	}
@@ -381,15 +401,19 @@ func (m *Manager) GetAccessToken(ctx context.Context, name string, forceRefresh 
 	return m.loadAndMaybeRefreshLocked(ctx, name, forceRefresh)
 }
 
-// InvalidateAccessToken drops the cached entry for a connection, forcing the
-// next GetAccessToken call to read the row (and refresh if needed). Called
-// when a downstream API returns 401 with the cached token.
+// cachedTokenStillValid: zero ExpiresAt means a non-expiring token (Slack
+// user tokens without rotation), always valid.
+func cachedTokenStillValid(v cachedAccessToken) bool {
+	if v.expiresAt.IsZero() {
+		return true
+	}
+	return time.Until(v.expiresAt) > refreshSafetyMargin
+}
+
 func (m *Manager) InvalidateAccessToken(name string) {
 	m.cacheInvalidate(name)
 }
 
-// RefreshIfExpiring is the entry point for the background job. Same path as
-// GetAccessToken's refresh branch but without returning the token.
 func (m *Manager) RefreshIfExpiring(ctx context.Context, name string) error {
 	mu := m.connMutex(name)
 	mu.Lock()
@@ -415,8 +439,15 @@ func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string, fo
 		return AccessToken{AccessToken: token.AccessToken, ExpiresAt: token.Expiry}, nil
 	}
 
+	// Non-expiring token (Slack without rotation): no expiry, no refresh
+	// token, valid until the user revokes it upstream.
+	if token.Expiry.IsZero() && token.RefreshToken == "" {
+		m.cachePut(name, cachedAccessToken{accessToken: token.AccessToken, expiresAt: time.Time{}})
+		return AccessToken{AccessToken: token.AccessToken}, nil
+	}
+
 	if token.RefreshToken == "" {
-		return AccessToken{}, fmt.Errorf("connection %q has no refresh token; re-authorize required", name)
+		return AccessToken{}, fmt.Errorf("connection %q access token expired and no refresh token is available; re-authorize required", name)
 	}
 
 	endpoint, err := GetEndpoint(conn.Provider)
@@ -437,8 +468,7 @@ func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string, fo
 	}
 
 	if newToken.RefreshToken == "" {
-		// Some providers (Google after first refresh) only return access tokens
-		// on subsequent refreshes; preserve the existing refresh token.
+		// Google omits refresh_token on subsequent refreshes; keep the original.
 		newToken.RefreshToken = token.RefreshToken
 	}
 

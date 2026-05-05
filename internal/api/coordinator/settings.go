@@ -360,3 +360,156 @@ func hashToken(token string) string {
 	h := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(h[:])
 }
+
+// MCP Server management handlers (REST-only, no proto changes needed)
+
+func (c *CoordinatorAPI) ListMCPServers(_ context.Context, _ *emptypb.Empty) (*pb.ListMCPServersResponse, error) {
+	servers, err := c.mcpServerRepo.List()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to list MCP servers: %v", err)
+	}
+
+	pbServers := make([]*pb.MCPServerInfo, len(servers))
+	for i, s := range servers {
+		pbServers[i] = &pb.MCPServerInfo{
+			Id:             s.ID,
+			Name:           s.Name,
+			Url:            s.URL,
+			AuthType:       s.AuthType,
+			AuthHeader:     s.AuthHeader,
+			ConnectionName: s.ConnectionName,
+			Status:         s.Status,
+			ToolCount:      int32(s.ToolCount),
+			LastError:      s.LastError,
+			CreatedAt:      timestamppb.New(s.CreatedAt),
+			UpdatedAt:      timestamppb.New(s.UpdatedAt),
+		}
+		if s.LastSyncAt != nil {
+			pbServers[i].LastSyncAt = timestamppb.New(*s.LastSyncAt)
+		}
+	}
+
+	return &pb.ListMCPServersResponse{Data: pbServers}, nil
+}
+
+func (c *CoordinatorAPI) CreateMCPServer(_ context.Context, req *pb.CreateMCPServerRequest) (*pb.MCPServerInfo, error) {
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+	if req.Url == "" {
+		return nil, status.Error(codes.InvalidArgument, "url is required")
+	}
+
+	authType := req.AuthType
+	if authType == "" {
+		if req.ConnectionName != "" {
+			authType = "connection"
+		} else if req.AuthValue != "" {
+			authType = "token"
+		} else {
+			authType = "none"
+		}
+	}
+
+	server := &persistence.MCPServer{
+		Name:           req.Name,
+		URL:            req.Url,
+		AuthType:       authType,
+		AuthHeader:     req.AuthHeader,
+		ConnectionName: req.ConnectionName,
+		Status:         "active",
+	}
+
+	if req.AuthValue != "" && c.aesgcm != nil {
+		encrypted, err := c.aesgcm.Encrypt(req.AuthValue)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to encrypt auth value: %v", err)
+		}
+		server.EncryptedAuthValue = encrypted
+	}
+
+	if err := c.mcpServerRepo.Create(server); err != nil {
+		if strings.Contains(err.Error(), "UNIQUE") || strings.Contains(err.Error(), "duplicate") {
+			return nil, status.Errorf(codes.AlreadyExists, "MCP server with name %q already exists", req.Name)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to create MCP server: %v", err)
+	}
+
+	return &pb.MCPServerInfo{
+		Id:             server.ID,
+		Name:           server.Name,
+		Url:            server.URL,
+		AuthType:       server.AuthType,
+		AuthHeader:     server.AuthHeader,
+		ConnectionName: server.ConnectionName,
+		Status:         server.Status,
+		CreatedAt:      timestamppb.New(server.CreatedAt),
+		UpdatedAt:      timestamppb.New(server.UpdatedAt),
+	}, nil
+}
+
+func (c *CoordinatorAPI) UpdateMCPServer(_ context.Context, req *pb.UpdateMCPServerRequest) (*pb.MCPServerInfo, error) {
+	if req.Id <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+
+	server, err := c.mcpServerRepo.GetByID(req.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "MCP server not found: %v", err)
+	}
+
+	if req.Name != "" {
+		server.Name = req.Name
+	}
+	if req.Url != "" {
+		server.URL = req.Url
+	}
+	if req.AuthType != "" {
+		server.AuthType = req.AuthType
+	}
+	if req.AuthHeader != "" {
+		server.AuthHeader = req.AuthHeader
+	}
+	if req.ConnectionName != "" {
+		server.ConnectionName = req.ConnectionName
+	}
+	if req.AuthValue != "" && c.aesgcm != nil {
+		encrypted, err := c.aesgcm.Encrypt(req.AuthValue)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to encrypt auth value: %v", err)
+		}
+		server.EncryptedAuthValue = encrypted
+	}
+
+	// Reset status to active on update (resets circuit breaker)
+	server.Status = "active"
+
+	if err := c.mcpServerRepo.Update(server); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update MCP server: %v", err)
+	}
+
+	return &pb.MCPServerInfo{
+		Id:             server.ID,
+		Name:           server.Name,
+		Url:            server.URL,
+		AuthType:       server.AuthType,
+		AuthHeader:     server.AuthHeader,
+		ConnectionName: server.ConnectionName,
+		Status:         server.Status,
+		ToolCount:      int32(server.ToolCount),
+		CreatedAt:      timestamppb.New(server.CreatedAt),
+		UpdatedAt:      timestamppb.New(server.UpdatedAt),
+	}, nil
+}
+
+func (c *CoordinatorAPI) DeleteMCPServer(_ context.Context, req *pb.DeleteMCPServerRequest) (*pb.CommonResponse, error) {
+	if req.Id <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+
+	if err := c.mcpServerRepo.Delete(req.Id); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to delete MCP server: %v", err)
+	}
+
+	return &pb.CommonResponse{Message: "MCP server deleted"}, nil
+}

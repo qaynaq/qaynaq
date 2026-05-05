@@ -72,6 +72,10 @@ const (
 	Coordinator_ListOAuthSessions_FullMethodName      = "/protorender.Coordinator/ListOAuthSessions"
 	Coordinator_RevokeOAuthSession_FullMethodName     = "/protorender.Coordinator/RevokeOAuthSession"
 	Coordinator_RevokeOAuthConsent_FullMethodName     = "/protorender.Coordinator/RevokeOAuthConsent"
+	Coordinator_ListMCPServers_FullMethodName         = "/protorender.Coordinator/ListMCPServers"
+	Coordinator_CreateMCPServer_FullMethodName        = "/protorender.Coordinator/CreateMCPServer"
+	Coordinator_UpdateMCPServer_FullMethodName        = "/protorender.Coordinator/UpdateMCPServer"
+	Coordinator_DeleteMCPServer_FullMethodName        = "/protorender.Coordinator/DeleteMCPServer"
 	Coordinator_ListProviders_FullMethodName          = "/protorender.Coordinator/ListProviders"
 	Coordinator_ListConnections_FullMethodName        = "/protorender.Coordinator/ListConnections"
 	Coordinator_DeleteConnection_FullMethodName       = "/protorender.Coordinator/DeleteConnection"
@@ -150,6 +154,11 @@ type CoordinatorClient interface {
 	ListOAuthSessions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListOAuthSessionsResponse, error)
 	RevokeOAuthSession(ctx context.Context, in *RevokeOAuthSessionRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	RevokeOAuthConsent(ctx context.Context, in *RevokeOAuthConsentRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	// MCP Server methods
+	ListMCPServers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMCPServersResponse, error)
+	CreateMCPServer(ctx context.Context, in *CreateMCPServerRequest, opts ...grpc.CallOption) (*MCPServerInfo, error)
+	UpdateMCPServer(ctx context.Context, in *UpdateMCPServerRequest, opts ...grpc.CallOption) (*MCPServerInfo, error)
+	DeleteMCPServer(ctx context.Context, in *DeleteMCPServerRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	// Connection methods
 	ListProviders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListProvidersResponse, error)
 	ListConnections(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListConnectionsResponse, error)
@@ -694,6 +703,46 @@ func (c *coordinatorClient) RevokeOAuthConsent(ctx context.Context, in *RevokeOA
 	return out, nil
 }
 
+func (c *coordinatorClient) ListMCPServers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMCPServersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMCPServersResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ListMCPServers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) CreateMCPServer(ctx context.Context, in *CreateMCPServerRequest, opts ...grpc.CallOption) (*MCPServerInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MCPServerInfo)
+	err := c.cc.Invoke(ctx, Coordinator_CreateMCPServer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) UpdateMCPServer(ctx context.Context, in *UpdateMCPServerRequest, opts ...grpc.CallOption) (*MCPServerInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MCPServerInfo)
+	err := c.cc.Invoke(ctx, Coordinator_UpdateMCPServer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) DeleteMCPServer(ctx context.Context, in *DeleteMCPServerRequest, opts ...grpc.CallOption) (*CommonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonResponse)
+	err := c.cc.Invoke(ctx, Coordinator_DeleteMCPServer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *coordinatorClient) ListProviders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListProvidersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListProvidersResponse)
@@ -851,6 +900,11 @@ type CoordinatorServer interface {
 	ListOAuthSessions(context.Context, *emptypb.Empty) (*ListOAuthSessionsResponse, error)
 	RevokeOAuthSession(context.Context, *RevokeOAuthSessionRequest) (*CommonResponse, error)
 	RevokeOAuthConsent(context.Context, *RevokeOAuthConsentRequest) (*CommonResponse, error)
+	// MCP Server methods
+	ListMCPServers(context.Context, *emptypb.Empty) (*ListMCPServersResponse, error)
+	CreateMCPServer(context.Context, *CreateMCPServerRequest) (*MCPServerInfo, error)
+	UpdateMCPServer(context.Context, *UpdateMCPServerRequest) (*MCPServerInfo, error)
+	DeleteMCPServer(context.Context, *DeleteMCPServerRequest) (*CommonResponse, error)
 	// Connection methods
 	ListProviders(context.Context, *emptypb.Empty) (*ListProvidersResponse, error)
 	ListConnections(context.Context, *emptypb.Empty) (*ListConnectionsResponse, error)
@@ -1027,6 +1081,18 @@ func (UnimplementedCoordinatorServer) RevokeOAuthSession(context.Context, *Revok
 }
 func (UnimplementedCoordinatorServer) RevokeOAuthConsent(context.Context, *RevokeOAuthConsentRequest) (*CommonResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeOAuthConsent not implemented")
+}
+func (UnimplementedCoordinatorServer) ListMCPServers(context.Context, *emptypb.Empty) (*ListMCPServersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMCPServers not implemented")
+}
+func (UnimplementedCoordinatorServer) CreateMCPServer(context.Context, *CreateMCPServerRequest) (*MCPServerInfo, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateMCPServer not implemented")
+}
+func (UnimplementedCoordinatorServer) UpdateMCPServer(context.Context, *UpdateMCPServerRequest) (*MCPServerInfo, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateMCPServer not implemented")
+}
+func (UnimplementedCoordinatorServer) DeleteMCPServer(context.Context, *DeleteMCPServerRequest) (*CommonResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteMCPServer not implemented")
 }
 func (UnimplementedCoordinatorServer) ListProviders(context.Context, *emptypb.Empty) (*ListProvidersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProviders not implemented")
@@ -2001,6 +2067,78 @@ func _Coordinator_RevokeOAuthConsent_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_ListMCPServers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListMCPServers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ListMCPServers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListMCPServers(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_CreateMCPServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateMCPServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).CreateMCPServer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_CreateMCPServer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).CreateMCPServer(ctx, req.(*CreateMCPServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_UpdateMCPServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateMCPServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).UpdateMCPServer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_UpdateMCPServer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).UpdateMCPServer(ctx, req.(*UpdateMCPServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_DeleteMCPServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMCPServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).DeleteMCPServer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_DeleteMCPServer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).DeleteMCPServer(ctx, req.(*DeleteMCPServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Coordinator_ListProviders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -2373,6 +2511,22 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeOAuthConsent",
 			Handler:    _Coordinator_RevokeOAuthConsent_Handler,
+		},
+		{
+			MethodName: "ListMCPServers",
+			Handler:    _Coordinator_ListMCPServers_Handler,
+		},
+		{
+			MethodName: "CreateMCPServer",
+			Handler:    _Coordinator_CreateMCPServer_Handler,
+		},
+		{
+			MethodName: "UpdateMCPServer",
+			Handler:    _Coordinator_UpdateMCPServer_Handler,
+		},
+		{
+			MethodName: "DeleteMCPServer",
+			Handler:    _Coordinator_DeleteMCPServer_Handler,
 		},
 		{
 			MethodName: "ListProviders",

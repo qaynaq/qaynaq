@@ -129,11 +129,12 @@ func InitializeCoordinatorCommand(ctx *cli.Context) *intcli.CoordinatorCLI {
 	connectionRepository := persistence.NewConnectionRepository(db)
 	connManager := connection.NewManager(connectionRepository, aesgcm)
 	connRefreshJob := connection.NewRefreshJob(connManager)
+	mcpServerRepository := persistence.NewMCPServerRepository(db)
 	mcpOAuthEnabled := ctx.Bool("mcp.oauth-enabled")
-	coordinatorAPI := coordinator.NewCoordinatorAPI(eventRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, flowBufferRepository, flowProcessorRepository, workerRepository, workerFlowRepository, secretRepository, cacheRepository, bufferRepository, rateLimitRepository, fileRepository, settingRepository, apiTokenRepository, oauthClientRepository, oauthRefreshTokenRepository, oauthConsentRepository, rateLimiterEngine, aesgcm, analyticsProvider, connManager, flowWorkerMap, authConfig.Type, mcpOAuthEnabled)
+	coordinatorAPI := coordinator.NewCoordinatorAPI(eventRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, flowBufferRepository, flowProcessorRepository, workerRepository, workerFlowRepository, secretRepository, cacheRepository, bufferRepository, rateLimitRepository, fileRepository, settingRepository, apiTokenRepository, oauthClientRepository, oauthRefreshTokenRepository, oauthConsentRepository, rateLimiterEngine, aesgcm, analyticsProvider, connManager, flowWorkerMap, mcpServerRepository, authConfig.Type, mcpOAuthEnabled)
 	coordinatorExecutor := executor.NewCoordinatorExecutor(workerRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, workerFlowRepository, fileRepository, flowWorkerMap)
 	oauthHandler := connection.NewOAuthHandler(connManager)
-	mcpHandler := mcppkg.NewMCPHandler(flowRepository, coordinatorExecutor, Version)
+	mcpHandler := mcppkg.NewMCPHandler(flowRepository, mcpServerRepository, coordinatorExecutor, aesgcm, connManager, Version)
 
 	var mcpOAuthServer *mcpoauth.Server
 	if mcpOAuthEnabled {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -108,7 +109,23 @@ func (h *OAuthHandler) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	}
 	h.stateStoreMux.Unlock()
 
-	url := oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
+	var authOpts []oauth2.AuthCodeOption
+
+	switch provider {
+	case "slack":
+		// Slack v2: "scope" requests bot scopes; user scopes must go in
+		// "user_scope" or the auth flow tries to install a bot.
+		userScopes := strings.Join(oauth2Config.Scopes, ",")
+		oauth2Config.Scopes = nil
+		authOpts = append(authOpts, oauth2.SetAuthURLParam("user_scope", userScopes))
+	default:
+		// access_type=offline + prompt=consent forces Google to issue a refresh
+		// token even on re-consent.
+		authOpts = append(authOpts, oauth2.AccessTypeOffline)
+		authOpts = append(authOpts, oauth2.SetAuthURLParam("prompt", "consent"))
+	}
+
+	url := oauth2Config.AuthCodeURL(state, authOpts...)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -147,16 +164,32 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := pending.OAuth2Config.Exchange(context.Background(), code)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to exchange OAuth2 code for token")
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, callbackHTML("error", "Failed to exchange authorization code for token."))
-		return
+	var token *oauth2.Token
+	if pending.Provider == "slack" {
+		// Slack returns the user token at authed_user.access_token; the
+		// top-level access_token is the bot token, which we don't want.
+		var err error
+		token, err = exchangeSlackUserToken(pending.OAuth2Config, code)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to exchange Slack OAuth2 code for token")
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, callbackHTML("error", "Failed to exchange authorization code for token."))
+			return
+		}
+	} else {
+		var err error
+		token, err = pending.OAuth2Config.Exchange(context.Background(), code)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to exchange OAuth2 code for token")
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, callbackHTML("error", "Failed to exchange authorization code for token."))
+			return
+		}
 	}
 
-	err = h.manager.StoreConnection(pending.Name, pending.Provider, pending.Config, token)
+	err := h.manager.StoreConnection(pending.Name, pending.Provider, pending.Config, token)
 	if err != nil {
 		err = h.manager.ReauthorizeConnection(pending.Name, pending.Config, token)
 	}
@@ -187,6 +220,56 @@ func (h *OAuthHandler) cleanupExpiredStates() {
 		}
 		h.stateStoreMux.Unlock()
 	}
+}
+
+// exchangeSlackUserToken handles Slack's non-standard OAuth v2 token response.
+// Slack returns user tokens inside authed_user.access_token, not the top-level access_token.
+func exchangeSlackUserToken(cfg *oauth2.Config, code string) (*oauth2.Token, error) {
+	resp, err := http.PostForm(cfg.Endpoint.TokenURL, map[string][]string{
+		"client_id":     {cfg.ClientID},
+		"client_secret": {cfg.ClientSecret},
+		"code":          {code},
+		"redirect_uri":  {cfg.RedirectURL},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("slack token exchange request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		OK         bool   `json:"ok"`
+		Error      string `json:"error"`
+		AuthedUser struct {
+			ID           string `json:"id"`
+			AccessToken  string `json:"access_token"`
+			TokenType    string `json:"token_type"`
+			RefreshToken string `json:"refresh_token"`
+			ExpiresIn    int64  `json:"expires_in"`
+		} `json:"authed_user"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode slack token response: %w", err)
+	}
+
+	if !result.OK {
+		return nil, fmt.Errorf("slack token exchange failed: %s", result.Error)
+	}
+
+	if result.AuthedUser.AccessToken == "" {
+		return nil, fmt.Errorf("slack returned no user access token (did you request user_scope?)")
+	}
+
+	token := &oauth2.Token{
+		AccessToken:  result.AuthedUser.AccessToken,
+		TokenType:    result.AuthedUser.TokenType,
+		RefreshToken: result.AuthedUser.RefreshToken,
+	}
+	if result.AuthedUser.ExpiresIn > 0 {
+		token.Expiry = time.Now().Add(time.Duration(result.AuthedUser.ExpiresIn) * time.Second)
+	}
+
+	return token, nil
 }
 
 func generateState() string {

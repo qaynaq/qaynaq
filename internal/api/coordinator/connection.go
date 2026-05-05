@@ -26,6 +26,10 @@ func (c *CoordinatorAPI) ListProviders(_ context.Context, _ *emptypb.Empty) (*pb
 				Description: s.Description,
 			})
 		}
+		if setup, ok := connection.ProviderSetups[id]; ok {
+			p.SetupUrl = setup.URL
+			p.SetupLabel = setup.Label
+		}
 		result.Data = append(result.Data, p)
 	}
 

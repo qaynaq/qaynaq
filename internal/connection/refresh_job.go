@@ -7,15 +7,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// RefreshJob proactively refreshes connection access tokens before they expire.
-// Running this in coordinator means workers' cached tokens stay fresh without
-// the workers ever needing to refresh themselves.
+// RefreshJob proactively rotates access tokens before they expire so
+// workers' caches don't have to.
 type RefreshJob struct {
 	manager  *Manager
 	interval time.Duration
-	// proactiveWindow is how far in advance of expiry the job refreshes a token.
-	// Should comfortably exceed `interval` so a token can't slip past expiry
-	// between two job runs.
+	// Must exceed interval so no token can slip past expiry between ticks.
 	proactiveWindow time.Duration
 }
 
