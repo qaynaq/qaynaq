@@ -18,6 +18,10 @@ export type Connection = {
   scopes: string[];
   clientId: string;
   clientSecretHint: string;
+  // shop is the Shopify shop subdomain for shop-templated providers.
+  shop?: string;
+  // cloudId is the Atlassian Cloud ID for cloudid-required providers.
+  cloudId?: string;
   createdAt: string;
   updatedAt: string;
 };

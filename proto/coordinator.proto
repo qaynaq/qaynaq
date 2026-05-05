@@ -393,6 +393,8 @@ message ConnectionInfo {
   string client_secret_hint = 5 [json_name = "client_secret_hint"];
   google.protobuf.Timestamp created_at = 6 [json_name = "created_at"];
   google.protobuf.Timestamp updated_at = 7 [json_name = "updated_at"];
+  string shop = 8 [json_name = "shop"];
+  string cloud_id = 9 [json_name = "cloud_id"];
 }
 
 message ListConnectionsResponse {
@@ -452,6 +454,9 @@ message Provider {
   repeated ProviderScope scopes = 2 [json_name = "scopes"];
   string setup_url = 3 [json_name = "setup_url"];
   string setup_label = 4 [json_name = "setup_label"];
+  string display_name = 5 [json_name = "display_name"];
+  bool requires_shop = 6 [json_name = "requires_shop"];
+  bool requires_cloud_id = 7 [json_name = "requires_cloud_id"];
 }
 
 message ListProvidersResponse {

@@ -18,7 +18,12 @@ func (c *CoordinatorAPI) ListProviders(_ context.Context, _ *emptypb.Empty) (*pb
 
 	result := &pb.ListProvidersResponse{}
 	for id, scopes := range providers {
-		p := &pb.Provider{Id: id}
+		p := &pb.Provider{
+			Id:              id,
+			DisplayName:     connection.GetDisplayName(id),
+			RequiresShop:    connection.ProviderUsesShopTemplate(id),
+			RequiresCloudId: connection.ProviderRequiresCloudID(id),
+		}
 		for _, s := range scopes {
 			p.Scopes = append(p.Scopes, &pb.ProviderScope{
 				Scope:       s.Scope,
@@ -54,6 +59,8 @@ func (c *CoordinatorAPI) ListConnections(_ context.Context, _ *emptypb.Empty) (*
 			Scopes:           conn.Scopes,
 			ClientId:         conn.ClientID,
 			ClientSecretHint: conn.ClientSecretHint,
+			Shop:             conn.Shop,
+			CloudId:          conn.CloudID,
 			CreatedAt:        timestamppb.New(conn.CreatedAt),
 			UpdatedAt:        timestamppb.New(conn.UpdatedAt),
 		}

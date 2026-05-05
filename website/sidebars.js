@@ -88,6 +88,7 @@ const sidebars = {
       type: "category",
       label: "Guides",
       items: [
+        "guides/connections",
         "guides/google-oauth-setup",
         "guides/mcp-server",
         "guides/mcp-server-proxy",

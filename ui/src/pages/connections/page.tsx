@@ -61,6 +61,8 @@ export default function ConnectionsPage() {
     provider: "",
     clientId: "",
     clientSecret: "",
+    shop: "",
+    cloudId: "",
   });
 
   const handleDelete = async (conn: Connection) => {
@@ -102,6 +104,7 @@ export default function ConnectionsPage() {
     clientSecret: string,
     scopes: string[],
     onSuccess: () => void,
+    extras?: { shop?: string; cloudId?: string },
   ) => {
     const params = new URLSearchParams({
       provider,
@@ -111,6 +114,12 @@ export default function ConnectionsPage() {
     });
     if (scopes.length > 0) {
       params.set("scopes", scopes.join(","));
+    }
+    if (extras?.shop) {
+      params.set("shop", extras.shop);
+    }
+    if (extras?.cloudId) {
+      params.set("cloud_id", extras.cloudId);
     }
 
     const popup = window.open(
@@ -150,17 +159,42 @@ export default function ConnectionsPage() {
   };
 
   const handleAuthorize = () => {
+    const provider = providers.find((p) => p.id === formData.provider);
+    const requiresScope = (provider?.scopes.length ?? 0) > 0;
+
     if (
       !formData.name.trim() ||
       !formData.provider ||
       !formData.clientId.trim() ||
       !formData.clientSecret.trim() ||
-      selectedScopes.size === 0
+      (requiresScope && selectedScopes.size === 0)
     ) {
       addToast({
         id: "validation-error",
         title: "Validation Error",
-        description: "Name, Provider, Client ID, Client Secret, and at least one scope are required.",
+        description: requiresScope
+          ? "Name, Provider, Client ID, Client Secret, and at least one scope are required."
+          : "Name, Provider, Client ID, and Client Secret are required.",
+        variant: "error",
+      });
+      return;
+    }
+
+    if (provider?.requires_shop && !formData.shop.trim()) {
+      addToast({
+        id: "validation-error",
+        title: "Validation Error",
+        description: "Shop domain is required for this provider (e.g., my-store).",
+        variant: "error",
+      });
+      return;
+    }
+
+    if (provider?.requires_cloud_id && !formData.cloudId.trim()) {
+      addToast({
+        id: "validation-error",
+        title: "Validation Error",
+        description: "Cloud ID is required for this provider.",
         variant: "error",
       });
       return;
@@ -173,11 +207,15 @@ export default function ConnectionsPage() {
       formData.clientSecret.trim(),
       Array.from(selectedScopes),
       () => {
-        setFormData({ name: "", provider: "", clientId: "", clientSecret: "" });
+        setFormData({ name: "", provider: "", clientId: "", clientSecret: "", shop: "", cloudId: "" });
         setSelectedScopes(new Set());
         setScopeSearch("");
         setShowSecret(false);
         setIsModalOpen(false);
+      },
+      {
+        shop: formData.shop.trim() || undefined,
+        cloudId: formData.cloudId.trim() || undefined,
       },
     );
   };
@@ -195,27 +233,44 @@ export default function ConnectionsPage() {
   };
 
   const submitReauthorize = () => {
-    if (!reAuthConn || !reAuthData.clientId.trim() || reAuthScopes.size === 0) {
+    if (!reAuthConn) return;
+    const provider = providers.find((p) => p.id === reAuthConn.provider);
+    const requiresScope = (provider?.scopes.length ?? 0) > 0;
+
+    if (!reAuthData.clientId.trim() || (requiresScope && reAuthScopes.size === 0)) {
       addToast({
         id: "validation-error",
         title: "Validation Error",
-        description: "Client ID and at least one scope are required.",
+        description: requiresScope
+          ? "Client ID and at least one scope are required."
+          : "Client ID is required.",
         variant: "error",
       });
       return;
     }
 
-    openOAuthPopup(reAuthConn.provider, reAuthConn.name, reAuthData.clientId.trim(), reAuthData.clientSecret.trim(), Array.from(reAuthScopes), () => {
-      setReAuthOpen(false);
-      setReAuthConn(null);
-      setReAuthData({ clientId: "", clientSecret: "" });
-      setReAuthScopes(new Set());
-      setReAuthScopeSearch("");
-    });
+    openOAuthPopup(
+      reAuthConn.provider,
+      reAuthConn.name,
+      reAuthData.clientId.trim(),
+      reAuthData.clientSecret.trim(),
+      Array.from(reAuthScopes),
+      () => {
+        setReAuthOpen(false);
+        setReAuthConn(null);
+        setReAuthData({ clientId: "", clientSecret: "" });
+        setReAuthScopes(new Set());
+        setReAuthScopeSearch("");
+      },
+      {
+        shop: reAuthConn.shop || undefined,
+        cloudId: reAuthConn.cloudId || undefined,
+      },
+    );
   };
 
   const resetForm = () => {
-    setFormData({ name: "", provider: "", clientId: "", clientSecret: "" });
+    setFormData({ name: "", provider: "", clientId: "", clientSecret: "", shop: "", cloudId: "" });
     setSelectedScopes(new Set());
     setScopeSearch("");
     setShowSecret(false);
@@ -247,9 +302,11 @@ export default function ConnectionsPage() {
     {
       key: "provider" as keyof Connection,
       title: "Provider",
-      render: (value: string) => (
-        <span className="capitalize">{value || "Unknown"}</span>
-      ),
+      render: (value: string) => {
+        const match = providers.find((p) => p.id === value);
+        const label = match?.display_name || (value ? value.charAt(0).toUpperCase() + value.slice(1) : "Unknown");
+        return <span>{label}</span>;
+      },
     },
     {
       key: "createdAt" as keyof Connection,
@@ -338,7 +395,7 @@ export default function ConnectionsPage() {
                   <SelectContent>
                     {providers.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.id.charAt(0).toUpperCase() + p.id.slice(1)}
+                        {p.display_name || p.id.charAt(0).toUpperCase() + p.id.slice(1)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -392,7 +449,53 @@ export default function ConnectionsPage() {
 
               {formData.provider && (() => {
                 const provider = providers.find((p) => p.id === formData.provider);
-                if (!provider) return null;
+                if (!provider?.requires_shop) return null;
+                return (
+                  <div className="space-y-2">
+                    <Label htmlFor="conn-shop">Shop domain</Label>
+                    <Input
+                      id="conn-shop"
+                      type="text"
+                      placeholder="my-store"
+                      value={formData.shop}
+                      onChange={(e) =>
+                        setFormData({ ...formData, shop: e.target.value.toLowerCase() })
+                      }
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      The subdomain of your Shopify store (e.g., <code>my-store</code> for <code>my-store.myshopify.com</code>).
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {formData.provider && (() => {
+                const provider = providers.find((p) => p.id === formData.provider);
+                if (!provider?.requires_cloud_id) return null;
+                return (
+                  <div className="space-y-2">
+                    <Label htmlFor="conn-cloud-id">Cloud ID</Label>
+                    <Input
+                      id="conn-cloud-id"
+                      type="text"
+                      placeholder="00000000-0000-0000-0000-000000000000"
+                      value={formData.cloudId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, cloudId: e.target.value })
+                      }
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Find your Cloud ID at <code>https://YOUR-SITE.atlassian.net/_edge/tenant_info</code>.
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {formData.provider && (() => {
+                const provider = providers.find((p) => p.id === formData.provider);
+                if (!provider || provider.scopes.length === 0) return null;
                 const filtered = provider.scopes.filter(
                   (s) =>
                     !scopeSearch ||
@@ -627,7 +730,7 @@ export default function ConnectionsPage() {
 
             {reAuthConn && (() => {
               const provider = providers.find((p) => p.id === reAuthConn.provider);
-              if (!provider) return null;
+              if (!provider || provider.scopes.length === 0) return null;
               const filtered = provider.scopes.filter(
                 (s) =>
                   !reAuthScopeSearch ||

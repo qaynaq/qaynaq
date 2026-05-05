@@ -3293,6 +3293,8 @@ type ConnectionInfo struct {
 	ClientSecretHint string                 `protobuf:"bytes,5,opt,name=client_secret_hint,proto3" json:"client_secret_hint,omitempty"`
 	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,proto3" json:"created_at,omitempty"`
 	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
+	Shop             string                 `protobuf:"bytes,8,opt,name=shop,proto3" json:"shop,omitempty"`
+	CloudId          string                 `protobuf:"bytes,9,opt,name=cloud_id,proto3" json:"cloud_id,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -3374,6 +3376,20 @@ func (x *ConnectionInfo) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *ConnectionInfo) GetShop() string {
+	if x != nil {
+		return x.Shop
+	}
+	return ""
+}
+
+func (x *ConnectionInfo) GetCloudId() string {
+	if x != nil {
+		return x.CloudId
+	}
+	return ""
 }
 
 type ListConnectionsResponse struct {
@@ -3892,13 +3908,16 @@ func (x *ProviderScope) GetDescription() string {
 }
 
 type Provider struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Scopes        []*ProviderScope       `protobuf:"bytes,2,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	SetupUrl      string                 `protobuf:"bytes,3,opt,name=setup_url,proto3" json:"setup_url,omitempty"`
-	SetupLabel    string                 `protobuf:"bytes,4,opt,name=setup_label,proto3" json:"setup_label,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Scopes          []*ProviderScope       `protobuf:"bytes,2,rep,name=scopes,proto3" json:"scopes,omitempty"`
+	SetupUrl        string                 `protobuf:"bytes,3,opt,name=setup_url,proto3" json:"setup_url,omitempty"`
+	SetupLabel      string                 `protobuf:"bytes,4,opt,name=setup_label,proto3" json:"setup_label,omitempty"`
+	DisplayName     string                 `protobuf:"bytes,5,opt,name=display_name,proto3" json:"display_name,omitempty"`
+	RequiresShop    bool                   `protobuf:"varint,6,opt,name=requires_shop,proto3" json:"requires_shop,omitempty"`
+	RequiresCloudId bool                   `protobuf:"varint,7,opt,name=requires_cloud_id,proto3" json:"requires_cloud_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Provider) Reset() {
@@ -3957,6 +3976,27 @@ func (x *Provider) GetSetupLabel() string {
 		return x.SetupLabel
 	}
 	return ""
+}
+
+func (x *Provider) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *Provider) GetRequiresShop() bool {
+	if x != nil {
+		return x.RequiresShop
+	}
+	return false
+}
+
+func (x *Provider) GetRequiresCloudId() bool {
+	if x != nil {
+		return x.RequiresCloudId
+	}
+	return false
 }
 
 type ListProvidersResponse struct {
@@ -4605,7 +4645,7 @@ const file_coordinator_proto_rawDesc = "" +
 	"\x16DeleteMCPServerRequest\x12\x17\n" +
 	"\x02id\x18\x01 \x01(\x03B\a\xfaB\x04\"\x02 \x00R\x02id\"'\n" +
 	"\x11ConnectionRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\x9e\x02\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xce\x02\n" +
 	"\x0eConnectionInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\bprovider\x18\x02 \x01(\tR\bprovider\x12\x16\n" +
@@ -4617,7 +4657,9 @@ const file_coordinator_proto_rawDesc = "" +
 	"created_at\x12:\n" +
 	"\n" +
 	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"updated_at\"J\n" +
+	"updated_at\x12\x12\n" +
+	"\x04shop\x18\b \x01(\tR\x04shop\x12\x1a\n" +
+	"\bcloud_id\x18\t \x01(\tR\bcloud_id\"J\n" +
 	"\x17ListConnectionsResponse\x12/\n" +
 	"\x04data\x18\x01 \x03(\v2\x1b.protorender.ConnectionInfoR\x04data\"-\n" +
 	"\x17ConnectionTokenResponse\x12\x12\n" +
@@ -4648,12 +4690,15 @@ const file_coordinator_proto_rawDesc = "" +
 	"\rProviderScope\x12\x14\n" +
 	"\x05scope\x18\x01 \x01(\tR\x05scope\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\"\x8e\x01\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\"\x86\x02\n" +
 	"\bProvider\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x122\n" +
 	"\x06scopes\x18\x02 \x03(\v2\x1a.protorender.ProviderScopeR\x06scopes\x12\x1c\n" +
 	"\tsetup_url\x18\x03 \x01(\tR\tsetup_url\x12 \n" +
-	"\vsetup_label\x18\x04 \x01(\tR\vsetup_label\"B\n" +
+	"\vsetup_label\x18\x04 \x01(\tR\vsetup_label\x12\"\n" +
+	"\fdisplay_name\x18\x05 \x01(\tR\fdisplay_name\x12$\n" +
+	"\rrequires_shop\x18\x06 \x01(\bR\rrequires_shop\x12,\n" +
+	"\x11requires_cloud_id\x18\a \x01(\bR\x11requires_cloud_id\"B\n" +
 	"\x15ListProvidersResponse\x12)\n" +
 	"\x04data\x18\x01 \x03(\v2\x15.protorender.ProviderR\x04data2\xe84\n" +
 	"\vCoordinator\x12]\n" +
