@@ -34,9 +34,8 @@ Local servers come from a curated allowlist. You don't type a free-form `npx <pk
 | Catalog ID | Maintainer | What it does | Required env |
 |------------|------------|--------------|--------------|
 | `filesystem` | official | Read/write files in a sandboxed dir | `ALLOWED_DIR` |
-| `slack` | community | Read/post Slack messages | `SLACK_MCP_XOXP_TOKEN` |
+| `slack` | community | Read/post Slack messages | `SLACK_MCP_XOXP_TOKEN` (or alternative token) |
 | `playwright` | official | Browser automation (headless or headed) | none |
-| `sentry` | official | Sentry issues, events, performance lookup | `SENTRY_AUTH_TOKEN` |
 | `redash` | community | Run SQL queries, browse schemas, manage dashboards | `REDASH_URL`, `REDASH_API_KEY` |
 
 If you need an entry that isn't there, file an issue. We treat the catalog as something the project owns.

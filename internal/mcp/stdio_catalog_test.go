@@ -3,7 +3,7 @@ package mcp
 import "testing"
 
 func TestCatalog_KnownEntries(t *testing.T) {
-	required := []string{"filesystem", "slack", "playwright", "sentry", "redash"}
+	required := []string{"filesystem", "slack", "playwright", "redash"}
 	for _, id := range required {
 		if _, ok := LookupCatalogEntry(id); !ok {
 			t.Errorf("expected catalog entry %q to exist", id)
@@ -44,15 +44,28 @@ func TestCatalog_AllEntriesHaveMaintainer(t *testing.T) {
 }
 
 func TestCatalog_RequiredEnvSpecsResolved(t *testing.T) {
-	slack, _ := LookupCatalogEntry("slack")
+	redash, _ := LookupCatalogEntry("redash")
 	hasRequired := false
-	for _, s := range slack.EnvSpec {
+	for _, s := range redash.EnvSpec {
 		if s.Required {
 			hasRequired = true
 			break
 		}
 	}
 	if !hasRequired {
-		t.Error("slack catalog entry has no required env spec")
+		t.Error("redash catalog entry has no required env spec")
+	}
+}
+
+func TestCatalog_AdvancedEnvFieldFlows(t *testing.T) {
+	redash, _ := LookupCatalogEntry("redash")
+	advanced := 0
+	for _, s := range redash.EnvSpec {
+		if s.Advanced {
+			advanced++
+		}
+	}
+	if advanced == 0 {
+		t.Error("redash catalog entry has no advanced env vars (regression)")
 	}
 }
