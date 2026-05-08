@@ -207,6 +207,7 @@ export type MCPCatalogEnvSpec = {
   description: string;
   required: boolean;
   secret: boolean;
+  advanced: boolean;
 };
 
 export type MCPCatalogEntry = {

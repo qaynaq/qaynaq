@@ -29,6 +29,7 @@ type StdioEnvSpec struct {
 	Description string `json:"description"`
 	Required    bool   `json:"required"`
 	Secret      bool   `json:"secret"`
+	Advanced bool `json:"advanced"`
 }
 
 var stdioCatalog = map[string]StdioCatalogEntry{
@@ -75,7 +76,7 @@ var stdioCatalog = map[string]StdioCatalogEntry{
 		ArgsTemplate: []string{"-y", "@sentry/mcp-server"},
 		EnvSpec: []StdioEnvSpec{
 			{Name: "SENTRY_AUTH_TOKEN", Description: "Sentry auth token (or ${SECRET_KEY}).", Required: true, Secret: true},
-			{Name: "SENTRY_HOST", Description: "Sentry host (defaults to sentry.io).", Required: false},
+			{Name: "SENTRY_HOST", Description: "Sentry host (defaults to sentry.io).", Advanced: true},
 		},
 	},
 	"redash": {
@@ -89,7 +90,10 @@ var stdioCatalog = map[string]StdioCatalogEntry{
 		EnvSpec: []StdioEnvSpec{
 			{Name: "REDASH_URL", Description: "Redash base URL (https://redash.example.com).", Required: true},
 			{Name: "REDASH_API_KEY", Description: "User API key from Redash settings.", Required: true, Secret: true},
-			{Name: "REDASH_SAFETY_MODE", Description: "off | warn (default) | strict - strict recommended.", Required: false},
+			{Name: "REDASH_SAFETY_MODE", Description: "off | warn (default) | strict - strict recommended.", Advanced: true},
+			{Name: "REDASH_AUTO_LIMIT", Description: "Auto-append LIMIT N to unbounded SELECTs (e.g. 1000).", Advanced: true},
+			{Name: "REDASH_DEFAULT_MAX_AGE", Description: "Cache age in seconds for query results (default 0).", Advanced: true},
+			{Name: "REDASH_MCP_CACHE_TTL", Description: "MCP-side cache TTL in seconds (default 300).", Advanced: true},
 		},
 	},
 }

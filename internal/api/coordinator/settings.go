@@ -654,6 +654,7 @@ func (c *CoordinatorAPI) ListMCPCatalog(_ context.Context, _ *emptypb.Empty) (*p
 				Description: spec.Description,
 				Required:    spec.Required,
 				Secret:      spec.Secret,
+				Advanced:    spec.Advanced,
 			})
 		}
 		out.Data = append(out.Data, pbEntry)

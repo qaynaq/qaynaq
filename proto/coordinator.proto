@@ -418,6 +418,7 @@ message MCPCatalogEnvSpec {
   string description = 2 [json_name = "description"];
   bool required = 3 [json_name = "required"];
   bool secret = 4 [json_name = "secret"];
+  bool advanced = 5 [json_name = "advanced"];
 }
 
 message ListMCPCatalogResponse {

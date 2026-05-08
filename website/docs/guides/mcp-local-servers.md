@@ -54,7 +54,10 @@ Click **Add Server**. In the dialog:
 - **Name** - a short, stable identifier. Used to namespace tool names: a tool `read_file` from a server named `fs` becomes `fs__read_file` on `/mcp`.
 - **Server type** - pick **Local (command / npx)**.
 - **Catalog** - pick the entry you want.
-- **Env vars** - one input per declared env spec. Required ones are marked with `*`.
+- **Env vars** - one input per declared env spec. Each var is one of:
+  - **Required** - marked with `*`, must be filled before save.
+  - **Optional** - marked `(optional)`, can stay empty.
+  - **Advanced** - hidden behind a "Show advanced settings" toggle. Tuning knobs the typical user does not need to touch (cache TTL, safety mode, alternate hosts).
 
 ### 3. Use Secrets for Sensitive Values
 

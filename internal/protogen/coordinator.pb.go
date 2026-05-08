@@ -3550,6 +3550,7 @@ type MCPCatalogEnvSpec struct {
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	Required      bool                   `protobuf:"varint,3,opt,name=required,proto3" json:"required,omitempty"`
 	Secret        bool                   `protobuf:"varint,4,opt,name=secret,proto3" json:"secret,omitempty"`
+	Advanced      bool                   `protobuf:"varint,5,opt,name=advanced,proto3" json:"advanced,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3608,6 +3609,13 @@ func (x *MCPCatalogEnvSpec) GetRequired() bool {
 func (x *MCPCatalogEnvSpec) GetSecret() bool {
 	if x != nil {
 		return x.Secret
+	}
+	return false
+}
+
+func (x *MCPCatalogEnvSpec) GetAdvanced() bool {
+	if x != nil {
+		return x.Advanced
 	}
 	return false
 }
@@ -5097,12 +5105,13 @@ const file_coordinator_proto_rawDesc = "" +
 	"\benv_spec\x18\a \x03(\v2\x1e.protorender.MCPCatalogEnvSpecR\benv_spec\x12\x1e\n" +
 	"\n" +
 	"maintainer\x18\b \x01(\tR\n" +
-	"maintainer\"}\n" +
+	"maintainer\"\x99\x01\n" +
 	"\x11MCPCatalogEnvSpec\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1a\n" +
 	"\brequired\x18\x03 \x01(\bR\brequired\x12\x16\n" +
-	"\x06secret\x18\x04 \x01(\bR\x06secret\"J\n" +
+	"\x06secret\x18\x04 \x01(\bR\x06secret\x12\x1a\n" +
+	"\badvanced\x18\x05 \x01(\bR\badvanced\"J\n" +
 	"\x16ListMCPCatalogResponse\x120\n" +
 	"\x04data\x18\x01 \x03(\v2\x1c.protorender.MCPCatalogEntryR\x04data\"'\n" +
 	"\x11ConnectionRequest\x12\x12\n" +

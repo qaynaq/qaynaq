@@ -8080,6 +8080,8 @@ func (m *MCPCatalogEnvSpec) validate(all bool) error {
 
 	// no validation rules for Secret
 
+	// no validation rules for Advanced
+
 	if len(errors) > 0 {
 		return MCPCatalogEnvSpecMultiError(errors)
 	}

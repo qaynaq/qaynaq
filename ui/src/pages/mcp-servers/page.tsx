@@ -35,12 +35,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Server, RefreshCw, Terminal } from "lucide-react";
+import { Plus, Trash2, Server, RefreshCw, Terminal, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/components/toast";
 import {
   Connection,
   MCPServer,
   MCPCatalogEntry,
+  MCPCatalogEnvSpec,
   MCPServerLogs,
 } from "@/lib/entities";
 import {
@@ -78,6 +79,79 @@ const MaintainerBadge = ({ maintainer }: { maintainer: string }) => {
 
 type Transport = "http" | "stdio";
 
+// Whole-string ${NAME} ref. Composed strings stay masked because they may
+// surround real secret data.
+const SECRET_REF_RE = /^\s*\$\{[A-Za-z_][A-Za-z0-9_]*\}\s*$/;
+
+const EnvField = ({
+  spec,
+  env,
+  setEnv,
+}: {
+  spec: MCPCatalogEnvSpec;
+  env: Record<string, string>;
+  setEnv: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}) => {
+  const [reveal, setReveal] = useState(false);
+  const value = env[spec.name] || "";
+  const isRef = SECRET_REF_RE.test(value);
+  const masked = spec.secret && !isRef && !reveal;
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`env-${spec.name}`}>
+        {spec.name}
+        {spec.required && <span className="text-destructive"> *</span>}
+        {!spec.required && (
+          <span className="text-muted-foreground"> (optional)</span>
+        )}
+      </Label>
+      <div className="relative">
+        <Input
+          id={`env-${spec.name}`}
+          type={masked ? "password" : "text"}
+          placeholder={spec.secret ? "value or ${SECRET_KEY}" : "value"}
+          value={value}
+          onChange={(e) =>
+            setEnv((prev) => ({
+              ...prev,
+              [spec.name]: e.target.value,
+            }))
+          }
+          required={spec.required}
+          className={spec.secret ? "pr-9" : undefined}
+        />
+        {spec.secret && (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setReveal((v) => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label={masked ? "Show value" : "Hide value"}
+          >
+            {masked ? (
+              <Eye className="h-4 w-4" />
+            ) : (
+              <EyeOff className="h-4 w-4" />
+            )}
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {spec.description}
+        {spec.secret && (
+          <>
+            {" "}
+            Use{" "}
+            <code className="bg-muted px-1 rounded">${"{KEY}"}</code> to
+            reference a saved secret (shown unmasked).
+          </>
+        )}
+      </p>
+    </div>
+  );
+};
+
 export default function MCPServersPage() {
   const { addToast } = useToast();
   const [mcpServers, setMcpServers] = useState<MCPServer[]>([]);
@@ -88,7 +162,6 @@ export default function MCPServersPage() {
   const [isAddingServer, setIsAddingServer] = useState(false);
   const [transport, setTransport] = useState<Transport>("http");
 
-  // HTTP form state
   const [newServerName, setNewServerName] = useState("");
   const [newServerUrl, setNewServerUrl] = useState("");
   const [newServerAuthType, setNewServerAuthType] = useState("none");
@@ -96,14 +169,13 @@ export default function MCPServersPage() {
   const [newServerAuthValue, setNewServerAuthValue] = useState("");
   const [newServerConnectionName, setNewServerConnectionName] = useState("");
 
-  // Stdio form state
   const [selectedCatalogId, setSelectedCatalogId] = useState("");
   const [stdioEnv, setStdioEnv] = useState<Record<string, string>>({});
+  const [showAdvancedEnv, setShowAdvancedEnv] = useState(false);
 
   const [deleteServerConfirmOpen, setDeleteServerConfirmOpen] = useState(false);
   const [serverToDelete, setServerToDelete] = useState<MCPServer | null>(null);
 
-  // Logs viewer state
   const [logsOpenForServer, setLogsOpenForServer] = useState<MCPServer | null>(
     null,
   );
@@ -145,6 +217,7 @@ export default function MCPServersPage() {
     setNewServerConnectionName("");
     setSelectedCatalogId("");
     setStdioEnv({});
+    setShowAdvancedEnv(false);
     setTransport("http");
   };
 
@@ -467,6 +540,7 @@ export default function MCPServersPage() {
                           onValueChange={(id) => {
                             setSelectedCatalogId(id);
                             setStdioEnv({});
+                            setShowAdvancedEnv(false);
                           }}
                         >
                           <SelectTrigger>
@@ -506,46 +580,45 @@ export default function MCPServersPage() {
                       </div>
 
                       {selectedCatalog &&
-                        selectedCatalog.env_spec.map((spec) => (
-                          <div key={spec.name} className="space-y-2">
-                            <Label htmlFor={`env-${spec.name}`}>
-                              {spec.name}
-                              {spec.required && (
-                                <span className="text-destructive"> *</span>
-                              )}
-                            </Label>
-                            <Input
-                              id={`env-${spec.name}`}
-                              type={spec.secret ? "password" : "text"}
-                              placeholder={
-                                spec.secret
-                                  ? "value or ${SECRET_KEY}"
-                                  : "value"
-                              }
-                              value={stdioEnv[spec.name] || ""}
-                              onChange={(e) =>
-                                setStdioEnv((prev) => ({
-                                  ...prev,
-                                  [spec.name]: e.target.value,
-                                }))
-                              }
-                              required={spec.required}
+                        selectedCatalog.env_spec
+                          .filter((s) => !s.advanced)
+                          .map((spec) => (
+                            <EnvField
+                              key={spec.name}
+                              spec={spec}
+                              env={stdioEnv}
+                              setEnv={setStdioEnv}
                             />
-                            <p className="text-xs text-muted-foreground">
-                              {spec.description}
-                              {spec.secret && (
-                                <>
-                                  {" "}
-                                  Use{" "}
-                                  <code className="bg-muted px-1 rounded">
-                                    ${"{KEY}"}
-                                  </code>{" "}
-                                  to reference a saved secret.
-                                </>
-                              )}
-                            </p>
+                          ))}
+
+                      {selectedCatalog &&
+                        selectedCatalog.env_spec.some((s) => s.advanced) && (
+                          <div className="space-y-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowAdvancedEnv((v) => !v)}
+                              className="text-xs text-muted-foreground underline"
+                            >
+                              {showAdvancedEnv
+                                ? "Hide advanced settings"
+                                : "Show advanced settings"}
+                            </button>
+                            {showAdvancedEnv && (
+                              <div className="space-y-4 border-l-2 border-muted pl-3">
+                                {selectedCatalog.env_spec
+                                  .filter((s) => s.advanced)
+                                  .map((spec) => (
+                                    <EnvField
+                                      key={spec.name}
+                                      spec={spec}
+                                      env={stdioEnv}
+                                      setEnv={setStdioEnv}
+                                    />
+                                  ))}
+                              </div>
+                            )}
                           </div>
-                        ))}
+                        )}
 
                       <p className="text-xs text-muted-foreground">
                         Command:{" "}
