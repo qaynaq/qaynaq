@@ -56,7 +56,7 @@ func (pc *positionCache) Start(ctx context.Context) {
 	if pc.saveInterval > 0 {
 		pc.logger.Info("Starting position cache with periodic save", "interval", pc.saveInterval)
 		pc.ticker = time.NewTicker(pc.saveInterval)
-		go pc.periodicSaveLoop(ctx)
+		go pc.periodicSaveLoop(ctx) //nolint:gosec // ctx is propagated; goroutine inherits cancellation
 	} else {
 		pc.logger.Info("Position cache configured for immediate save mode (interval=0)")
 		close(pc.stoppedChan)

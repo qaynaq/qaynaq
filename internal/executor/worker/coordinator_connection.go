@@ -32,7 +32,7 @@ type coordinatorConnection struct {
 	mu                sync.Mutex
 	grpcConn          *grpc.ClientConn
 	coordinatorClient pb.CoordinatorClient
-	flowManager     flowManagerInterface
+	flowManager       flowManagerInterface
 	grpcPort          uint32
 	joined            bool
 }
@@ -150,8 +150,8 @@ func (c *coordinatorConnection) SendHeartbeat(ctx context.Context) error {
 	c.mu.Unlock()
 
 	resp, err := c.coordinatorClient.Heartbeat(ctx, &pb.HeartbeatRequest{
-		Id:                     hostname,
-		Port:                   c.grpcPort,
+		Id:                   hostname,
+		Port:                 c.grpcPort,
 		RunningWorkerFlowIds: runningFlowIDs,
 	})
 	if err != nil {
@@ -190,7 +190,7 @@ func (c *coordinatorConnection) UpdateWorkerFlowStatus(ctx context.Context, work
 		ctx,
 		&pb.WorkerFlowStatusRequest{
 			WorkerFlowId: workerFlowID,
-			Status:         status,
+			Status:       status,
 		},
 	)
 	if err != nil {
@@ -207,7 +207,7 @@ func (c *coordinatorConnection) UpdateWorkerFlowStatus(ctx context.Context, work
 
 func (c *coordinatorConnection) IngestMetrics(ctx context.Context, workerFlowID int64, inputEvents, processorErrors, outputEvents uint64) error {
 	_, err := c.coordinatorClient.IngestMetrics(ctx, &pb.MetricsRequest{
-		WorkerFlowId:  workerFlowID,
+		WorkerFlowId:    workerFlowID,
 		InputEvents:     inputEvents,
 		ProcessorErrors: processorErrors,
 		OutputEvents:    outputEvents,

@@ -84,7 +84,6 @@ func (r *oauthRefreshTokenRepository) ListActiveSessions() ([]OAuthSession, erro
 	return sessions, err
 }
 
-
 func (r *oauthRefreshTokenRepository) Revoke(id int64) error {
 	now := time.Now()
 	return r.db.Model(&OAuthRefreshToken{}).Where("id = ?", id).Update("revoked_at", &now).Error

@@ -52,9 +52,9 @@ type upstreamServer struct {
 }
 
 const (
-	maxUpstreamFailures      = 3
-	upstreamSyncTimeout      = 10 * time.Second
-	upstreamCircuitCooldown  = 5 * time.Minute
+	maxUpstreamFailures     = 3
+	upstreamSyncTimeout     = 10 * time.Second
+	upstreamCircuitCooldown = 5 * time.Minute
 )
 
 type MCPHandler struct {

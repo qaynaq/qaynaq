@@ -123,7 +123,7 @@ func (c *CoordinatorAPI) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest)
 	}
 
 	response := &pb.HeartbeatResponse{
-		Message:                     "Heartbeat acknowledged",
+		Message:                   "Heartbeat acknowledged",
 		RenewedLeaseWorkerFlowIds: []int64{},
 		ExpiredLeaseWorkerFlowIds: []int64{},
 	}

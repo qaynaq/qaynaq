@@ -17,10 +17,10 @@ type RequestForwarder interface {
 }
 
 type requestForwarder struct {
-	workerManager   WorkerManager
+	workerManager WorkerManager
 	flowWorkerMap FlowWorkerMap
 	flowRepo      persistence.FlowRepository
-	pathRegex       *regexp.Regexp
+	pathRegex     *regexp.Regexp
 }
 
 func NewRequestForwarder(
@@ -29,10 +29,10 @@ func NewRequestForwarder(
 	flowRepo persistence.FlowRepository,
 ) RequestForwarder {
 	return &requestForwarder{
-		workerManager:   workerManager,
+		workerManager: workerManager,
 		flowWorkerMap: flowWorkerMap,
 		flowRepo:      flowRepo,
-		pathRegex:       regexp.MustCompile(`^/ingest/(\d+)(/.*)?$`),
+		pathRegex:     regexp.MustCompile(`^/ingest/(\d+)(/.*)?$`),
 	}
 }
 
@@ -86,14 +86,14 @@ func (f *requestForwarder) ForwardRequestToWorker(ctx context.Context, r *http.R
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to read request body: %w", err)
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	resp, err := workerClient.Ingest(ctx, &pb.IngestRequest{
 		WorkerFlowId: workerFlowID,
-		Method:         r.Method,
-		Path:           componentPath,
-		ContentType:    r.Header.Get("Content-Type"),
-		Payload:        bodyBytes,
+		Method:       r.Method,
+		Path:         componentPath,
+		ContentType:  r.Header.Get("Content-Type"),
+		Payload:      bodyBytes,
 	})
 
 	if err != nil {

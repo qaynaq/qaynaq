@@ -19,9 +19,9 @@ const (
 
 type Event struct {
 	ID             int64           `json:"id" gorm:"primaryKey"`
-	WorkerFlowID int64           `json:"worker_flow_id" gorm:"not null"`
-	FlowID       int64           `json:"flow_id"`
-	TraceID      string          `json:"trace_id"`
+	WorkerFlowID   int64           `json:"worker_flow_id" gorm:"not null"`
+	FlowID         int64           `json:"flow_id"`
+	TraceID        string          `json:"trace_id"`
 	Section        string          `json:"section" gorm:"not null"`
 	ComponentLabel string          `json:"component_label"`
 	Type           EventType       `json:"type" gorm:"not null"`

@@ -69,10 +69,10 @@ func NewFlowManager(coordinatorConnection CoordinatorConnection, vaultProvider v
 func (m *flowManager) WriteFiles(files []*pb.FlowFile) error {
 	for _, f := range files {
 		dest := filepath.Join("/tmp/qaynaq/files", f.Key)
-		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dest), 0o750); err != nil {
 			return fmt.Errorf("failed to create directory for file %s: %w", f.Key, err)
 		}
-		if err := os.WriteFile(dest, f.Content, 0o644); err != nil {
+		if err := os.WriteFile(dest, f.Content, 0o600); err != nil {
 			return fmt.Errorf("failed to write file %s: %w", f.Key, err)
 		}
 		log.Debug().Str("key", f.Key).Str("path", dest).Msg("Wrote file to disk")
@@ -345,7 +345,7 @@ func (m *flowManager) StartFlow(ctx context.Context, workerFlowID int64) {
 			log.Info().Int64("worker_flow_id", workerFlowID).Str("status", string(flowStatus)).Msg("Flow has been finished")
 		}()
 
-		streamCtx, cancel := context.WithCancel(ctx)
+		streamCtx, cancel := context.WithCancel(ctx) //nolint:gosec // cancel stored on flow.Cancel and invoked by caller
 		flow.Cancel = cancel
 
 		m.mu.Lock()

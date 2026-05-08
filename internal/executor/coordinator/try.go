@@ -74,14 +74,14 @@ func TryStream(ctx context.Context, processors []persistence.FlowProcessor, mess
 			if err != nil {
 				return &TryResult{Error: fmt.Sprintf("failed to create temp directory: %s", err)}
 			}
-			defer os.RemoveAll(tmpDir)
+			defer func() { _ = os.RemoveAll(tmpDir) }()
 
 			for _, f := range files {
 				filePath := filepath.Join(tmpDir, f.Key)
-				if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
+				if err := os.MkdirAll(filepath.Dir(filePath), 0o750); err != nil {
 					return &TryResult{Error: fmt.Sprintf("failed to create directory for file %q: %s", f.Key, err)}
 				}
-				if err := os.WriteFile(filePath, f.Content, 0o644); err != nil {
+				if err := os.WriteFile(filePath, f.Content, 0o600); err != nil {
 					return &TryResult{Error: fmt.Sprintf("failed to write file %q: %s", f.Key, err)}
 				}
 			}

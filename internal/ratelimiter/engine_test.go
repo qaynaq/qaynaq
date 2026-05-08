@@ -9,9 +9,9 @@ import (
 	"database/sql"
 
 	"github.com/qaynaq/qaynaq/internal/persistence"
-	_ "modernc.org/sqlite"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	_ "modernc.org/sqlite"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

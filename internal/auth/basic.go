@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"github.com/qaynaq/qaynaq/internal/config"
+	"github.com/rs/zerolog/log"
 )
 
 type BasicAuthHandler struct {
@@ -41,7 +41,7 @@ func (h *BasicAuthHandler) Middleware(next http.Handler) http.Handler {
 
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"error":"Unauthorized"}`))
+		_, _ = w.Write([]byte(`{"error":"Unauthorized"}`))
 	})
 }
 
@@ -79,7 +79,7 @@ func (h *BasicAuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	log.Info().Str("username", loginReq.Username).Msg("User logged in with basic auth")
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	_ = json.NewEncoder(w).Encode(map[string]string{
 		"token":      token,
 		"token_type": "Bearer",
 	})
@@ -96,7 +96,7 @@ func (h *BasicAuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) 
 	})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
 func (h *BasicAuthHandler) isValidSession(token string) bool {

@@ -13,7 +13,7 @@ var DBPath string
 
 func Init() {
 	dir := filepath.Join("/tmp", "qaynaq")
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		log.Error().Err(err).Msg("Failed to create sample data directory")
 		return
 	}
@@ -28,7 +28,7 @@ func Init() {
 		log.Error().Err(err).Msg("Failed to create sample database")
 		return
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	schema := `
 CREATE TABLE customers (
@@ -57,7 +57,7 @@ CREATE TABLE orders (
 `
 	if _, err := db.Exec(schema); err != nil {
 		log.Error().Err(err).Msg("Failed to create sample schema")
-		os.Remove(DBPath)
+		_ = os.Remove(DBPath)
 		return
 	}
 

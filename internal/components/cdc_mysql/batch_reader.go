@@ -140,10 +140,9 @@ func (br *batchReader) readBatch(ctx context.Context) (service.MessageBatch, ser
 			ackEventFn()
 
 			return service.MessageBatch{}, func(ctx context.Context, err error) error { return nil }, nil
-		} else {
-			br.logger.Debug("Empty batch with incomplete GTID, no position advance", "gtid", currentGTID, "file", currentFile, "pos", currentPosition, "isGTIDComplete", isGTIDComplete)
-			return service.MessageBatch{}, func(ctx context.Context, err error) error { return nil }, nil
 		}
+		br.logger.Debug("Empty batch with incomplete GTID, no position advance", "gtid", currentGTID, "file", currentFile, "pos", currentPosition, "isGTIDComplete", isGTIDComplete)
+		return service.MessageBatch{}, func(ctx context.Context, err error) error { return nil }, nil
 	}
 
 	if isGTIDComplete {

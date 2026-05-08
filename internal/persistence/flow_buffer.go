@@ -8,11 +8,11 @@ import (
 
 type FlowBuffer struct {
 	ID        int64     `json:"id" gorm:"primaryKey"`
-	FlowID  int64     `json:"flow_id" gorm:"not null"`
+	FlowID    int64     `json:"flow_id" gorm:"not null"`
 	BufferID  int64     `json:"buffer_id" gorm:"not null"`
 	CreatedAt time.Time `json:"created_at" gorm:"not null"`
 
-	Flow Flow `json:"flow" gorm:"foreignKey:FlowID"`
+	Flow   Flow   `json:"flow" gorm:"foreignKey:FlowID"`
 	Buffer Buffer `json:"buffer" gorm:"foreignKey:BufferID"`
 }
 

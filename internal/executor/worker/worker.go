@@ -25,8 +25,8 @@ type WorkerExecutor interface {
 
 type workerExecutor struct {
 	coordinatorConnection CoordinatorConnection
-	flowManager         FlowManager
-	flowQueue           FlowQueue
+	flowManager           FlowManager
+	flowQueue             FlowQueue
 	telemetryManager      TelemetryManager
 }
 
@@ -43,8 +43,8 @@ func NewWorkerExecutor(ctx context.Context, grpcConn *grpc.ClientConn, grpcPort 
 
 	return &workerExecutor{
 		coordinatorConnection: coordinatorConnection,
-		flowManager:         flowManager,
-		flowQueue:           flowQueue,
+		flowManager:           flowManager,
+		flowQueue:             flowQueue,
 		telemetryManager:      telemetryManager,
 	}
 }

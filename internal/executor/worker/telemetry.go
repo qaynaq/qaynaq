@@ -20,13 +20,13 @@ type TelemetryManager interface {
 
 type telemetryManager struct {
 	coordinatorConnection CoordinatorConnection
-	flowManager         FlowManager
+	flowManager           FlowManager
 }
 
 func NewTelemetryManager(coordinatorConnection CoordinatorConnection, flowManager FlowManager) TelemetryManager {
 	return &telemetryManager{
 		coordinatorConnection: coordinatorConnection,
-		flowManager:         flowManager,
+		flowManager:           flowManager,
 	}
 }
 
@@ -90,13 +90,13 @@ func (t *telemetryManager) ShipLogs(ctx context.Context) {
 								}
 
 								if err := eventStreamClient.Send(&pb.Event{
-									WorkerFlowId: workerFlowID,
+									WorkerFlowId:   workerFlowID,
 									ComponentLabel: componentLabel,
 									Section:        section,
 									Type:           string(event.Type),
 									Content:        event.Content,
 									Meta:           metaStruct,
-									TraceId:         event.FlowID,
+									TraceId:        event.FlowID,
 								}); err != nil {
 									log.Error().Err(err).Msg("Failed to send event, re-establishing connection")
 									goto ReconnectEventStream

@@ -30,8 +30,8 @@ type MCPServer struct {
 	Transport    string `gorm:"not null;default:'http'" json:"transport"`
 	CatalogID    string `gorm:"default:''" json:"catalog_id"`
 	Command      string `gorm:"default:''" json:"command"`
-	Args         string `gorm:"default:''" json:"args"`          // JSON array of strings
-	EncryptedEnv string `gorm:"default:''" json:"-"`             // JSON map of {ENV_NAME: value}, AES-GCM encrypted whole-blob
+	Args         string `gorm:"default:''" json:"args"` // JSON array of strings
+	EncryptedEnv string `gorm:"default:''" json:"-"`    // JSON map of {ENV_NAME: value}, AES-GCM encrypted whole-blob
 	ProcessState string `gorm:"default:'stopped'" json:"process_state"`
 }
 

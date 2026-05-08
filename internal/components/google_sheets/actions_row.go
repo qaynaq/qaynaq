@@ -64,9 +64,9 @@ func (p *Processor) createRow(ctx context.Context, f *resolvedFields) (map[strin
 	}
 
 	return map[string]any{
-		"updated_range":  resp.Updates.UpdatedRange,
-		"updated_rows":   resp.Updates.UpdatedRows,
-		"updated_cells":  resp.Updates.UpdatedCells,
+		"updated_range": resp.Updates.UpdatedRange,
+		"updated_rows":  resp.Updates.UpdatedRows,
+		"updated_cells": resp.Updates.UpdatedCells,
 	}, nil
 }
 
@@ -88,10 +88,7 @@ func (p *Processor) createRows(ctx context.Context, f *resolvedFields) (map[stri
 		return nil, err
 	}
 
-	var values [][]any
-	for _, row := range rowData {
-		values = append(values, row)
-	}
+	values := append([][]any{}, rowData...)
 
 	rangeStr := f.sheetName
 	resp, err := svc.Spreadsheets.Values.Append(f.spreadsheetID, rangeStr, &sheets.ValueRange{
@@ -102,9 +99,9 @@ func (p *Processor) createRows(ctx context.Context, f *resolvedFields) (map[stri
 	}
 
 	return map[string]any{
-		"updated_range":  resp.Updates.UpdatedRange,
-		"updated_rows":   resp.Updates.UpdatedRows,
-		"updated_cells":  resp.Updates.UpdatedCells,
+		"updated_range": resp.Updates.UpdatedRange,
+		"updated_rows":  resp.Updates.UpdatedRows,
+		"updated_cells": resp.Updates.UpdatedCells,
 	}, nil
 }
 

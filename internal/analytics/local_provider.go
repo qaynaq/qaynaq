@@ -49,7 +49,7 @@ func (p *LocalProvider) loadFlowStats(result *Result) error {
 
 	result.FlowsByStatus = make([]FlowStatusCount, len(counts))
 	for i, c := range counts {
-		result.FlowsByStatus[i] = FlowStatusCount{Status: c.Status, Count: c.Count}
+		result.FlowsByStatus[i] = FlowStatusCount(c)
 		result.TotalFlows += c.Count
 	}
 	return nil
@@ -155,7 +155,7 @@ func (p *LocalProvider) loadTopComponents(result *Result) error {
 	}
 	result.TopInputComponents = make([]ComponentCount, len(inputs))
 	for i, c := range inputs {
-		result.TopInputComponents[i] = ComponentCount{Component: c.Component, Count: c.Count}
+		result.TopInputComponents[i] = ComponentCount(c)
 	}
 
 	var outputs []compCount
@@ -170,7 +170,7 @@ func (p *LocalProvider) loadTopComponents(result *Result) error {
 	}
 	result.TopOutputComponents = make([]ComponentCount, len(outputs))
 	for i, c := range outputs {
-		result.TopOutputComponents[i] = ComponentCount{Component: c.Component, Count: c.Count}
+		result.TopOutputComponents[i] = ComponentCount(c)
 	}
 
 	return nil

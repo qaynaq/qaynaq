@@ -1,4 +1,4 @@
-.PHONY: help all proto ui-deps ui-build build bundle coordinator worker ui website clean
+.PHONY: help all proto ui-deps ui-build build bundle coordinator worker ui website test lint clean
 
 BINARY   := dist/qaynaq
 UI_DIR   := ui
@@ -20,6 +20,8 @@ help:
 	@echo "  worker          Run worker from ./.env"
 	@echo "  ui              Start UI dev server"
 	@echo "  website         Start website dev server"
+	@echo "  test            Run Go tests"
+	@echo "  lint            Run golangci-lint"
 	@echo "  clean           Remove build artifacts"
 
 all: help
@@ -57,6 +59,12 @@ ui:
 
 website:
 	pnpm --prefix $(WEB_DIR) start
+
+test:
+	go test ./...
+
+lint:
+	golangci-lint run ./...
 
 clean:
 	rm -rf dist $(UI_DIR)/dist

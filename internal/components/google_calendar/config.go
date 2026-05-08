@@ -28,19 +28,19 @@ const (
 )
 
 const (
-	actionAddAttendees     = "add_attendees"
-	actionCreateCalendar   = "create_calendar"
-	actionCreateEvent      = "create_event"
-	actionDeleteEvent      = "delete_event"
-	actionFindBusyPeriods  = "find_busy_periods"
-	actionFindCalendars    = "find_calendars"
-	actionFindEvents       = "find_events"
+	actionAddAttendees      = "add_attendees"
+	actionCreateCalendar    = "create_calendar"
+	actionCreateEvent       = "create_event"
+	actionDeleteEvent       = "delete_event"
+	actionFindBusyPeriods   = "find_busy_periods"
+	actionFindCalendars     = "find_calendars"
+	actionFindEvents        = "find_events"
 	actionFindOrCreateEvent = "find_or_create_event"
-	actionGetCalendar      = "get_calendar"
-	actionGetEvent         = "get_event"
-	actionMoveEvent        = "move_event"
-	actionQuickAddEvent    = "quick_add_event"
-	actionUpdateEvent      = "update_event"
+	actionGetCalendar       = "get_calendar"
+	actionGetEvent          = "get_event"
+	actionMoveEvent         = "move_event"
+	actionQuickAddEvent     = "quick_add_event"
+	actionUpdateEvent       = "update_event"
 )
 
 func Config() *service.ConfigSpec {

@@ -259,7 +259,7 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	if !exists || time.Now().After(pending.ExpiresAt) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, callbackHTML("error", "Invalid or expired authorization state. Please try again."))
+		_, _ = fmt.Fprint(w, callbackHTML("error", "Invalid or expired authorization state. Please try again."))
 		return
 	}
 
@@ -269,7 +269,7 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		log.Error().Str("error", errParam).Str("description", errDesc).Msg("OAuth authorization denied")
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, callbackHTML("error", fmt.Sprintf("Authorization denied: %s", errDesc)))
+		_, _ = fmt.Fprint(w, callbackHTML("error", fmt.Sprintf("Authorization denied: %s", errDesc)))
 		return
 	}
 
@@ -277,7 +277,7 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	if code == "" {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, callbackHTML("error", "Missing authorization code."))
+		_, _ = fmt.Fprint(w, callbackHTML("error", "Missing authorization code."))
 		return
 	}
 
@@ -291,7 +291,7 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 			log.Error().Err(err).Msg("Failed to exchange Slack OAuth2 code for token")
 			w.Header().Set("Content-Type", "text/html")
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, callbackHTML("error", "Failed to exchange authorization code for token."))
+			_, _ = fmt.Fprint(w, callbackHTML("error", "Failed to exchange authorization code for token."))
 			return
 		}
 	} else {
@@ -305,7 +305,7 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 			log.Error().Err(err).Msg("Failed to exchange OAuth2 code for token")
 			w.Header().Set("Content-Type", "text/html")
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, callbackHTML("error", "Failed to exchange authorization code for token."))
+			_, _ = fmt.Fprint(w, callbackHTML("error", "Failed to exchange authorization code for token."))
 			return
 		}
 	}
@@ -318,13 +318,13 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		log.Error().Err(err).Str("name", pending.Name).Msg("Failed to store connection")
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, callbackHTML("error", "Failed to store connection."))
+		_, _ = fmt.Fprint(w, callbackHTML("error", "Failed to store connection."))
 		return
 	}
 
 	log.Info().Str("name", pending.Name).Str("provider", pending.Provider).Msg("OAuth connection saved")
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, callbackHTML("success", pending.Name))
+	_, _ = fmt.Fprint(w, callbackHTML("success", pending.Name))
 }
 
 func (h *OAuthHandler) cleanupExpiredStates() {
@@ -355,7 +355,7 @@ func exchangeSlackUserToken(cfg *oauth2.Config, code string) (*oauth2.Token, err
 	if err != nil {
 		return nil, fmt.Errorf("slack token exchange request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result struct {
 		OK         bool   `json:"ok"`

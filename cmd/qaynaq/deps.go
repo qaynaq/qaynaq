@@ -12,20 +12,20 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/qaynaq/qaynaq/internal/analytics"
-	"github.com/qaynaq/qaynaq/internal/sampledata"
 	"github.com/qaynaq/qaynaq/internal/api"
 	"github.com/qaynaq/qaynaq/internal/api/coordinator"
 	"github.com/qaynaq/qaynaq/internal/auth"
-	"github.com/qaynaq/qaynaq/internal/connauth"
-	"github.com/qaynaq/qaynaq/internal/connection"
 	intcli "github.com/qaynaq/qaynaq/internal/cli"
 	"github.com/qaynaq/qaynaq/internal/config"
+	"github.com/qaynaq/qaynaq/internal/connauth"
+	"github.com/qaynaq/qaynaq/internal/connection"
 	"github.com/qaynaq/qaynaq/internal/executor"
 	executorcoordinator "github.com/qaynaq/qaynaq/internal/executor/coordinator"
 	mcppkg "github.com/qaynaq/qaynaq/internal/mcp"
 	mcpoauth "github.com/qaynaq/qaynaq/internal/mcp/oauth"
 	"github.com/qaynaq/qaynaq/internal/persistence"
 	"github.com/qaynaq/qaynaq/internal/ratelimiter"
+	"github.com/qaynaq/qaynaq/internal/sampledata"
 	"github.com/qaynaq/qaynaq/internal/vault"
 )
 
@@ -153,8 +153,8 @@ func InitializeCoordinatorCommand(ctx *cli.Context) *intcli.CoordinatorCLI {
 func InitializeWorkerCommand(appCtx context.Context, ctx *cli.Context) *intcli.WorkerCLI {
 	secretConfig := buildSecretConfig(ctx)
 
-	discoveryUri := ctx.String("discovery-uri")
-	grpcConn, err := grpc.NewClient(discoveryUri, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	discoveryURI := ctx.String("discovery-uri")
+	grpcConn, err := grpc.NewClient(discoveryURI, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create grpc client")
 	}

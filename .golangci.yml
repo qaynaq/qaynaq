@@ -1,0 +1,91 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - unconvert
+    - unused
+  exclusions:
+    generated: lax
+    rules:
+      - path: internal/protogen/
+        linters:
+          - errcheck
+          - gosec
+          - govet
+          - revive
+          - staticcheck
+          - unconvert
+          - unused
+      - path: internal/statik/
+        linters:
+          - errcheck
+          - gosec
+          - govet
+          - revive
+          - staticcheck
+          - unconvert
+          - unused
+      - path: _test\.go$
+        linters:
+          - errcheck
+          - gosec
+  settings:
+    revive:
+      rules:
+        - name: blank-imports
+          disabled: true
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+          disabled: true
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: package-comments
+          disabled: true
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+          disabled: true
+        - name: unreachable-code
+        - name: redefines-builtin-id
+    gosec:
+      excludes:
+        - G101
+        - G104
+        - G115
+        - G117
+        - G204
+        - G304
+        - G404
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - internal/protogen
+      - internal/statik

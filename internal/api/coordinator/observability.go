@@ -50,9 +50,9 @@ func (c *CoordinatorAPI) IngestEvents(stream grpc.BidiStreamingServer[pb.Event, 
 		}
 
 		evetEntity := &persistence.Event{
-			WorkerFlowID: wsID,
-			FlowID:       flowID,
-			TraceID:      event.GetTraceId(),
+			WorkerFlowID:   wsID,
+			FlowID:         flowID,
+			TraceID:        event.GetTraceId(),
 			Section:        event.GetSection(),
 			ComponentLabel: event.GetComponentLabel(),
 			Type:           persistence.EventType(event.GetType()),
@@ -117,8 +117,8 @@ func (c *CoordinatorAPI) ListEvents(ctx context.Context, in *pb.ListEventsReques
 
 		pbEvents = append(pbEvents, &pb.Event{
 			Id:             e.ID,
-			WorkerFlowId: e.WorkerFlowID,
-			TraceId:         e.TraceID,
+			WorkerFlowId:   e.WorkerFlowID,
+			TraceId:        e.TraceID,
 			Section:        e.Section,
 			ComponentLabel: e.ComponentLabel,
 			Type:           string(e.Type),

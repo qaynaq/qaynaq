@@ -25,7 +25,7 @@ func (c *CoordinatorAPI) TestConnection(ctx context.Context, in *pb.TestConnecti
 	if err != nil {
 		return &pb.TestConnectionResponse{Ok: false, Error: err.Error()}, nil
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if err := db.PingContext(connCtx); err != nil {
 		return &pb.TestConnectionResponse{Ok: false, Error: err.Error()}, nil

@@ -18,10 +18,10 @@ type WorkerManager interface {
 }
 
 type workerManager struct {
-	mu               sync.Mutex
-	workerRepo       persistence.WorkerRepository
+	mu             sync.Mutex
+	workerRepo     persistence.WorkerRepository
 	workerFlowRepo persistence.WorkerFlowRepository
-	clientManager    GRPCClientManager
+	clientManager  GRPCClientManager
 }
 
 func NewWorkerManager(
@@ -30,9 +30,9 @@ func NewWorkerManager(
 	clientManager GRPCClientManager,
 ) WorkerManager {
 	return &workerManager{
-		workerRepo:       workerRepo,
+		workerRepo:     workerRepo,
 		workerFlowRepo: workerFlowRepo,
-		clientManager:    clientManager,
+		clientManager:  clientManager,
 	}
 }
 

@@ -3,8 +3,8 @@ package coordinator
 import (
 	"context"
 
-	"github.com/rs/zerolog/log"
 	"github.com/qaynaq/qaynaq/internal/connection"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
