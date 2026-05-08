@@ -6,10 +6,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// MCP transport kinds.
+const (
+	MCPTransportHTTP  = "http"
+	MCPTransportStdio = "stdio"
+)
+
 type MCPServer struct {
 	ID                 int64      `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name               string     `gorm:"uniqueIndex;not null" json:"name"`
-	URL                string     `gorm:"not null" json:"url"`
+	URL                string     `gorm:"default:''" json:"url"`
 	AuthType           string     `gorm:"not null;default:'none'" json:"auth_type"`
 	AuthHeader         string     `gorm:"default:''" json:"auth_header"`
 	EncryptedAuthValue string     `gorm:"default:''" json:"-"`
@@ -20,6 +26,13 @@ type MCPServer struct {
 	LastError          string     `gorm:"default:''" json:"last_error"`
 	CreatedAt          time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt          time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+
+	Transport    string `gorm:"not null;default:'http'" json:"transport"`
+	CatalogID    string `gorm:"default:''" json:"catalog_id"`
+	Command      string `gorm:"default:''" json:"command"`
+	Args         string `gorm:"default:''" json:"args"`          // JSON array of strings
+	EncryptedEnv string `gorm:"default:''" json:"-"`             // JSON map of {ENV_NAME: value}, AES-GCM encrypted whole-blob
+	ProcessState string `gorm:"default:'stopped'" json:"process_state"`
 }
 
 type MCPServerRepository interface {
@@ -31,6 +44,7 @@ type MCPServerRepository interface {
 	Delete(id int64) error
 	UpdateSyncStatus(id int64, toolCount int, lastError string) error
 	UpdateStatus(id int64, status string) error
+	UpdateProcessState(id int64, processState string) error
 }
 
 type mcpServerRepository struct {
@@ -93,3 +107,6 @@ func (r *mcpServerRepository) UpdateStatus(id int64, status string) error {
 	return r.db.Model(&MCPServer{}).Where("id = ?", id).Update("status", status).Error
 }
 
+func (r *mcpServerRepository) UpdateProcessState(id int64, processState string) error {
+	return r.db.Model(&MCPServer{}).Where("id = ?", id).Update("process_state", processState).Error
+}
