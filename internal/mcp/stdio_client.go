@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"syscall"
 
 	mcpclient "github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/client/transport"
@@ -15,10 +14,7 @@ func newStdioMCPClientWithStderr(command string, env []string, args []string, ri
 	cmdFunc := func(ctx context.Context, cmd string, e []string, a []string) (*exec.Cmd, error) {
 		c := exec.CommandContext(ctx, cmd, a...)
 		c.Env = append(os.Environ(), e...)
-		// Setpgid puts the child in its own process group so a kill on the group
-		// also reaps grandchildren. Without it, `npx <pkg>` exits but the Node
-		// process it spawned hangs around as a zombie.
-		c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		setProcessGroup(c)
 		return c, nil
 	}
 
