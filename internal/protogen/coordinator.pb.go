@@ -2858,6 +2858,9 @@ type MCPServerInfo struct {
 	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,proto3" json:"created_at,omitempty"`
 	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
 	LastSyncAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=last_sync_at,proto3,oneof" json:"last_sync_at,omitempty"`
+	Transport      string                 `protobuf:"bytes,13,opt,name=transport,proto3" json:"transport,omitempty"`
+	CatalogId      string                 `protobuf:"bytes,14,opt,name=catalog_id,proto3" json:"catalog_id,omitempty"`
+	ProcessState   string                 `protobuf:"bytes,15,opt,name=process_state,proto3" json:"process_state,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2976,6 +2979,27 @@ func (x *MCPServerInfo) GetLastSyncAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *MCPServerInfo) GetTransport() string {
+	if x != nil {
+		return x.Transport
+	}
+	return ""
+}
+
+func (x *MCPServerInfo) GetCatalogId() string {
+	if x != nil {
+		return x.CatalogId
+	}
+	return ""
+}
+
+func (x *MCPServerInfo) GetProcessState() string {
+	if x != nil {
+		return x.ProcessState
+	}
+	return ""
+}
+
 type ListMCPServersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          []*MCPServerInfo       `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
@@ -3028,6 +3052,9 @@ type CreateMCPServerRequest struct {
 	AuthHeader     string                 `protobuf:"bytes,4,opt,name=auth_header,proto3" json:"auth_header,omitempty"`
 	AuthValue      string                 `protobuf:"bytes,5,opt,name=auth_value,proto3" json:"auth_value,omitempty"`
 	ConnectionName string                 `protobuf:"bytes,6,opt,name=connection_name,proto3" json:"connection_name,omitempty"`
+	Transport      string                 `protobuf:"bytes,7,opt,name=transport,proto3" json:"transport,omitempty"`
+	CatalogId      string                 `protobuf:"bytes,8,opt,name=catalog_id,proto3" json:"catalog_id,omitempty"`
+	Env            map[string]string      `protobuf:"bytes,9,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -3104,6 +3131,27 @@ func (x *CreateMCPServerRequest) GetConnectionName() string {
 	return ""
 }
 
+func (x *CreateMCPServerRequest) GetTransport() string {
+	if x != nil {
+		return x.Transport
+	}
+	return ""
+}
+
+func (x *CreateMCPServerRequest) GetCatalogId() string {
+	if x != nil {
+		return x.CatalogId
+	}
+	return ""
+}
+
+func (x *CreateMCPServerRequest) GetEnv() map[string]string {
+	if x != nil {
+		return x.Env
+	}
+	return nil
+}
+
 type UpdateMCPServerRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -3113,6 +3161,7 @@ type UpdateMCPServerRequest struct {
 	AuthHeader     string                 `protobuf:"bytes,5,opt,name=auth_header,proto3" json:"auth_header,omitempty"`
 	AuthValue      string                 `protobuf:"bytes,6,opt,name=auth_value,proto3" json:"auth_value,omitempty"`
 	ConnectionName string                 `protobuf:"bytes,7,opt,name=connection_name,proto3" json:"connection_name,omitempty"`
+	Env            map[string]string      `protobuf:"bytes,8,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -3196,6 +3245,13 @@ func (x *UpdateMCPServerRequest) GetConnectionName() string {
 	return ""
 }
 
+func (x *UpdateMCPServerRequest) GetEnv() map[string]string {
+	if x != nil {
+		return x.Env
+	}
+	return nil
+}
+
 type DeleteMCPServerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -3240,6 +3296,374 @@ func (x *DeleteMCPServerRequest) GetId() int64 {
 	return 0
 }
 
+type RestartMCPServerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestartMCPServerRequest) Reset() {
+	*x = RestartMCPServerRequest{}
+	mi := &file_coordinator_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestartMCPServerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestartMCPServerRequest) ProtoMessage() {}
+
+func (x *RestartMCPServerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_coordinator_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestartMCPServerRequest.ProtoReflect.Descriptor instead.
+func (*RestartMCPServerRequest) Descriptor() ([]byte, []int) {
+	return file_coordinator_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *RestartMCPServerRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type GetMCPServerLogsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMCPServerLogsRequest) Reset() {
+	*x = GetMCPServerLogsRequest{}
+	mi := &file_coordinator_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMCPServerLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMCPServerLogsRequest) ProtoMessage() {}
+
+func (x *GetMCPServerLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_coordinator_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMCPServerLogsRequest.ProtoReflect.Descriptor instead.
+func (*GetMCPServerLogsRequest) Descriptor() ([]byte, []int) {
+	return file_coordinator_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *GetMCPServerLogsRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type MCPServerLogsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LastError     string                 `protobuf:"bytes,1,opt,name=last_error,proto3" json:"last_error,omitempty"`
+	Stderr        string                 `protobuf:"bytes,2,opt,name=stderr,proto3" json:"stderr,omitempty"`
+	ProcessState  string                 `protobuf:"bytes,3,opt,name=process_state,proto3" json:"process_state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MCPServerLogsResponse) Reset() {
+	*x = MCPServerLogsResponse{}
+	mi := &file_coordinator_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MCPServerLogsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MCPServerLogsResponse) ProtoMessage() {}
+
+func (x *MCPServerLogsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_coordinator_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MCPServerLogsResponse.ProtoReflect.Descriptor instead.
+func (*MCPServerLogsResponse) Descriptor() ([]byte, []int) {
+	return file_coordinator_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *MCPServerLogsResponse) GetLastError() string {
+	if x != nil {
+		return x.LastError
+	}
+	return ""
+}
+
+func (x *MCPServerLogsResponse) GetStderr() string {
+	if x != nil {
+		return x.Stderr
+	}
+	return ""
+}
+
+func (x *MCPServerLogsResponse) GetProcessState() string {
+	if x != nil {
+		return x.ProcessState
+	}
+	return ""
+}
+
+type MCPCatalogEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,proto3" json:"display_name,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	DocsUrl       string                 `protobuf:"bytes,4,opt,name=docs_url,proto3" json:"docs_url,omitempty"`
+	Command       string                 `protobuf:"bytes,5,opt,name=command,proto3" json:"command,omitempty"`
+	Args          []string               `protobuf:"bytes,6,rep,name=args,proto3" json:"args,omitempty"`
+	EnvSpec       []*MCPCatalogEnvSpec   `protobuf:"bytes,7,rep,name=env_spec,proto3" json:"env_spec,omitempty"`
+	Maintainer    string                 `protobuf:"bytes,8,opt,name=maintainer,proto3" json:"maintainer,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MCPCatalogEntry) Reset() {
+	*x = MCPCatalogEntry{}
+	mi := &file_coordinator_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MCPCatalogEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MCPCatalogEntry) ProtoMessage() {}
+
+func (x *MCPCatalogEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_coordinator_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MCPCatalogEntry.ProtoReflect.Descriptor instead.
+func (*MCPCatalogEntry) Descriptor() ([]byte, []int) {
+	return file_coordinator_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *MCPCatalogEntry) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *MCPCatalogEntry) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *MCPCatalogEntry) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *MCPCatalogEntry) GetDocsUrl() string {
+	if x != nil {
+		return x.DocsUrl
+	}
+	return ""
+}
+
+func (x *MCPCatalogEntry) GetCommand() string {
+	if x != nil {
+		return x.Command
+	}
+	return ""
+}
+
+func (x *MCPCatalogEntry) GetArgs() []string {
+	if x != nil {
+		return x.Args
+	}
+	return nil
+}
+
+func (x *MCPCatalogEntry) GetEnvSpec() []*MCPCatalogEnvSpec {
+	if x != nil {
+		return x.EnvSpec
+	}
+	return nil
+}
+
+func (x *MCPCatalogEntry) GetMaintainer() string {
+	if x != nil {
+		return x.Maintainer
+	}
+	return ""
+}
+
+type MCPCatalogEnvSpec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Required      bool                   `protobuf:"varint,3,opt,name=required,proto3" json:"required,omitempty"`
+	Secret        bool                   `protobuf:"varint,4,opt,name=secret,proto3" json:"secret,omitempty"`
+	Advanced      bool                   `protobuf:"varint,5,opt,name=advanced,proto3" json:"advanced,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MCPCatalogEnvSpec) Reset() {
+	*x = MCPCatalogEnvSpec{}
+	mi := &file_coordinator_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MCPCatalogEnvSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MCPCatalogEnvSpec) ProtoMessage() {}
+
+func (x *MCPCatalogEnvSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_coordinator_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MCPCatalogEnvSpec.ProtoReflect.Descriptor instead.
+func (*MCPCatalogEnvSpec) Descriptor() ([]byte, []int) {
+	return file_coordinator_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *MCPCatalogEnvSpec) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *MCPCatalogEnvSpec) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *MCPCatalogEnvSpec) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+func (x *MCPCatalogEnvSpec) GetSecret() bool {
+	if x != nil {
+		return x.Secret
+	}
+	return false
+}
+
+func (x *MCPCatalogEnvSpec) GetAdvanced() bool {
+	if x != nil {
+		return x.Advanced
+	}
+	return false
+}
+
+type ListMCPCatalogResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []*MCPCatalogEntry     `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMCPCatalogResponse) Reset() {
+	*x = ListMCPCatalogResponse{}
+	mi := &file_coordinator_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMCPCatalogResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMCPCatalogResponse) ProtoMessage() {}
+
+func (x *ListMCPCatalogResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_coordinator_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMCPCatalogResponse.ProtoReflect.Descriptor instead.
+func (*ListMCPCatalogResponse) Descriptor() ([]byte, []int) {
+	return file_coordinator_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *ListMCPCatalogResponse) GetData() []*MCPCatalogEntry {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type ConnectionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -3249,7 +3673,7 @@ type ConnectionRequest struct {
 
 func (x *ConnectionRequest) Reset() {
 	*x = ConnectionRequest{}
-	mi := &file_coordinator_proto_msgTypes[56]
+	mi := &file_coordinator_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3261,7 +3685,7 @@ func (x *ConnectionRequest) String() string {
 func (*ConnectionRequest) ProtoMessage() {}
 
 func (x *ConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[56]
+	mi := &file_coordinator_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3274,7 +3698,7 @@ func (x *ConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionRequest.ProtoReflect.Descriptor instead.
 func (*ConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{56}
+	return file_coordinator_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *ConnectionRequest) GetName() string {
@@ -3301,7 +3725,7 @@ type ConnectionInfo struct {
 
 func (x *ConnectionInfo) Reset() {
 	*x = ConnectionInfo{}
-	mi := &file_coordinator_proto_msgTypes[57]
+	mi := &file_coordinator_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3313,7 +3737,7 @@ func (x *ConnectionInfo) String() string {
 func (*ConnectionInfo) ProtoMessage() {}
 
 func (x *ConnectionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[57]
+	mi := &file_coordinator_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3326,7 +3750,7 @@ func (x *ConnectionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionInfo.ProtoReflect.Descriptor instead.
 func (*ConnectionInfo) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{57}
+	return file_coordinator_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *ConnectionInfo) GetName() string {
@@ -3401,7 +3825,7 @@ type ListConnectionsResponse struct {
 
 func (x *ListConnectionsResponse) Reset() {
 	*x = ListConnectionsResponse{}
-	mi := &file_coordinator_proto_msgTypes[58]
+	mi := &file_coordinator_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3413,7 +3837,7 @@ func (x *ListConnectionsResponse) String() string {
 func (*ListConnectionsResponse) ProtoMessage() {}
 
 func (x *ListConnectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[58]
+	mi := &file_coordinator_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3426,7 +3850,7 @@ func (x *ListConnectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListConnectionsResponse.ProtoReflect.Descriptor instead.
 func (*ListConnectionsResponse) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{58}
+	return file_coordinator_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *ListConnectionsResponse) GetData() []*ConnectionInfo {
@@ -3445,7 +3869,7 @@ type ConnectionTokenResponse struct {
 
 func (x *ConnectionTokenResponse) Reset() {
 	*x = ConnectionTokenResponse{}
-	mi := &file_coordinator_proto_msgTypes[59]
+	mi := &file_coordinator_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3457,7 +3881,7 @@ func (x *ConnectionTokenResponse) String() string {
 func (*ConnectionTokenResponse) ProtoMessage() {}
 
 func (x *ConnectionTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[59]
+	mi := &file_coordinator_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3470,7 +3894,7 @@ func (x *ConnectionTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionTokenResponse.ProtoReflect.Descriptor instead.
 func (*ConnectionTokenResponse) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{59}
+	return file_coordinator_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ConnectionTokenResponse) GetData() string {
@@ -3493,7 +3917,7 @@ type AccessTokenRequest struct {
 
 func (x *AccessTokenRequest) Reset() {
 	*x = AccessTokenRequest{}
-	mi := &file_coordinator_proto_msgTypes[60]
+	mi := &file_coordinator_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3505,7 +3929,7 @@ func (x *AccessTokenRequest) String() string {
 func (*AccessTokenRequest) ProtoMessage() {}
 
 func (x *AccessTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[60]
+	mi := &file_coordinator_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3518,7 +3942,7 @@ func (x *AccessTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccessTokenRequest.ProtoReflect.Descriptor instead.
 func (*AccessTokenRequest) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{60}
+	return file_coordinator_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *AccessTokenRequest) GetName() string {
@@ -3545,7 +3969,7 @@ type AccessTokenResponse struct {
 
 func (x *AccessTokenResponse) Reset() {
 	*x = AccessTokenResponse{}
-	mi := &file_coordinator_proto_msgTypes[61]
+	mi := &file_coordinator_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3557,7 +3981,7 @@ func (x *AccessTokenResponse) String() string {
 func (*AccessTokenResponse) ProtoMessage() {}
 
 func (x *AccessTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[61]
+	mi := &file_coordinator_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3570,7 +3994,7 @@ func (x *AccessTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccessTokenResponse.ProtoReflect.Descriptor instead.
 func (*AccessTokenResponse) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{61}
+	return file_coordinator_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *AccessTokenResponse) GetAccessToken() string {
@@ -3596,7 +4020,7 @@ type SetupStatusResponse struct {
 
 func (x *SetupStatusResponse) Reset() {
 	*x = SetupStatusResponse{}
-	mi := &file_coordinator_proto_msgTypes[62]
+	mi := &file_coordinator_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3608,7 +4032,7 @@ func (x *SetupStatusResponse) String() string {
 func (*SetupStatusResponse) ProtoMessage() {}
 
 func (x *SetupStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[62]
+	mi := &file_coordinator_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3621,7 +4045,7 @@ func (x *SetupStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetupStatusResponse.ProtoReflect.Descriptor instead.
 func (*SetupStatusResponse) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{62}
+	return file_coordinator_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *SetupStatusResponse) GetFirstRunComplete() bool {
@@ -3641,7 +4065,7 @@ type TestConnectionRequest struct {
 
 func (x *TestConnectionRequest) Reset() {
 	*x = TestConnectionRequest{}
-	mi := &file_coordinator_proto_msgTypes[63]
+	mi := &file_coordinator_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3653,7 +4077,7 @@ func (x *TestConnectionRequest) String() string {
 func (*TestConnectionRequest) ProtoMessage() {}
 
 func (x *TestConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[63]
+	mi := &file_coordinator_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3666,7 +4090,7 @@ func (x *TestConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestConnectionRequest.ProtoReflect.Descriptor instead.
 func (*TestConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{63}
+	return file_coordinator_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *TestConnectionRequest) GetConnectionString() string {
@@ -3693,7 +4117,7 @@ type TestConnectionResponse struct {
 
 func (x *TestConnectionResponse) Reset() {
 	*x = TestConnectionResponse{}
-	mi := &file_coordinator_proto_msgTypes[64]
+	mi := &file_coordinator_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3705,7 +4129,7 @@ func (x *TestConnectionResponse) String() string {
 func (*TestConnectionResponse) ProtoMessage() {}
 
 func (x *TestConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[64]
+	mi := &file_coordinator_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3718,7 +4142,7 @@ func (x *TestConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestConnectionResponse.ProtoReflect.Descriptor instead.
 func (*TestConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{64}
+	return file_coordinator_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *TestConnectionResponse) GetOk() bool {
@@ -3745,7 +4169,7 @@ type TestShopifyConnectionRequest struct {
 
 func (x *TestShopifyConnectionRequest) Reset() {
 	*x = TestShopifyConnectionRequest{}
-	mi := &file_coordinator_proto_msgTypes[65]
+	mi := &file_coordinator_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3757,7 +4181,7 @@ func (x *TestShopifyConnectionRequest) String() string {
 func (*TestShopifyConnectionRequest) ProtoMessage() {}
 
 func (x *TestShopifyConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[65]
+	mi := &file_coordinator_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3770,7 +4194,7 @@ func (x *TestShopifyConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestShopifyConnectionRequest.ProtoReflect.Descriptor instead.
 func (*TestShopifyConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{65}
+	return file_coordinator_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *TestShopifyConnectionRequest) GetShopName() string {
@@ -3798,7 +4222,7 @@ type TestShopifyConnectionResponse struct {
 
 func (x *TestShopifyConnectionResponse) Reset() {
 	*x = TestShopifyConnectionResponse{}
-	mi := &file_coordinator_proto_msgTypes[66]
+	mi := &file_coordinator_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3810,7 +4234,7 @@ func (x *TestShopifyConnectionResponse) String() string {
 func (*TestShopifyConnectionResponse) ProtoMessage() {}
 
 func (x *TestShopifyConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[66]
+	mi := &file_coordinator_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3823,7 +4247,7 @@ func (x *TestShopifyConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestShopifyConnectionResponse.ProtoReflect.Descriptor instead.
 func (*TestShopifyConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{66}
+	return file_coordinator_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *TestShopifyConnectionResponse) GetOk() bool {
@@ -3858,7 +4282,7 @@ type ProviderScope struct {
 
 func (x *ProviderScope) Reset() {
 	*x = ProviderScope{}
-	mi := &file_coordinator_proto_msgTypes[67]
+	mi := &file_coordinator_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3870,7 +4294,7 @@ func (x *ProviderScope) String() string {
 func (*ProviderScope) ProtoMessage() {}
 
 func (x *ProviderScope) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[67]
+	mi := &file_coordinator_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3883,7 +4307,7 @@ func (x *ProviderScope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderScope.ProtoReflect.Descriptor instead.
 func (*ProviderScope) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{67}
+	return file_coordinator_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *ProviderScope) GetScope() string {
@@ -3922,7 +4346,7 @@ type Provider struct {
 
 func (x *Provider) Reset() {
 	*x = Provider{}
-	mi := &file_coordinator_proto_msgTypes[68]
+	mi := &file_coordinator_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3934,7 +4358,7 @@ func (x *Provider) String() string {
 func (*Provider) ProtoMessage() {}
 
 func (x *Provider) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[68]
+	mi := &file_coordinator_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3947,7 +4371,7 @@ func (x *Provider) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Provider.ProtoReflect.Descriptor instead.
 func (*Provider) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{68}
+	return file_coordinator_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *Provider) GetId() string {
@@ -4008,7 +4432,7 @@ type ListProvidersResponse struct {
 
 func (x *ListProvidersResponse) Reset() {
 	*x = ListProvidersResponse{}
-	mi := &file_coordinator_proto_msgTypes[69]
+	mi := &file_coordinator_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4020,7 +4444,7 @@ func (x *ListProvidersResponse) String() string {
 func (*ListProvidersResponse) ProtoMessage() {}
 
 func (x *ListProvidersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[69]
+	mi := &file_coordinator_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4033,7 +4457,7 @@ func (x *ListProvidersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProvidersResponse.ProtoReflect.Descriptor instead.
 func (*ListProvidersResponse) Descriptor() ([]byte, []int) {
-	return file_coordinator_proto_rawDescGZIP(), []int{69}
+	return file_coordinator_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *ListProvidersResponse) GetData() []*Provider {
@@ -4055,7 +4479,7 @@ type ListWorkersResponse_Worker struct {
 
 func (x *ListWorkersResponse_Worker) Reset() {
 	*x = ListWorkersResponse_Worker{}
-	mi := &file_coordinator_proto_msgTypes[70]
+	mi := &file_coordinator_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4067,7 +4491,7 @@ func (x *ListWorkersResponse_Worker) String() string {
 func (*ListWorkersResponse_Worker) ProtoMessage() {}
 
 func (x *ListWorkersResponse_Worker) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[70]
+	mi := &file_coordinator_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4121,7 +4545,7 @@ type GetAnalyticsResponse_FlowStatusCount struct {
 
 func (x *GetAnalyticsResponse_FlowStatusCount) Reset() {
 	*x = GetAnalyticsResponse_FlowStatusCount{}
-	mi := &file_coordinator_proto_msgTypes[74]
+	mi := &file_coordinator_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4133,7 +4557,7 @@ func (x *GetAnalyticsResponse_FlowStatusCount) String() string {
 func (*GetAnalyticsResponse_FlowStatusCount) ProtoMessage() {}
 
 func (x *GetAnalyticsResponse_FlowStatusCount) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[74]
+	mi := &file_coordinator_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4173,7 +4597,7 @@ type GetAnalyticsResponse_ComponentCount struct {
 
 func (x *GetAnalyticsResponse_ComponentCount) Reset() {
 	*x = GetAnalyticsResponse_ComponentCount{}
-	mi := &file_coordinator_proto_msgTypes[75]
+	mi := &file_coordinator_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4185,7 +4609,7 @@ func (x *GetAnalyticsResponse_ComponentCount) String() string {
 func (*GetAnalyticsResponse_ComponentCount) ProtoMessage() {}
 
 func (x *GetAnalyticsResponse_ComponentCount) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[75]
+	mi := &file_coordinator_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4227,7 +4651,7 @@ type GetAnalyticsResponse_TimeSeriesPoint struct {
 
 func (x *GetAnalyticsResponse_TimeSeriesPoint) Reset() {
 	*x = GetAnalyticsResponse_TimeSeriesPoint{}
-	mi := &file_coordinator_proto_msgTypes[76]
+	mi := &file_coordinator_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4239,7 +4663,7 @@ func (x *GetAnalyticsResponse_TimeSeriesPoint) String() string {
 func (*GetAnalyticsResponse_TimeSeriesPoint) ProtoMessage() {}
 
 func (x *GetAnalyticsResponse_TimeSeriesPoint) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[76]
+	mi := &file_coordinator_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4292,7 +4716,7 @@ type TryFlowRequest_TryMessage struct {
 
 func (x *TryFlowRequest_TryMessage) Reset() {
 	*x = TryFlowRequest_TryMessage{}
-	mi := &file_coordinator_proto_msgTypes[77]
+	mi := &file_coordinator_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4304,7 +4728,7 @@ func (x *TryFlowRequest_TryMessage) String() string {
 func (*TryFlowRequest_TryMessage) ProtoMessage() {}
 
 func (x *TryFlowRequest_TryMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[77]
+	mi := &file_coordinator_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4336,7 +4760,7 @@ type TryFlowResponse_TryOutput struct {
 
 func (x *TryFlowResponse_TryOutput) Reset() {
 	*x = TryFlowResponse_TryOutput{}
-	mi := &file_coordinator_proto_msgTypes[78]
+	mi := &file_coordinator_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4348,7 +4772,7 @@ func (x *TryFlowResponse_TryOutput) String() string {
 func (*TryFlowResponse_TryOutput) ProtoMessage() {}
 
 func (x *TryFlowResponse_TryOutput) ProtoReflect() protoreflect.Message {
-	mi := &file_coordinator_proto_msgTypes[78]
+	mi := &file_coordinator_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4597,7 +5021,7 @@ const file_coordinator_proto_rawDesc = "" +
 	"\bsessions\x18\x01 \x03(\v2\x19.protorender.OAuthSessionR\bsessions\x12$\n" +
 	"\roauth_enabled\x18\x02 \x01(\bR\roauth_enabled\"4\n" +
 	"\x19RevokeOAuthSessionRequest\x12\x17\n" +
-	"\x02id\x18\x01 \x01(\x03B\a\xfaB\x04\"\x02 \x00R\x02id\"\xd5\x03\n" +
+	"\x02id\x18\x01 \x01(\x03B\a\xfaB\x04\"\x02 \x00R\x02id\"\xb9\x04\n" +
 	"\rMCPServerInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
@@ -4619,19 +5043,32 @@ const file_coordinator_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"updated_at\x12C\n" +
-	"\flast_sync_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampH\x00R\flast_sync_at\x88\x01\x01B\x0f\n" +
+	"\flast_sync_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampH\x00R\flast_sync_at\x88\x01\x01\x12\x1c\n" +
+	"\ttransport\x18\r \x01(\tR\ttransport\x12\x1e\n" +
+	"\n" +
+	"catalog_id\x18\x0e \x01(\tR\n" +
+	"catalog_id\x12$\n" +
+	"\rprocess_state\x18\x0f \x01(\tR\rprocess_stateB\x0f\n" +
 	"\r_last_sync_at\"H\n" +
 	"\x16ListMCPServersResponse\x12.\n" +
-	"\x04data\x18\x01 \x03(\v2\x1a.protorender.MCPServerInfoR\x04data\"\xdc\x01\n" +
+	"\x04data\x18\x01 \x03(\v2\x1a.protorender.MCPServerInfoR\x04data\"\x89\x03\n" +
 	"\x16CreateMCPServerRequest\x12\x1d\n" +
-	"\x04name\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18dR\x04name\x12\x19\n" +
-	"\x03url\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x03url\x12\x1c\n" +
+	"\x04name\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18dR\x04name\x12\x10\n" +
+	"\x03url\x18\x02 \x01(\tR\x03url\x12\x1c\n" +
 	"\tauth_type\x18\x03 \x01(\tR\tauth_type\x12 \n" +
 	"\vauth_header\x18\x04 \x01(\tR\vauth_header\x12\x1e\n" +
 	"\n" +
 	"auth_value\x18\x05 \x01(\tR\n" +
 	"auth_value\x12(\n" +
-	"\x0fconnection_name\x18\x06 \x01(\tR\x0fconnection_name\"\xe1\x01\n" +
+	"\x0fconnection_name\x18\x06 \x01(\tR\x0fconnection_name\x12\x1c\n" +
+	"\ttransport\x18\a \x01(\tR\ttransport\x12\x1e\n" +
+	"\n" +
+	"catalog_id\x18\b \x01(\tR\n" +
+	"catalog_id\x12>\n" +
+	"\x03env\x18\t \x03(\v2,.protorender.CreateMCPServerRequest.EnvEntryR\x03env\x1a6\n" +
+	"\bEnvEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd9\x02\n" +
 	"\x16UpdateMCPServerRequest\x12\x17\n" +
 	"\x02id\x18\x01 \x01(\x03B\a\xfaB\x04\"\x02 \x00R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
@@ -4641,9 +5078,42 @@ const file_coordinator_proto_rawDesc = "" +
 	"\n" +
 	"auth_value\x18\x06 \x01(\tR\n" +
 	"auth_value\x12(\n" +
-	"\x0fconnection_name\x18\a \x01(\tR\x0fconnection_name\"1\n" +
+	"\x0fconnection_name\x18\a \x01(\tR\x0fconnection_name\x12>\n" +
+	"\x03env\x18\b \x03(\v2,.protorender.UpdateMCPServerRequest.EnvEntryR\x03env\x1a6\n" +
+	"\bEnvEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"1\n" +
 	"\x16DeleteMCPServerRequest\x12\x17\n" +
-	"\x02id\x18\x01 \x01(\x03B\a\xfaB\x04\"\x02 \x00R\x02id\"'\n" +
+	"\x02id\x18\x01 \x01(\x03B\a\xfaB\x04\"\x02 \x00R\x02id\"2\n" +
+	"\x17RestartMCPServerRequest\x12\x17\n" +
+	"\x02id\x18\x01 \x01(\x03B\a\xfaB\x04\"\x02 \x00R\x02id\"2\n" +
+	"\x17GetMCPServerLogsRequest\x12\x17\n" +
+	"\x02id\x18\x01 \x01(\x03B\a\xfaB\x04\"\x02 \x00R\x02id\"u\n" +
+	"\x15MCPServerLogsResponse\x12\x1e\n" +
+	"\n" +
+	"last_error\x18\x01 \x01(\tR\n" +
+	"last_error\x12\x16\n" +
+	"\x06stderr\x18\x02 \x01(\tR\x06stderr\x12$\n" +
+	"\rprocess_state\x18\x03 \x01(\tR\rprocess_state\"\x8d\x02\n" +
+	"\x0fMCPCatalogEntry\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\fdisplay_name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1a\n" +
+	"\bdocs_url\x18\x04 \x01(\tR\bdocs_url\x12\x18\n" +
+	"\acommand\x18\x05 \x01(\tR\acommand\x12\x12\n" +
+	"\x04args\x18\x06 \x03(\tR\x04args\x12:\n" +
+	"\benv_spec\x18\a \x03(\v2\x1e.protorender.MCPCatalogEnvSpecR\benv_spec\x12\x1e\n" +
+	"\n" +
+	"maintainer\x18\b \x01(\tR\n" +
+	"maintainer\"\x99\x01\n" +
+	"\x11MCPCatalogEnvSpec\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1a\n" +
+	"\brequired\x18\x03 \x01(\bR\brequired\x12\x16\n" +
+	"\x06secret\x18\x04 \x01(\bR\x06secret\x12\x1a\n" +
+	"\badvanced\x18\x05 \x01(\bR\badvanced\"J\n" +
+	"\x16ListMCPCatalogResponse\x120\n" +
+	"\x04data\x18\x01 \x03(\v2\x1c.protorender.MCPCatalogEntryR\x04data\"'\n" +
 	"\x11ConnectionRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"\xce\x02\n" +
 	"\x0eConnectionInfo\x12\x12\n" +
@@ -4700,7 +5170,7 @@ const file_coordinator_proto_rawDesc = "" +
 	"\rrequires_shop\x18\x06 \x01(\bR\rrequires_shop\x12,\n" +
 	"\x11requires_cloud_id\x18\a \x01(\bR\x11requires_cloud_id\"B\n" +
 	"\x15ListProvidersResponse\x12)\n" +
-	"\x04data\x18\x01 \x03(\v2\x15.protorender.ProviderR\x04data2\xe84\n" +
+	"\x04data\x18\x01 \x03(\v2\x15.protorender.ProviderR\x04data2\xee7\n" +
 	"\vCoordinator\x12]\n" +
 	"\x16UpdateWorkerFlowStatus\x12$.protorender.WorkerFlowStatusRequest\x1a\x1b.protorender.CommonResponse\"\x00\x12S\n" +
 	"\x0eRegisterWorker\x12\".protorender.RegisterWorkerRequest\x1a\x1b.protorender.CommonResponse\"\x00\x12W\n" +
@@ -4767,7 +5237,10 @@ const file_coordinator_proto_rawDesc = "" +
 	"\x0eListMCPServers\x12\x16.google.protobuf.Empty\x1a#.protorender.ListMCPServersResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v0/settings/mcp/servers\x12w\n" +
 	"\x0fCreateMCPServer\x12#.protorender.CreateMCPServerRequest\x1a\x1a.protorender.MCPServerInfo\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/v0/settings/mcp/servers\x12|\n" +
 	"\x0fUpdateMCPServer\x12#.protorender.UpdateMCPServerRequest\x1a\x1a.protorender.MCPServerInfo\"(\x82\xd3\xe4\x93\x02\":\x01*\x1a\x1d/v0/settings/mcp/servers/{id}\x12z\n" +
-	"\x0fDeleteMCPServer\x12#.protorender.DeleteMCPServerRequest\x1a\x1b.protorender.CommonResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/v0/settings/mcp/servers/{id}\x12n\n" +
+	"\x0fDeleteMCPServer\x12#.protorender.DeleteMCPServerRequest\x1a\x1b.protorender.CommonResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/v0/settings/mcp/servers/{id}\x12\x87\x01\n" +
+	"\x10RestartMCPServer\x12$.protorender.RestartMCPServerRequest\x1a\x1b.protorender.CommonResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/v0/settings/mcp/servers/{id}/restart\x12\x88\x01\n" +
+	"\x10GetMCPServerLogs\x12$.protorender.GetMCPServerLogsRequest\x1a\".protorender.MCPServerLogsResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/v0/settings/mcp/servers/{id}/logs\x12o\n" +
+	"\x0eListMCPCatalog\x12\x16.google.protobuf.Empty\x1a#.protorender.ListMCPCatalogResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v0/settings/mcp/catalog\x12n\n" +
 	"\rListProviders\x12\x16.google.protobuf.Empty\x1a\".protorender.ListProvidersResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v0/connections/providers\x12h\n" +
 	"\x0fListConnections\x12\x16.google.protobuf.Empty\x1a$.protorender.ListConnectionsResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v0/connections\x12o\n" +
 	"\x10DeleteConnection\x12\x1e.protorender.ConnectionRequest\x1a\x1b.protorender.CommonResponse\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/v0/connections/{name}\x12\\\n" +
@@ -4790,7 +5263,7 @@ func file_coordinator_proto_rawDescGZIP() []byte {
 	return file_coordinator_proto_rawDescData
 }
 
-var file_coordinator_proto_msgTypes = make([]protoimpl.MessageInfo, 79)
+var file_coordinator_proto_msgTypes = make([]protoimpl.MessageInfo, 87)
 var file_coordinator_proto_goTypes = []any{
 	(*RegisterWorkerRequest)(nil),                // 0: protorender.RegisterWorkerRequest
 	(*DeregisterWorkerRequest)(nil),              // 1: protorender.DeregisterWorkerRequest
@@ -4848,238 +5321,256 @@ var file_coordinator_proto_goTypes = []any{
 	(*CreateMCPServerRequest)(nil),               // 53: protorender.CreateMCPServerRequest
 	(*UpdateMCPServerRequest)(nil),               // 54: protorender.UpdateMCPServerRequest
 	(*DeleteMCPServerRequest)(nil),               // 55: protorender.DeleteMCPServerRequest
-	(*ConnectionRequest)(nil),                    // 56: protorender.ConnectionRequest
-	(*ConnectionInfo)(nil),                       // 57: protorender.ConnectionInfo
-	(*ListConnectionsResponse)(nil),              // 58: protorender.ListConnectionsResponse
-	(*ConnectionTokenResponse)(nil),              // 59: protorender.ConnectionTokenResponse
-	(*AccessTokenRequest)(nil),                   // 60: protorender.AccessTokenRequest
-	(*AccessTokenResponse)(nil),                  // 61: protorender.AccessTokenResponse
-	(*SetupStatusResponse)(nil),                  // 62: protorender.SetupStatusResponse
-	(*TestConnectionRequest)(nil),                // 63: protorender.TestConnectionRequest
-	(*TestConnectionResponse)(nil),               // 64: protorender.TestConnectionResponse
-	(*TestShopifyConnectionRequest)(nil),         // 65: protorender.TestShopifyConnectionRequest
-	(*TestShopifyConnectionResponse)(nil),        // 66: protorender.TestShopifyConnectionResponse
-	(*ProviderScope)(nil),                        // 67: protorender.ProviderScope
-	(*Provider)(nil),                             // 68: protorender.Provider
-	(*ListProvidersResponse)(nil),                // 69: protorender.ListProvidersResponse
-	(*ListWorkersResponse_Worker)(nil),           // 70: protorender.ListWorkersResponse.Worker
-	nil,                                          // 71: protorender.MetricsRequest.InputEventsByComponentEntry
-	nil,                                          // 72: protorender.MetricsRequest.ProcessorEventsByComponentEntry
-	nil,                                          // 73: protorender.MetricsRequest.OutputEventsByComponentEntry
-	(*GetAnalyticsResponse_FlowStatusCount)(nil), // 74: protorender.GetAnalyticsResponse.FlowStatusCount
-	(*GetAnalyticsResponse_ComponentCount)(nil),  // 75: protorender.GetAnalyticsResponse.ComponentCount
-	(*GetAnalyticsResponse_TimeSeriesPoint)(nil), // 76: protorender.GetAnalyticsResponse.TimeSeriesPoint
-	(*TryFlowRequest_TryMessage)(nil),            // 77: protorender.TryFlowRequest.TryMessage
-	(*TryFlowResponse_TryOutput)(nil),            // 78: protorender.TryFlowResponse.TryOutput
-	(WorkerFlowStatus)(0),                        // 79: protorender.WorkerFlowStatus
-	(*Flow)(nil),                                 // 80: protorender.Flow
-	(*CommonResponse)(nil),                       // 81: protorender.CommonResponse
-	(*structpb.Struct)(nil),                      // 82: google.protobuf.Struct
-	(*timestamppb.Timestamp)(nil),                // 83: google.protobuf.Timestamp
-	(*Secret)(nil),                               // 84: protorender.Secret
-	(*Cache)(nil),                                // 85: protorender.Cache
-	(*RateLimit)(nil),                            // 86: protorender.RateLimit
-	(*Buffer)(nil),                               // 87: protorender.Buffer
-	(*File)(nil),                                 // 88: protorender.File
-	(*Flow_Processor)(nil),                       // 89: protorender.Flow.Processor
-	(*emptypb.Empty)(nil),                        // 90: google.protobuf.Empty
-	(*RateLimitCheckRequest)(nil),                // 91: protorender.RateLimitCheckRequest
-	(*RateLimitCheckResponse)(nil),               // 92: protorender.RateLimitCheckResponse
+	(*RestartMCPServerRequest)(nil),              // 56: protorender.RestartMCPServerRequest
+	(*GetMCPServerLogsRequest)(nil),              // 57: protorender.GetMCPServerLogsRequest
+	(*MCPServerLogsResponse)(nil),                // 58: protorender.MCPServerLogsResponse
+	(*MCPCatalogEntry)(nil),                      // 59: protorender.MCPCatalogEntry
+	(*MCPCatalogEnvSpec)(nil),                    // 60: protorender.MCPCatalogEnvSpec
+	(*ListMCPCatalogResponse)(nil),               // 61: protorender.ListMCPCatalogResponse
+	(*ConnectionRequest)(nil),                    // 62: protorender.ConnectionRequest
+	(*ConnectionInfo)(nil),                       // 63: protorender.ConnectionInfo
+	(*ListConnectionsResponse)(nil),              // 64: protorender.ListConnectionsResponse
+	(*ConnectionTokenResponse)(nil),              // 65: protorender.ConnectionTokenResponse
+	(*AccessTokenRequest)(nil),                   // 66: protorender.AccessTokenRequest
+	(*AccessTokenResponse)(nil),                  // 67: protorender.AccessTokenResponse
+	(*SetupStatusResponse)(nil),                  // 68: protorender.SetupStatusResponse
+	(*TestConnectionRequest)(nil),                // 69: protorender.TestConnectionRequest
+	(*TestConnectionResponse)(nil),               // 70: protorender.TestConnectionResponse
+	(*TestShopifyConnectionRequest)(nil),         // 71: protorender.TestShopifyConnectionRequest
+	(*TestShopifyConnectionResponse)(nil),        // 72: protorender.TestShopifyConnectionResponse
+	(*ProviderScope)(nil),                        // 73: protorender.ProviderScope
+	(*Provider)(nil),                             // 74: protorender.Provider
+	(*ListProvidersResponse)(nil),                // 75: protorender.ListProvidersResponse
+	(*ListWorkersResponse_Worker)(nil),           // 76: protorender.ListWorkersResponse.Worker
+	nil,                                          // 77: protorender.MetricsRequest.InputEventsByComponentEntry
+	nil,                                          // 78: protorender.MetricsRequest.ProcessorEventsByComponentEntry
+	nil,                                          // 79: protorender.MetricsRequest.OutputEventsByComponentEntry
+	(*GetAnalyticsResponse_FlowStatusCount)(nil), // 80: protorender.GetAnalyticsResponse.FlowStatusCount
+	(*GetAnalyticsResponse_ComponentCount)(nil),  // 81: protorender.GetAnalyticsResponse.ComponentCount
+	(*GetAnalyticsResponse_TimeSeriesPoint)(nil), // 82: protorender.GetAnalyticsResponse.TimeSeriesPoint
+	(*TryFlowRequest_TryMessage)(nil),            // 83: protorender.TryFlowRequest.TryMessage
+	(*TryFlowResponse_TryOutput)(nil),            // 84: protorender.TryFlowResponse.TryOutput
+	nil,                                          // 85: protorender.CreateMCPServerRequest.EnvEntry
+	nil,                                          // 86: protorender.UpdateMCPServerRequest.EnvEntry
+	(WorkerFlowStatus)(0),                        // 87: protorender.WorkerFlowStatus
+	(*Flow)(nil),                                 // 88: protorender.Flow
+	(*CommonResponse)(nil),                       // 89: protorender.CommonResponse
+	(*structpb.Struct)(nil),                      // 90: google.protobuf.Struct
+	(*timestamppb.Timestamp)(nil),                // 91: google.protobuf.Timestamp
+	(*Secret)(nil),                               // 92: protorender.Secret
+	(*Cache)(nil),                                // 93: protorender.Cache
+	(*RateLimit)(nil),                            // 94: protorender.RateLimit
+	(*Buffer)(nil),                               // 95: protorender.Buffer
+	(*File)(nil),                                 // 96: protorender.File
+	(*Flow_Processor)(nil),                       // 97: protorender.Flow.Processor
+	(*emptypb.Empty)(nil),                        // 98: google.protobuf.Empty
+	(*RateLimitCheckRequest)(nil),                // 99: protorender.RateLimitCheckRequest
+	(*RateLimitCheckResponse)(nil),               // 100: protorender.RateLimitCheckResponse
 }
 var file_coordinator_proto_depIdxs = []int32{
-	79,  // 0: protorender.WorkerFlowStatusRequest.status:type_name -> protorender.WorkerFlowStatus
-	70,  // 1: protorender.ListWorkersResponse.data:type_name -> protorender.ListWorkersResponse.Worker
-	80,  // 2: protorender.ListFlowsResponse.data:type_name -> protorender.Flow
-	80,  // 3: protorender.FlowResponse.data:type_name -> protorender.Flow
-	81,  // 4: protorender.FlowResponse.meta:type_name -> protorender.CommonResponse
-	82,  // 5: protorender.Event.meta:type_name -> google.protobuf.Struct
-	83,  // 6: protorender.Event.created_at:type_name -> google.protobuf.Timestamp
-	83,  // 7: protorender.ListEventsRequest.start_time:type_name -> google.protobuf.Timestamp
-	83,  // 8: protorender.ListEventsRequest.end_time:type_name -> google.protobuf.Timestamp
+	87,  // 0: protorender.WorkerFlowStatusRequest.status:type_name -> protorender.WorkerFlowStatus
+	76,  // 1: protorender.ListWorkersResponse.data:type_name -> protorender.ListWorkersResponse.Worker
+	88,  // 2: protorender.ListFlowsResponse.data:type_name -> protorender.Flow
+	88,  // 3: protorender.FlowResponse.data:type_name -> protorender.Flow
+	89,  // 4: protorender.FlowResponse.meta:type_name -> protorender.CommonResponse
+	90,  // 5: protorender.Event.meta:type_name -> google.protobuf.Struct
+	91,  // 6: protorender.Event.created_at:type_name -> google.protobuf.Timestamp
+	91,  // 7: protorender.ListEventsRequest.start_time:type_name -> google.protobuf.Timestamp
+	91,  // 8: protorender.ListEventsRequest.end_time:type_name -> google.protobuf.Timestamp
 	11,  // 9: protorender.ListEventsResponse.data:type_name -> protorender.Event
-	71,  // 10: protorender.MetricsRequest.input_events_by_component:type_name -> protorender.MetricsRequest.InputEventsByComponentEntry
-	72,  // 11: protorender.MetricsRequest.processor_events_by_component:type_name -> protorender.MetricsRequest.ProcessorEventsByComponentEntry
-	73,  // 12: protorender.MetricsRequest.output_events_by_component:type_name -> protorender.MetricsRequest.OutputEventsByComponentEntry
-	74,  // 13: protorender.GetAnalyticsResponse.flows_by_status:type_name -> protorender.GetAnalyticsResponse.FlowStatusCount
-	76,  // 14: protorender.GetAnalyticsResponse.events_over_time:type_name -> protorender.GetAnalyticsResponse.TimeSeriesPoint
-	75,  // 15: protorender.GetAnalyticsResponse.top_input_components:type_name -> protorender.GetAnalyticsResponse.ComponentCount
-	75,  // 16: protorender.GetAnalyticsResponse.top_output_components:type_name -> protorender.GetAnalyticsResponse.ComponentCount
-	84,  // 17: protorender.ListSecretsResponse.data:type_name -> protorender.Secret
-	84,  // 18: protorender.SecretResponse.data:type_name -> protorender.Secret
-	81,  // 19: protorender.SecretResponse.meta:type_name -> protorender.CommonResponse
-	85,  // 20: protorender.ListCachesResponse.data:type_name -> protorender.Cache
-	85,  // 21: protorender.CacheResponse.data:type_name -> protorender.Cache
-	81,  // 22: protorender.CacheResponse.meta:type_name -> protorender.CommonResponse
-	86,  // 23: protorender.ListRateLimitsResponse.data:type_name -> protorender.RateLimit
-	87,  // 24: protorender.BufferResponse.data:type_name -> protorender.Buffer
-	81,  // 25: protorender.BufferResponse.meta:type_name -> protorender.CommonResponse
-	87,  // 26: protorender.ListBuffersResponse.data:type_name -> protorender.Buffer
-	88,  // 27: protorender.ListFilesResponse.data:type_name -> protorender.File
-	88,  // 28: protorender.FileResponse.data:type_name -> protorender.File
-	81,  // 29: protorender.FileResponse.meta:type_name -> protorender.CommonResponse
-	86,  // 30: protorender.RateLimitResponse.data:type_name -> protorender.RateLimit
-	81,  // 31: protorender.RateLimitResponse.meta:type_name -> protorender.CommonResponse
-	89,  // 32: protorender.ValidateFlowRequest.processors:type_name -> protorender.Flow.Processor
-	89,  // 33: protorender.TryFlowRequest.processors:type_name -> protorender.Flow.Processor
-	77,  // 34: protorender.TryFlowRequest.messages:type_name -> protorender.TryFlowRequest.TryMessage
-	78,  // 35: protorender.TryFlowResponse.outputs:type_name -> protorender.TryFlowResponse.TryOutput
+	77,  // 10: protorender.MetricsRequest.input_events_by_component:type_name -> protorender.MetricsRequest.InputEventsByComponentEntry
+	78,  // 11: protorender.MetricsRequest.processor_events_by_component:type_name -> protorender.MetricsRequest.ProcessorEventsByComponentEntry
+	79,  // 12: protorender.MetricsRequest.output_events_by_component:type_name -> protorender.MetricsRequest.OutputEventsByComponentEntry
+	80,  // 13: protorender.GetAnalyticsResponse.flows_by_status:type_name -> protorender.GetAnalyticsResponse.FlowStatusCount
+	82,  // 14: protorender.GetAnalyticsResponse.events_over_time:type_name -> protorender.GetAnalyticsResponse.TimeSeriesPoint
+	81,  // 15: protorender.GetAnalyticsResponse.top_input_components:type_name -> protorender.GetAnalyticsResponse.ComponentCount
+	81,  // 16: protorender.GetAnalyticsResponse.top_output_components:type_name -> protorender.GetAnalyticsResponse.ComponentCount
+	92,  // 17: protorender.ListSecretsResponse.data:type_name -> protorender.Secret
+	92,  // 18: protorender.SecretResponse.data:type_name -> protorender.Secret
+	89,  // 19: protorender.SecretResponse.meta:type_name -> protorender.CommonResponse
+	93,  // 20: protorender.ListCachesResponse.data:type_name -> protorender.Cache
+	93,  // 21: protorender.CacheResponse.data:type_name -> protorender.Cache
+	89,  // 22: protorender.CacheResponse.meta:type_name -> protorender.CommonResponse
+	94,  // 23: protorender.ListRateLimitsResponse.data:type_name -> protorender.RateLimit
+	95,  // 24: protorender.BufferResponse.data:type_name -> protorender.Buffer
+	89,  // 25: protorender.BufferResponse.meta:type_name -> protorender.CommonResponse
+	95,  // 26: protorender.ListBuffersResponse.data:type_name -> protorender.Buffer
+	96,  // 27: protorender.ListFilesResponse.data:type_name -> protorender.File
+	96,  // 28: protorender.FileResponse.data:type_name -> protorender.File
+	89,  // 29: protorender.FileResponse.meta:type_name -> protorender.CommonResponse
+	94,  // 30: protorender.RateLimitResponse.data:type_name -> protorender.RateLimit
+	89,  // 31: protorender.RateLimitResponse.meta:type_name -> protorender.CommonResponse
+	97,  // 32: protorender.ValidateFlowRequest.processors:type_name -> protorender.Flow.Processor
+	97,  // 33: protorender.TryFlowRequest.processors:type_name -> protorender.Flow.Processor
+	83,  // 34: protorender.TryFlowRequest.messages:type_name -> protorender.TryFlowRequest.TryMessage
+	84,  // 35: protorender.TryFlowResponse.outputs:type_name -> protorender.TryFlowResponse.TryOutput
 	39,  // 36: protorender.GetMCPSettingsResponse.tokens:type_name -> protorender.APIToken
-	83,  // 37: protorender.APIToken.created_at:type_name -> google.protobuf.Timestamp
-	83,  // 38: protorender.APIToken.last_used_at:type_name -> google.protobuf.Timestamp
+	91,  // 37: protorender.APIToken.created_at:type_name -> google.protobuf.Timestamp
+	91,  // 38: protorender.APIToken.last_used_at:type_name -> google.protobuf.Timestamp
 	39,  // 39: protorender.CreateAPITokenResponse.data:type_name -> protorender.APIToken
 	39,  // 40: protorender.ListAPITokensResponse.tokens:type_name -> protorender.APIToken
-	83,  // 41: protorender.OAuthClient.created_at:type_name -> google.protobuf.Timestamp
-	83,  // 42: protorender.OAuthClient.last_used_at:type_name -> google.protobuf.Timestamp
+	91,  // 41: protorender.OAuthClient.created_at:type_name -> google.protobuf.Timestamp
+	91,  // 42: protorender.OAuthClient.last_used_at:type_name -> google.protobuf.Timestamp
 	44,  // 43: protorender.ListOAuthClientsResponse.clients:type_name -> protorender.OAuthClient
-	83,  // 44: protorender.OAuthSession.created_at:type_name -> google.protobuf.Timestamp
-	83,  // 45: protorender.OAuthSession.expires_at:type_name -> google.protobuf.Timestamp
+	91,  // 44: protorender.OAuthSession.created_at:type_name -> google.protobuf.Timestamp
+	91,  // 45: protorender.OAuthSession.expires_at:type_name -> google.protobuf.Timestamp
 	48,  // 46: protorender.ListOAuthSessionsResponse.sessions:type_name -> protorender.OAuthSession
-	83,  // 47: protorender.MCPServerInfo.created_at:type_name -> google.protobuf.Timestamp
-	83,  // 48: protorender.MCPServerInfo.updated_at:type_name -> google.protobuf.Timestamp
-	83,  // 49: protorender.MCPServerInfo.last_sync_at:type_name -> google.protobuf.Timestamp
+	91,  // 47: protorender.MCPServerInfo.created_at:type_name -> google.protobuf.Timestamp
+	91,  // 48: protorender.MCPServerInfo.updated_at:type_name -> google.protobuf.Timestamp
+	91,  // 49: protorender.MCPServerInfo.last_sync_at:type_name -> google.protobuf.Timestamp
 	51,  // 50: protorender.ListMCPServersResponse.data:type_name -> protorender.MCPServerInfo
-	83,  // 51: protorender.ConnectionInfo.created_at:type_name -> google.protobuf.Timestamp
-	83,  // 52: protorender.ConnectionInfo.updated_at:type_name -> google.protobuf.Timestamp
-	57,  // 53: protorender.ListConnectionsResponse.data:type_name -> protorender.ConnectionInfo
-	83,  // 54: protorender.AccessTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	67,  // 55: protorender.Provider.scopes:type_name -> protorender.ProviderScope
-	68,  // 56: protorender.ListProvidersResponse.data:type_name -> protorender.Provider
-	83,  // 57: protorender.ListWorkersResponse.Worker.last_heartbeat:type_name -> google.protobuf.Timestamp
-	4,   // 58: protorender.Coordinator.UpdateWorkerFlowStatus:input_type -> protorender.WorkerFlowStatusRequest
-	0,   // 59: protorender.Coordinator.RegisterWorker:input_type -> protorender.RegisterWorkerRequest
-	1,   // 60: protorender.Coordinator.DeregisterWorker:input_type -> protorender.DeregisterWorkerRequest
-	2,   // 61: protorender.Coordinator.Heartbeat:input_type -> protorender.HeartbeatRequest
-	5,   // 62: protorender.Coordinator.ListWorkers:input_type -> protorender.ListWorkersRequest
-	7,   // 63: protorender.Coordinator.ListFlows:input_type -> protorender.ListFlowsRequest
-	9,   // 64: protorender.Coordinator.GetFlow:input_type -> protorender.GetFlowRequest
-	80,  // 65: protorender.Coordinator.CreateFlow:input_type -> protorender.Flow
-	80,  // 66: protorender.Coordinator.UpdateFlow:input_type -> protorender.Flow
-	9,   // 67: protorender.Coordinator.DeleteFlow:input_type -> protorender.GetFlowRequest
-	32,  // 68: protorender.Coordinator.ValidateFlow:input_type -> protorender.ValidateFlowRequest
-	34,  // 69: protorender.Coordinator.TryFlow:input_type -> protorender.TryFlowRequest
-	90,  // 70: protorender.Coordinator.ListSecrets:input_type -> google.protobuf.Empty
-	17,  // 71: protorender.Coordinator.CreateSecret:input_type -> protorender.SecretRequest
-	17,  // 72: protorender.Coordinator.UpdateSecret:input_type -> protorender.SecretRequest
-	17,  // 73: protorender.Coordinator.GetSecret:input_type -> protorender.SecretRequest
-	17,  // 74: protorender.Coordinator.DeleteSecret:input_type -> protorender.SecretRequest
-	90,  // 75: protorender.Coordinator.ListCaches:input_type -> google.protobuf.Empty
-	21,  // 76: protorender.Coordinator.GetCache:input_type -> protorender.GetCacheRequest
-	85,  // 77: protorender.Coordinator.CreateCache:input_type -> protorender.Cache
-	85,  // 78: protorender.Coordinator.UpdateCache:input_type -> protorender.Cache
-	21,  // 79: protorender.Coordinator.DeleteCache:input_type -> protorender.GetCacheRequest
-	90,  // 80: protorender.Coordinator.ListRateLimits:input_type -> google.protobuf.Empty
-	30,  // 81: protorender.Coordinator.GetRateLimit:input_type -> protorender.GetRateLimitRequest
-	86,  // 82: protorender.Coordinator.CreateRateLimit:input_type -> protorender.RateLimit
-	86,  // 83: protorender.Coordinator.UpdateRateLimit:input_type -> protorender.RateLimit
-	30,  // 84: protorender.Coordinator.DeleteRateLimit:input_type -> protorender.GetRateLimitRequest
-	91,  // 85: protorender.Coordinator.CheckRateLimit:input_type -> protorender.RateLimitCheckRequest
-	90,  // 86: protorender.Coordinator.ListBuffers:input_type -> google.protobuf.Empty
-	24,  // 87: protorender.Coordinator.GetBuffer:input_type -> protorender.GetBufferRequest
-	87,  // 88: protorender.Coordinator.CreateBuffer:input_type -> protorender.Buffer
-	87,  // 89: protorender.Coordinator.UpdateBuffer:input_type -> protorender.Buffer
-	24,  // 90: protorender.Coordinator.DeleteBuffer:input_type -> protorender.GetBufferRequest
-	90,  // 91: protorender.Coordinator.ListFiles:input_type -> google.protobuf.Empty
-	28,  // 92: protorender.Coordinator.GetFile:input_type -> protorender.GetFileRequest
-	88,  // 93: protorender.Coordinator.CreateFile:input_type -> protorender.File
-	88,  // 94: protorender.Coordinator.UpdateFile:input_type -> protorender.File
-	28,  // 95: protorender.Coordinator.DeleteFile:input_type -> protorender.GetFileRequest
-	12,  // 96: protorender.Coordinator.ListEvents:input_type -> protorender.ListEventsRequest
-	11,  // 97: protorender.Coordinator.IngestEvents:input_type -> protorender.Event
-	14,  // 98: protorender.Coordinator.IngestMetrics:input_type -> protorender.MetricsRequest
-	15,  // 99: protorender.Coordinator.GetAnalytics:input_type -> protorender.GetAnalyticsRequest
-	90,  // 100: protorender.Coordinator.GetMCPSettings:input_type -> google.protobuf.Empty
-	37,  // 101: protorender.Coordinator.UpdateMCPProtected:input_type -> protorender.UpdateMCPProtectedRequest
-	90,  // 102: protorender.Coordinator.ListAPITokens:input_type -> google.protobuf.Empty
-	40,  // 103: protorender.Coordinator.CreateAPIToken:input_type -> protorender.CreateAPITokenRequest
-	42,  // 104: protorender.Coordinator.DeleteAPIToken:input_type -> protorender.DeleteAPITokenRequest
-	90,  // 105: protorender.Coordinator.ListOAuthClients:input_type -> google.protobuf.Empty
-	46,  // 106: protorender.Coordinator.DeleteOAuthClient:input_type -> protorender.DeleteOAuthClientRequest
-	90,  // 107: protorender.Coordinator.ListOAuthSessions:input_type -> google.protobuf.Empty
-	50,  // 108: protorender.Coordinator.RevokeOAuthSession:input_type -> protorender.RevokeOAuthSessionRequest
-	47,  // 109: protorender.Coordinator.RevokeOAuthConsent:input_type -> protorender.RevokeOAuthConsentRequest
-	90,  // 110: protorender.Coordinator.ListMCPServers:input_type -> google.protobuf.Empty
-	53,  // 111: protorender.Coordinator.CreateMCPServer:input_type -> protorender.CreateMCPServerRequest
-	54,  // 112: protorender.Coordinator.UpdateMCPServer:input_type -> protorender.UpdateMCPServerRequest
-	55,  // 113: protorender.Coordinator.DeleteMCPServer:input_type -> protorender.DeleteMCPServerRequest
-	90,  // 114: protorender.Coordinator.ListProviders:input_type -> google.protobuf.Empty
-	90,  // 115: protorender.Coordinator.ListConnections:input_type -> google.protobuf.Empty
-	56,  // 116: protorender.Coordinator.DeleteConnection:input_type -> protorender.ConnectionRequest
-	56,  // 117: protorender.Coordinator.GetConnectionToken:input_type -> protorender.ConnectionRequest
-	60,  // 118: protorender.Coordinator.GetAccessToken:input_type -> protorender.AccessTokenRequest
-	90,  // 119: protorender.Coordinator.GetSetupStatus:input_type -> google.protobuf.Empty
-	90,  // 120: protorender.Coordinator.CompleteSetup:input_type -> google.protobuf.Empty
-	63,  // 121: protorender.Coordinator.TestConnection:input_type -> protorender.TestConnectionRequest
-	65,  // 122: protorender.Coordinator.TestShopifyConnection:input_type -> protorender.TestShopifyConnectionRequest
-	81,  // 123: protorender.Coordinator.UpdateWorkerFlowStatus:output_type -> protorender.CommonResponse
-	81,  // 124: protorender.Coordinator.RegisterWorker:output_type -> protorender.CommonResponse
-	81,  // 125: protorender.Coordinator.DeregisterWorker:output_type -> protorender.CommonResponse
-	3,   // 126: protorender.Coordinator.Heartbeat:output_type -> protorender.HeartbeatResponse
-	6,   // 127: protorender.Coordinator.ListWorkers:output_type -> protorender.ListWorkersResponse
-	8,   // 128: protorender.Coordinator.ListFlows:output_type -> protorender.ListFlowsResponse
-	10,  // 129: protorender.Coordinator.GetFlow:output_type -> protorender.FlowResponse
-	10,  // 130: protorender.Coordinator.CreateFlow:output_type -> protorender.FlowResponse
-	10,  // 131: protorender.Coordinator.UpdateFlow:output_type -> protorender.FlowResponse
-	81,  // 132: protorender.Coordinator.DeleteFlow:output_type -> protorender.CommonResponse
-	33,  // 133: protorender.Coordinator.ValidateFlow:output_type -> protorender.ValidateFlowResponse
-	35,  // 134: protorender.Coordinator.TryFlow:output_type -> protorender.TryFlowResponse
-	18,  // 135: protorender.Coordinator.ListSecrets:output_type -> protorender.ListSecretsResponse
-	81,  // 136: protorender.Coordinator.CreateSecret:output_type -> protorender.CommonResponse
-	81,  // 137: protorender.Coordinator.UpdateSecret:output_type -> protorender.CommonResponse
-	19,  // 138: protorender.Coordinator.GetSecret:output_type -> protorender.SecretResponse
-	81,  // 139: protorender.Coordinator.DeleteSecret:output_type -> protorender.CommonResponse
-	20,  // 140: protorender.Coordinator.ListCaches:output_type -> protorender.ListCachesResponse
-	22,  // 141: protorender.Coordinator.GetCache:output_type -> protorender.CacheResponse
-	22,  // 142: protorender.Coordinator.CreateCache:output_type -> protorender.CacheResponse
-	22,  // 143: protorender.Coordinator.UpdateCache:output_type -> protorender.CacheResponse
-	81,  // 144: protorender.Coordinator.DeleteCache:output_type -> protorender.CommonResponse
-	23,  // 145: protorender.Coordinator.ListRateLimits:output_type -> protorender.ListRateLimitsResponse
-	31,  // 146: protorender.Coordinator.GetRateLimit:output_type -> protorender.RateLimitResponse
-	31,  // 147: protorender.Coordinator.CreateRateLimit:output_type -> protorender.RateLimitResponse
-	31,  // 148: protorender.Coordinator.UpdateRateLimit:output_type -> protorender.RateLimitResponse
-	81,  // 149: protorender.Coordinator.DeleteRateLimit:output_type -> protorender.CommonResponse
-	92,  // 150: protorender.Coordinator.CheckRateLimit:output_type -> protorender.RateLimitCheckResponse
-	26,  // 151: protorender.Coordinator.ListBuffers:output_type -> protorender.ListBuffersResponse
-	25,  // 152: protorender.Coordinator.GetBuffer:output_type -> protorender.BufferResponse
-	25,  // 153: protorender.Coordinator.CreateBuffer:output_type -> protorender.BufferResponse
-	25,  // 154: protorender.Coordinator.UpdateBuffer:output_type -> protorender.BufferResponse
-	81,  // 155: protorender.Coordinator.DeleteBuffer:output_type -> protorender.CommonResponse
-	27,  // 156: protorender.Coordinator.ListFiles:output_type -> protorender.ListFilesResponse
-	29,  // 157: protorender.Coordinator.GetFile:output_type -> protorender.FileResponse
-	29,  // 158: protorender.Coordinator.CreateFile:output_type -> protorender.FileResponse
-	29,  // 159: protorender.Coordinator.UpdateFile:output_type -> protorender.FileResponse
-	81,  // 160: protorender.Coordinator.DeleteFile:output_type -> protorender.CommonResponse
-	13,  // 161: protorender.Coordinator.ListEvents:output_type -> protorender.ListEventsResponse
-	90,  // 162: protorender.Coordinator.IngestEvents:output_type -> google.protobuf.Empty
-	90,  // 163: protorender.Coordinator.IngestMetrics:output_type -> google.protobuf.Empty
-	16,  // 164: protorender.Coordinator.GetAnalytics:output_type -> protorender.GetAnalyticsResponse
-	36,  // 165: protorender.Coordinator.GetMCPSettings:output_type -> protorender.GetMCPSettingsResponse
-	38,  // 166: protorender.Coordinator.UpdateMCPProtected:output_type -> protorender.UpdateMCPProtectedResponse
-	43,  // 167: protorender.Coordinator.ListAPITokens:output_type -> protorender.ListAPITokensResponse
-	41,  // 168: protorender.Coordinator.CreateAPIToken:output_type -> protorender.CreateAPITokenResponse
-	81,  // 169: protorender.Coordinator.DeleteAPIToken:output_type -> protorender.CommonResponse
-	45,  // 170: protorender.Coordinator.ListOAuthClients:output_type -> protorender.ListOAuthClientsResponse
-	81,  // 171: protorender.Coordinator.DeleteOAuthClient:output_type -> protorender.CommonResponse
-	49,  // 172: protorender.Coordinator.ListOAuthSessions:output_type -> protorender.ListOAuthSessionsResponse
-	81,  // 173: protorender.Coordinator.RevokeOAuthSession:output_type -> protorender.CommonResponse
-	81,  // 174: protorender.Coordinator.RevokeOAuthConsent:output_type -> protorender.CommonResponse
-	52,  // 175: protorender.Coordinator.ListMCPServers:output_type -> protorender.ListMCPServersResponse
-	51,  // 176: protorender.Coordinator.CreateMCPServer:output_type -> protorender.MCPServerInfo
-	51,  // 177: protorender.Coordinator.UpdateMCPServer:output_type -> protorender.MCPServerInfo
-	81,  // 178: protorender.Coordinator.DeleteMCPServer:output_type -> protorender.CommonResponse
-	69,  // 179: protorender.Coordinator.ListProviders:output_type -> protorender.ListProvidersResponse
-	58,  // 180: protorender.Coordinator.ListConnections:output_type -> protorender.ListConnectionsResponse
-	81,  // 181: protorender.Coordinator.DeleteConnection:output_type -> protorender.CommonResponse
-	59,  // 182: protorender.Coordinator.GetConnectionToken:output_type -> protorender.ConnectionTokenResponse
-	61,  // 183: protorender.Coordinator.GetAccessToken:output_type -> protorender.AccessTokenResponse
-	62,  // 184: protorender.Coordinator.GetSetupStatus:output_type -> protorender.SetupStatusResponse
-	81,  // 185: protorender.Coordinator.CompleteSetup:output_type -> protorender.CommonResponse
-	64,  // 186: protorender.Coordinator.TestConnection:output_type -> protorender.TestConnectionResponse
-	66,  // 187: protorender.Coordinator.TestShopifyConnection:output_type -> protorender.TestShopifyConnectionResponse
-	123, // [123:188] is the sub-list for method output_type
-	58,  // [58:123] is the sub-list for method input_type
-	58,  // [58:58] is the sub-list for extension type_name
-	58,  // [58:58] is the sub-list for extension extendee
-	0,   // [0:58] is the sub-list for field type_name
+	85,  // 51: protorender.CreateMCPServerRequest.env:type_name -> protorender.CreateMCPServerRequest.EnvEntry
+	86,  // 52: protorender.UpdateMCPServerRequest.env:type_name -> protorender.UpdateMCPServerRequest.EnvEntry
+	60,  // 53: protorender.MCPCatalogEntry.env_spec:type_name -> protorender.MCPCatalogEnvSpec
+	59,  // 54: protorender.ListMCPCatalogResponse.data:type_name -> protorender.MCPCatalogEntry
+	91,  // 55: protorender.ConnectionInfo.created_at:type_name -> google.protobuf.Timestamp
+	91,  // 56: protorender.ConnectionInfo.updated_at:type_name -> google.protobuf.Timestamp
+	63,  // 57: protorender.ListConnectionsResponse.data:type_name -> protorender.ConnectionInfo
+	91,  // 58: protorender.AccessTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	73,  // 59: protorender.Provider.scopes:type_name -> protorender.ProviderScope
+	74,  // 60: protorender.ListProvidersResponse.data:type_name -> protorender.Provider
+	91,  // 61: protorender.ListWorkersResponse.Worker.last_heartbeat:type_name -> google.protobuf.Timestamp
+	4,   // 62: protorender.Coordinator.UpdateWorkerFlowStatus:input_type -> protorender.WorkerFlowStatusRequest
+	0,   // 63: protorender.Coordinator.RegisterWorker:input_type -> protorender.RegisterWorkerRequest
+	1,   // 64: protorender.Coordinator.DeregisterWorker:input_type -> protorender.DeregisterWorkerRequest
+	2,   // 65: protorender.Coordinator.Heartbeat:input_type -> protorender.HeartbeatRequest
+	5,   // 66: protorender.Coordinator.ListWorkers:input_type -> protorender.ListWorkersRequest
+	7,   // 67: protorender.Coordinator.ListFlows:input_type -> protorender.ListFlowsRequest
+	9,   // 68: protorender.Coordinator.GetFlow:input_type -> protorender.GetFlowRequest
+	88,  // 69: protorender.Coordinator.CreateFlow:input_type -> protorender.Flow
+	88,  // 70: protorender.Coordinator.UpdateFlow:input_type -> protorender.Flow
+	9,   // 71: protorender.Coordinator.DeleteFlow:input_type -> protorender.GetFlowRequest
+	32,  // 72: protorender.Coordinator.ValidateFlow:input_type -> protorender.ValidateFlowRequest
+	34,  // 73: protorender.Coordinator.TryFlow:input_type -> protorender.TryFlowRequest
+	98,  // 74: protorender.Coordinator.ListSecrets:input_type -> google.protobuf.Empty
+	17,  // 75: protorender.Coordinator.CreateSecret:input_type -> protorender.SecretRequest
+	17,  // 76: protorender.Coordinator.UpdateSecret:input_type -> protorender.SecretRequest
+	17,  // 77: protorender.Coordinator.GetSecret:input_type -> protorender.SecretRequest
+	17,  // 78: protorender.Coordinator.DeleteSecret:input_type -> protorender.SecretRequest
+	98,  // 79: protorender.Coordinator.ListCaches:input_type -> google.protobuf.Empty
+	21,  // 80: protorender.Coordinator.GetCache:input_type -> protorender.GetCacheRequest
+	93,  // 81: protorender.Coordinator.CreateCache:input_type -> protorender.Cache
+	93,  // 82: protorender.Coordinator.UpdateCache:input_type -> protorender.Cache
+	21,  // 83: protorender.Coordinator.DeleteCache:input_type -> protorender.GetCacheRequest
+	98,  // 84: protorender.Coordinator.ListRateLimits:input_type -> google.protobuf.Empty
+	30,  // 85: protorender.Coordinator.GetRateLimit:input_type -> protorender.GetRateLimitRequest
+	94,  // 86: protorender.Coordinator.CreateRateLimit:input_type -> protorender.RateLimit
+	94,  // 87: protorender.Coordinator.UpdateRateLimit:input_type -> protorender.RateLimit
+	30,  // 88: protorender.Coordinator.DeleteRateLimit:input_type -> protorender.GetRateLimitRequest
+	99,  // 89: protorender.Coordinator.CheckRateLimit:input_type -> protorender.RateLimitCheckRequest
+	98,  // 90: protorender.Coordinator.ListBuffers:input_type -> google.protobuf.Empty
+	24,  // 91: protorender.Coordinator.GetBuffer:input_type -> protorender.GetBufferRequest
+	95,  // 92: protorender.Coordinator.CreateBuffer:input_type -> protorender.Buffer
+	95,  // 93: protorender.Coordinator.UpdateBuffer:input_type -> protorender.Buffer
+	24,  // 94: protorender.Coordinator.DeleteBuffer:input_type -> protorender.GetBufferRequest
+	98,  // 95: protorender.Coordinator.ListFiles:input_type -> google.protobuf.Empty
+	28,  // 96: protorender.Coordinator.GetFile:input_type -> protorender.GetFileRequest
+	96,  // 97: protorender.Coordinator.CreateFile:input_type -> protorender.File
+	96,  // 98: protorender.Coordinator.UpdateFile:input_type -> protorender.File
+	28,  // 99: protorender.Coordinator.DeleteFile:input_type -> protorender.GetFileRequest
+	12,  // 100: protorender.Coordinator.ListEvents:input_type -> protorender.ListEventsRequest
+	11,  // 101: protorender.Coordinator.IngestEvents:input_type -> protorender.Event
+	14,  // 102: protorender.Coordinator.IngestMetrics:input_type -> protorender.MetricsRequest
+	15,  // 103: protorender.Coordinator.GetAnalytics:input_type -> protorender.GetAnalyticsRequest
+	98,  // 104: protorender.Coordinator.GetMCPSettings:input_type -> google.protobuf.Empty
+	37,  // 105: protorender.Coordinator.UpdateMCPProtected:input_type -> protorender.UpdateMCPProtectedRequest
+	98,  // 106: protorender.Coordinator.ListAPITokens:input_type -> google.protobuf.Empty
+	40,  // 107: protorender.Coordinator.CreateAPIToken:input_type -> protorender.CreateAPITokenRequest
+	42,  // 108: protorender.Coordinator.DeleteAPIToken:input_type -> protorender.DeleteAPITokenRequest
+	98,  // 109: protorender.Coordinator.ListOAuthClients:input_type -> google.protobuf.Empty
+	46,  // 110: protorender.Coordinator.DeleteOAuthClient:input_type -> protorender.DeleteOAuthClientRequest
+	98,  // 111: protorender.Coordinator.ListOAuthSessions:input_type -> google.protobuf.Empty
+	50,  // 112: protorender.Coordinator.RevokeOAuthSession:input_type -> protorender.RevokeOAuthSessionRequest
+	47,  // 113: protorender.Coordinator.RevokeOAuthConsent:input_type -> protorender.RevokeOAuthConsentRequest
+	98,  // 114: protorender.Coordinator.ListMCPServers:input_type -> google.protobuf.Empty
+	53,  // 115: protorender.Coordinator.CreateMCPServer:input_type -> protorender.CreateMCPServerRequest
+	54,  // 116: protorender.Coordinator.UpdateMCPServer:input_type -> protorender.UpdateMCPServerRequest
+	55,  // 117: protorender.Coordinator.DeleteMCPServer:input_type -> protorender.DeleteMCPServerRequest
+	56,  // 118: protorender.Coordinator.RestartMCPServer:input_type -> protorender.RestartMCPServerRequest
+	57,  // 119: protorender.Coordinator.GetMCPServerLogs:input_type -> protorender.GetMCPServerLogsRequest
+	98,  // 120: protorender.Coordinator.ListMCPCatalog:input_type -> google.protobuf.Empty
+	98,  // 121: protorender.Coordinator.ListProviders:input_type -> google.protobuf.Empty
+	98,  // 122: protorender.Coordinator.ListConnections:input_type -> google.protobuf.Empty
+	62,  // 123: protorender.Coordinator.DeleteConnection:input_type -> protorender.ConnectionRequest
+	62,  // 124: protorender.Coordinator.GetConnectionToken:input_type -> protorender.ConnectionRequest
+	66,  // 125: protorender.Coordinator.GetAccessToken:input_type -> protorender.AccessTokenRequest
+	98,  // 126: protorender.Coordinator.GetSetupStatus:input_type -> google.protobuf.Empty
+	98,  // 127: protorender.Coordinator.CompleteSetup:input_type -> google.protobuf.Empty
+	69,  // 128: protorender.Coordinator.TestConnection:input_type -> protorender.TestConnectionRequest
+	71,  // 129: protorender.Coordinator.TestShopifyConnection:input_type -> protorender.TestShopifyConnectionRequest
+	89,  // 130: protorender.Coordinator.UpdateWorkerFlowStatus:output_type -> protorender.CommonResponse
+	89,  // 131: protorender.Coordinator.RegisterWorker:output_type -> protorender.CommonResponse
+	89,  // 132: protorender.Coordinator.DeregisterWorker:output_type -> protorender.CommonResponse
+	3,   // 133: protorender.Coordinator.Heartbeat:output_type -> protorender.HeartbeatResponse
+	6,   // 134: protorender.Coordinator.ListWorkers:output_type -> protorender.ListWorkersResponse
+	8,   // 135: protorender.Coordinator.ListFlows:output_type -> protorender.ListFlowsResponse
+	10,  // 136: protorender.Coordinator.GetFlow:output_type -> protorender.FlowResponse
+	10,  // 137: protorender.Coordinator.CreateFlow:output_type -> protorender.FlowResponse
+	10,  // 138: protorender.Coordinator.UpdateFlow:output_type -> protorender.FlowResponse
+	89,  // 139: protorender.Coordinator.DeleteFlow:output_type -> protorender.CommonResponse
+	33,  // 140: protorender.Coordinator.ValidateFlow:output_type -> protorender.ValidateFlowResponse
+	35,  // 141: protorender.Coordinator.TryFlow:output_type -> protorender.TryFlowResponse
+	18,  // 142: protorender.Coordinator.ListSecrets:output_type -> protorender.ListSecretsResponse
+	89,  // 143: protorender.Coordinator.CreateSecret:output_type -> protorender.CommonResponse
+	89,  // 144: protorender.Coordinator.UpdateSecret:output_type -> protorender.CommonResponse
+	19,  // 145: protorender.Coordinator.GetSecret:output_type -> protorender.SecretResponse
+	89,  // 146: protorender.Coordinator.DeleteSecret:output_type -> protorender.CommonResponse
+	20,  // 147: protorender.Coordinator.ListCaches:output_type -> protorender.ListCachesResponse
+	22,  // 148: protorender.Coordinator.GetCache:output_type -> protorender.CacheResponse
+	22,  // 149: protorender.Coordinator.CreateCache:output_type -> protorender.CacheResponse
+	22,  // 150: protorender.Coordinator.UpdateCache:output_type -> protorender.CacheResponse
+	89,  // 151: protorender.Coordinator.DeleteCache:output_type -> protorender.CommonResponse
+	23,  // 152: protorender.Coordinator.ListRateLimits:output_type -> protorender.ListRateLimitsResponse
+	31,  // 153: protorender.Coordinator.GetRateLimit:output_type -> protorender.RateLimitResponse
+	31,  // 154: protorender.Coordinator.CreateRateLimit:output_type -> protorender.RateLimitResponse
+	31,  // 155: protorender.Coordinator.UpdateRateLimit:output_type -> protorender.RateLimitResponse
+	89,  // 156: protorender.Coordinator.DeleteRateLimit:output_type -> protorender.CommonResponse
+	100, // 157: protorender.Coordinator.CheckRateLimit:output_type -> protorender.RateLimitCheckResponse
+	26,  // 158: protorender.Coordinator.ListBuffers:output_type -> protorender.ListBuffersResponse
+	25,  // 159: protorender.Coordinator.GetBuffer:output_type -> protorender.BufferResponse
+	25,  // 160: protorender.Coordinator.CreateBuffer:output_type -> protorender.BufferResponse
+	25,  // 161: protorender.Coordinator.UpdateBuffer:output_type -> protorender.BufferResponse
+	89,  // 162: protorender.Coordinator.DeleteBuffer:output_type -> protorender.CommonResponse
+	27,  // 163: protorender.Coordinator.ListFiles:output_type -> protorender.ListFilesResponse
+	29,  // 164: protorender.Coordinator.GetFile:output_type -> protorender.FileResponse
+	29,  // 165: protorender.Coordinator.CreateFile:output_type -> protorender.FileResponse
+	29,  // 166: protorender.Coordinator.UpdateFile:output_type -> protorender.FileResponse
+	89,  // 167: protorender.Coordinator.DeleteFile:output_type -> protorender.CommonResponse
+	13,  // 168: protorender.Coordinator.ListEvents:output_type -> protorender.ListEventsResponse
+	98,  // 169: protorender.Coordinator.IngestEvents:output_type -> google.protobuf.Empty
+	98,  // 170: protorender.Coordinator.IngestMetrics:output_type -> google.protobuf.Empty
+	16,  // 171: protorender.Coordinator.GetAnalytics:output_type -> protorender.GetAnalyticsResponse
+	36,  // 172: protorender.Coordinator.GetMCPSettings:output_type -> protorender.GetMCPSettingsResponse
+	38,  // 173: protorender.Coordinator.UpdateMCPProtected:output_type -> protorender.UpdateMCPProtectedResponse
+	43,  // 174: protorender.Coordinator.ListAPITokens:output_type -> protorender.ListAPITokensResponse
+	41,  // 175: protorender.Coordinator.CreateAPIToken:output_type -> protorender.CreateAPITokenResponse
+	89,  // 176: protorender.Coordinator.DeleteAPIToken:output_type -> protorender.CommonResponse
+	45,  // 177: protorender.Coordinator.ListOAuthClients:output_type -> protorender.ListOAuthClientsResponse
+	89,  // 178: protorender.Coordinator.DeleteOAuthClient:output_type -> protorender.CommonResponse
+	49,  // 179: protorender.Coordinator.ListOAuthSessions:output_type -> protorender.ListOAuthSessionsResponse
+	89,  // 180: protorender.Coordinator.RevokeOAuthSession:output_type -> protorender.CommonResponse
+	89,  // 181: protorender.Coordinator.RevokeOAuthConsent:output_type -> protorender.CommonResponse
+	52,  // 182: protorender.Coordinator.ListMCPServers:output_type -> protorender.ListMCPServersResponse
+	51,  // 183: protorender.Coordinator.CreateMCPServer:output_type -> protorender.MCPServerInfo
+	51,  // 184: protorender.Coordinator.UpdateMCPServer:output_type -> protorender.MCPServerInfo
+	89,  // 185: protorender.Coordinator.DeleteMCPServer:output_type -> protorender.CommonResponse
+	89,  // 186: protorender.Coordinator.RestartMCPServer:output_type -> protorender.CommonResponse
+	58,  // 187: protorender.Coordinator.GetMCPServerLogs:output_type -> protorender.MCPServerLogsResponse
+	61,  // 188: protorender.Coordinator.ListMCPCatalog:output_type -> protorender.ListMCPCatalogResponse
+	75,  // 189: protorender.Coordinator.ListProviders:output_type -> protorender.ListProvidersResponse
+	64,  // 190: protorender.Coordinator.ListConnections:output_type -> protorender.ListConnectionsResponse
+	89,  // 191: protorender.Coordinator.DeleteConnection:output_type -> protorender.CommonResponse
+	65,  // 192: protorender.Coordinator.GetConnectionToken:output_type -> protorender.ConnectionTokenResponse
+	67,  // 193: protorender.Coordinator.GetAccessToken:output_type -> protorender.AccessTokenResponse
+	68,  // 194: protorender.Coordinator.GetSetupStatus:output_type -> protorender.SetupStatusResponse
+	89,  // 195: protorender.Coordinator.CompleteSetup:output_type -> protorender.CommonResponse
+	70,  // 196: protorender.Coordinator.TestConnection:output_type -> protorender.TestConnectionResponse
+	72,  // 197: protorender.Coordinator.TestShopifyConnection:output_type -> protorender.TestShopifyConnectionResponse
+	130, // [130:198] is the sub-list for method output_type
+	62,  // [62:130] is the sub-list for method input_type
+	62,  // [62:62] is the sub-list for extension type_name
+	62,  // [62:62] is the sub-list for extension extendee
+	0,   // [0:62] is the sub-list for field type_name
 }
 
 func init() { file_coordinator_proto_init() }
@@ -5097,7 +5588,7 @@ func file_coordinator_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_coordinator_proto_rawDesc), len(file_coordinator_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   79,
+			NumMessages:   87,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

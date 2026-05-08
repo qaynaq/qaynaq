@@ -76,6 +76,9 @@ const (
 	Coordinator_CreateMCPServer_FullMethodName        = "/protorender.Coordinator/CreateMCPServer"
 	Coordinator_UpdateMCPServer_FullMethodName        = "/protorender.Coordinator/UpdateMCPServer"
 	Coordinator_DeleteMCPServer_FullMethodName        = "/protorender.Coordinator/DeleteMCPServer"
+	Coordinator_RestartMCPServer_FullMethodName       = "/protorender.Coordinator/RestartMCPServer"
+	Coordinator_GetMCPServerLogs_FullMethodName       = "/protorender.Coordinator/GetMCPServerLogs"
+	Coordinator_ListMCPCatalog_FullMethodName         = "/protorender.Coordinator/ListMCPCatalog"
 	Coordinator_ListProviders_FullMethodName          = "/protorender.Coordinator/ListProviders"
 	Coordinator_ListConnections_FullMethodName        = "/protorender.Coordinator/ListConnections"
 	Coordinator_DeleteConnection_FullMethodName       = "/protorender.Coordinator/DeleteConnection"
@@ -159,6 +162,9 @@ type CoordinatorClient interface {
 	CreateMCPServer(ctx context.Context, in *CreateMCPServerRequest, opts ...grpc.CallOption) (*MCPServerInfo, error)
 	UpdateMCPServer(ctx context.Context, in *UpdateMCPServerRequest, opts ...grpc.CallOption) (*MCPServerInfo, error)
 	DeleteMCPServer(ctx context.Context, in *DeleteMCPServerRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	RestartMCPServer(ctx context.Context, in *RestartMCPServerRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	GetMCPServerLogs(ctx context.Context, in *GetMCPServerLogsRequest, opts ...grpc.CallOption) (*MCPServerLogsResponse, error)
+	ListMCPCatalog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMCPCatalogResponse, error)
 	// Connection methods
 	ListProviders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListProvidersResponse, error)
 	ListConnections(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListConnectionsResponse, error)
@@ -743,6 +749,36 @@ func (c *coordinatorClient) DeleteMCPServer(ctx context.Context, in *DeleteMCPSe
 	return out, nil
 }
 
+func (c *coordinatorClient) RestartMCPServer(ctx context.Context, in *RestartMCPServerRequest, opts ...grpc.CallOption) (*CommonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonResponse)
+	err := c.cc.Invoke(ctx, Coordinator_RestartMCPServer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) GetMCPServerLogs(ctx context.Context, in *GetMCPServerLogsRequest, opts ...grpc.CallOption) (*MCPServerLogsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MCPServerLogsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_GetMCPServerLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) ListMCPCatalog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMCPCatalogResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMCPCatalogResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ListMCPCatalog_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *coordinatorClient) ListProviders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListProvidersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListProvidersResponse)
@@ -905,6 +941,9 @@ type CoordinatorServer interface {
 	CreateMCPServer(context.Context, *CreateMCPServerRequest) (*MCPServerInfo, error)
 	UpdateMCPServer(context.Context, *UpdateMCPServerRequest) (*MCPServerInfo, error)
 	DeleteMCPServer(context.Context, *DeleteMCPServerRequest) (*CommonResponse, error)
+	RestartMCPServer(context.Context, *RestartMCPServerRequest) (*CommonResponse, error)
+	GetMCPServerLogs(context.Context, *GetMCPServerLogsRequest) (*MCPServerLogsResponse, error)
+	ListMCPCatalog(context.Context, *emptypb.Empty) (*ListMCPCatalogResponse, error)
 	// Connection methods
 	ListProviders(context.Context, *emptypb.Empty) (*ListProvidersResponse, error)
 	ListConnections(context.Context, *emptypb.Empty) (*ListConnectionsResponse, error)
@@ -1093,6 +1132,15 @@ func (UnimplementedCoordinatorServer) UpdateMCPServer(context.Context, *UpdateMC
 }
 func (UnimplementedCoordinatorServer) DeleteMCPServer(context.Context, *DeleteMCPServerRequest) (*CommonResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteMCPServer not implemented")
+}
+func (UnimplementedCoordinatorServer) RestartMCPServer(context.Context, *RestartMCPServerRequest) (*CommonResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RestartMCPServer not implemented")
+}
+func (UnimplementedCoordinatorServer) GetMCPServerLogs(context.Context, *GetMCPServerLogsRequest) (*MCPServerLogsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMCPServerLogs not implemented")
+}
+func (UnimplementedCoordinatorServer) ListMCPCatalog(context.Context, *emptypb.Empty) (*ListMCPCatalogResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMCPCatalog not implemented")
 }
 func (UnimplementedCoordinatorServer) ListProviders(context.Context, *emptypb.Empty) (*ListProvidersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProviders not implemented")
@@ -2139,6 +2187,60 @@ func _Coordinator_DeleteMCPServer_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_RestartMCPServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestartMCPServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).RestartMCPServer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_RestartMCPServer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).RestartMCPServer(ctx, req.(*RestartMCPServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_GetMCPServerLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMCPServerLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).GetMCPServerLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_GetMCPServerLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).GetMCPServerLogs(ctx, req.(*GetMCPServerLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_ListMCPCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListMCPCatalog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ListMCPCatalog_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListMCPCatalog(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Coordinator_ListProviders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -2527,6 +2629,18 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteMCPServer",
 			Handler:    _Coordinator_DeleteMCPServer_Handler,
+		},
+		{
+			MethodName: "RestartMCPServer",
+			Handler:    _Coordinator_RestartMCPServer_Handler,
+		},
+		{
+			MethodName: "GetMCPServerLogs",
+			Handler:    _Coordinator_GetMCPServerLogs_Handler,
+		},
+		{
+			MethodName: "ListMCPCatalog",
+			Handler:    _Coordinator_ListMCPCatalog_Handler,
 		},
 		{
 			MethodName: "ListProviders",

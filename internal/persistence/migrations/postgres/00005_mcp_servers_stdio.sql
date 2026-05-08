@@ -1,0 +1,7 @@
+ALTER TABLE mcp_servers ADD COLUMN transport TEXT NOT NULL DEFAULT 'http';
+ALTER TABLE mcp_servers ADD COLUMN catalog_id TEXT NOT NULL DEFAULT '';
+ALTER TABLE mcp_servers ADD COLUMN command TEXT NOT NULL DEFAULT '';
+ALTER TABLE mcp_servers ADD COLUMN args TEXT NOT NULL DEFAULT '';
+ALTER TABLE mcp_servers ADD COLUMN encrypted_env TEXT NOT NULL DEFAULT '';
+ALTER TABLE mcp_servers ADD COLUMN process_state TEXT NOT NULL DEFAULT 'stopped';
+ALTER TABLE mcp_servers ALTER COLUMN url DROP NOT NULL;

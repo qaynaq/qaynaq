@@ -2,11 +2,13 @@
 sidebar_position: 4
 ---
 
-# MCP Server Proxy
+# Remote MCP Servers (HTTP)
 
 Qaynaq's `/mcp` endpoint can serve tools from your own flows ([MCP Server](/docs/guides/mcp-server)) AND from external MCP servers you register, all in the same connection. Register an external server in **MCP Servers** and within ~30 seconds its tools appear alongside your native tools, namespaced by server name.
 
-This is useful when an upstream service already publishes an MCP server and you want a single endpoint your AI assistants can connect to instead of one per service.
+Qaynaq supports two flavors of upstream MCP server: **remote** (HTTP URL, this guide) and **local** (CLI binaries Qaynaq runs as a child process, see [Local MCP Servers](/docs/guides/mcp-local-servers)). Both show up in the same MCP Servers list and route through the same `/mcp` endpoint.
+
+Use this guide when an upstream service already publishes an HTTP MCP server and you want a single endpoint your AI assistants can connect to instead of one per service.
 
 ## When to Use the Proxy
 

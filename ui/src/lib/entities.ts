@@ -197,6 +197,34 @@ export type MCPServer = {
   last_sync_at?: string;
   created_at: string;
   updated_at: string;
+  transport: string;
+  catalog_id: string;
+  process_state: string;
+};
+
+export type MCPCatalogEnvSpec = {
+  name: string;
+  description: string;
+  required: boolean;
+  secret: boolean;
+  advanced: boolean;
+};
+
+export type MCPCatalogEntry = {
+  id: string;
+  display_name: string;
+  description: string;
+  docs_url: string;
+  maintainer: "official" | "community" | string;
+  command: string;
+  args: string[];
+  env_spec: MCPCatalogEnvSpec[];
+};
+
+export type MCPServerLogs = {
+  last_error: string;
+  stderr: string;
+  process_state: string;
 };
 
 export type Analytics = {

@@ -6948,6 +6948,12 @@ func (m *MCPServerInfo) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Transport
+
+	// no validation rules for CatalogId
+
+	// no validation rules for ProcessState
+
 	if m.LastSyncAt != nil {
 
 		if all {
@@ -7228,16 +7234,7 @@ func (m *CreateMCPServerRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetUrl()) < 1 {
-		err := CreateMCPServerRequestValidationError{
-			field:  "Url",
-			reason: "value length must be at least 1 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Url
 
 	// no validation rules for AuthType
 
@@ -7246,6 +7243,12 @@ func (m *CreateMCPServerRequest) validate(all bool) error {
 	// no validation rules for AuthValue
 
 	// no validation rules for ConnectionName
+
+	// no validation rules for Transport
+
+	// no validation rules for CatalogId
+
+	// no validation rules for Env
 
 	if len(errors) > 0 {
 		return CreateMCPServerRequestMultiError(errors)
@@ -7371,6 +7374,8 @@ func (m *UpdateMCPServerRequest) validate(all bool) error {
 	// no validation rules for AuthValue
 
 	// no validation rules for ConnectionName
+
+	// no validation rules for Env
 
 	if len(errors) > 0 {
 		return UpdateMCPServerRequestMultiError(errors)
@@ -7564,6 +7569,734 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = DeleteMCPServerRequestValidationError{}
+
+// Validate checks the field values on RestartMCPServerRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RestartMCPServerRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RestartMCPServerRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RestartMCPServerRequestMultiError, or nil if none found.
+func (m *RestartMCPServerRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RestartMCPServerRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetId() <= 0 {
+		err := RestartMCPServerRequestValidationError{
+			field:  "Id",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return RestartMCPServerRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// RestartMCPServerRequestMultiError is an error wrapping multiple validation
+// errors returned by RestartMCPServerRequest.ValidateAll() if the designated
+// constraints aren't met.
+type RestartMCPServerRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RestartMCPServerRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RestartMCPServerRequestMultiError) AllErrors() []error { return m }
+
+// RestartMCPServerRequestValidationError is the validation error returned by
+// RestartMCPServerRequest.Validate if the designated constraints aren't met.
+type RestartMCPServerRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RestartMCPServerRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RestartMCPServerRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RestartMCPServerRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RestartMCPServerRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RestartMCPServerRequestValidationError) ErrorName() string {
+	return "RestartMCPServerRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RestartMCPServerRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRestartMCPServerRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RestartMCPServerRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RestartMCPServerRequestValidationError{}
+
+// Validate checks the field values on GetMCPServerLogsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetMCPServerLogsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetMCPServerLogsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetMCPServerLogsRequestMultiError, or nil if none found.
+func (m *GetMCPServerLogsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetMCPServerLogsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetId() <= 0 {
+		err := GetMCPServerLogsRequestValidationError{
+			field:  "Id",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return GetMCPServerLogsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetMCPServerLogsRequestMultiError is an error wrapping multiple validation
+// errors returned by GetMCPServerLogsRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetMCPServerLogsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetMCPServerLogsRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetMCPServerLogsRequestMultiError) AllErrors() []error { return m }
+
+// GetMCPServerLogsRequestValidationError is the validation error returned by
+// GetMCPServerLogsRequest.Validate if the designated constraints aren't met.
+type GetMCPServerLogsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetMCPServerLogsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetMCPServerLogsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetMCPServerLogsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetMCPServerLogsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetMCPServerLogsRequestValidationError) ErrorName() string {
+	return "GetMCPServerLogsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetMCPServerLogsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetMCPServerLogsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetMCPServerLogsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetMCPServerLogsRequestValidationError{}
+
+// Validate checks the field values on MCPServerLogsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *MCPServerLogsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on MCPServerLogsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// MCPServerLogsResponseMultiError, or nil if none found.
+func (m *MCPServerLogsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *MCPServerLogsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for LastError
+
+	// no validation rules for Stderr
+
+	// no validation rules for ProcessState
+
+	if len(errors) > 0 {
+		return MCPServerLogsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// MCPServerLogsResponseMultiError is an error wrapping multiple validation
+// errors returned by MCPServerLogsResponse.ValidateAll() if the designated
+// constraints aren't met.
+type MCPServerLogsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m MCPServerLogsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m MCPServerLogsResponseMultiError) AllErrors() []error { return m }
+
+// MCPServerLogsResponseValidationError is the validation error returned by
+// MCPServerLogsResponse.Validate if the designated constraints aren't met.
+type MCPServerLogsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e MCPServerLogsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e MCPServerLogsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e MCPServerLogsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e MCPServerLogsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e MCPServerLogsResponseValidationError) ErrorName() string {
+	return "MCPServerLogsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e MCPServerLogsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sMCPServerLogsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = MCPServerLogsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = MCPServerLogsResponseValidationError{}
+
+// Validate checks the field values on MCPCatalogEntry with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *MCPCatalogEntry) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on MCPCatalogEntry with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// MCPCatalogEntryMultiError, or nil if none found.
+func (m *MCPCatalogEntry) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *MCPCatalogEntry) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for DisplayName
+
+	// no validation rules for Description
+
+	// no validation rules for DocsUrl
+
+	// no validation rules for Command
+
+	for idx, item := range m.GetEnvSpec() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, MCPCatalogEntryValidationError{
+						field:  fmt.Sprintf("EnvSpec[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, MCPCatalogEntryValidationError{
+						field:  fmt.Sprintf("EnvSpec[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return MCPCatalogEntryValidationError{
+					field:  fmt.Sprintf("EnvSpec[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Maintainer
+
+	if len(errors) > 0 {
+		return MCPCatalogEntryMultiError(errors)
+	}
+
+	return nil
+}
+
+// MCPCatalogEntryMultiError is an error wrapping multiple validation errors
+// returned by MCPCatalogEntry.ValidateAll() if the designated constraints
+// aren't met.
+type MCPCatalogEntryMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m MCPCatalogEntryMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m MCPCatalogEntryMultiError) AllErrors() []error { return m }
+
+// MCPCatalogEntryValidationError is the validation error returned by
+// MCPCatalogEntry.Validate if the designated constraints aren't met.
+type MCPCatalogEntryValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e MCPCatalogEntryValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e MCPCatalogEntryValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e MCPCatalogEntryValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e MCPCatalogEntryValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e MCPCatalogEntryValidationError) ErrorName() string { return "MCPCatalogEntryValidationError" }
+
+// Error satisfies the builtin error interface
+func (e MCPCatalogEntryValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sMCPCatalogEntry.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = MCPCatalogEntryValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = MCPCatalogEntryValidationError{}
+
+// Validate checks the field values on MCPCatalogEnvSpec with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *MCPCatalogEnvSpec) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on MCPCatalogEnvSpec with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// MCPCatalogEnvSpecMultiError, or nil if none found.
+func (m *MCPCatalogEnvSpec) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *MCPCatalogEnvSpec) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Description
+
+	// no validation rules for Required
+
+	// no validation rules for Secret
+
+	// no validation rules for Advanced
+
+	if len(errors) > 0 {
+		return MCPCatalogEnvSpecMultiError(errors)
+	}
+
+	return nil
+}
+
+// MCPCatalogEnvSpecMultiError is an error wrapping multiple validation errors
+// returned by MCPCatalogEnvSpec.ValidateAll() if the designated constraints
+// aren't met.
+type MCPCatalogEnvSpecMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m MCPCatalogEnvSpecMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m MCPCatalogEnvSpecMultiError) AllErrors() []error { return m }
+
+// MCPCatalogEnvSpecValidationError is the validation error returned by
+// MCPCatalogEnvSpec.Validate if the designated constraints aren't met.
+type MCPCatalogEnvSpecValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e MCPCatalogEnvSpecValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e MCPCatalogEnvSpecValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e MCPCatalogEnvSpecValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e MCPCatalogEnvSpecValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e MCPCatalogEnvSpecValidationError) ErrorName() string {
+	return "MCPCatalogEnvSpecValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e MCPCatalogEnvSpecValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sMCPCatalogEnvSpec.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = MCPCatalogEnvSpecValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = MCPCatalogEnvSpecValidationError{}
+
+// Validate checks the field values on ListMCPCatalogResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListMCPCatalogResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListMCPCatalogResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListMCPCatalogResponseMultiError, or nil if none found.
+func (m *ListMCPCatalogResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListMCPCatalogResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetData() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListMCPCatalogResponseValidationError{
+						field:  fmt.Sprintf("Data[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListMCPCatalogResponseValidationError{
+						field:  fmt.Sprintf("Data[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListMCPCatalogResponseValidationError{
+					field:  fmt.Sprintf("Data[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ListMCPCatalogResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListMCPCatalogResponseMultiError is an error wrapping multiple validation
+// errors returned by ListMCPCatalogResponse.ValidateAll() if the designated
+// constraints aren't met.
+type ListMCPCatalogResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListMCPCatalogResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListMCPCatalogResponseMultiError) AllErrors() []error { return m }
+
+// ListMCPCatalogResponseValidationError is the validation error returned by
+// ListMCPCatalogResponse.Validate if the designated constraints aren't met.
+type ListMCPCatalogResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListMCPCatalogResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListMCPCatalogResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListMCPCatalogResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListMCPCatalogResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListMCPCatalogResponseValidationError) ErrorName() string {
+	return "ListMCPCatalogResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListMCPCatalogResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListMCPCatalogResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListMCPCatalogResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListMCPCatalogResponseValidationError{}
 
 // Validate checks the field values on ConnectionRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the

@@ -16,6 +16,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/qaynaq/qaynaq/internal/config"
+	"github.com/qaynaq/qaynaq/internal/mcp"
 	"github.com/qaynaq/qaynaq/internal/persistence"
 	pb "github.com/qaynaq/qaynaq/internal/protogen"
 )
@@ -383,6 +384,9 @@ func (c *CoordinatorAPI) ListMCPServers(_ context.Context, _ *emptypb.Empty) (*p
 			LastError:      s.LastError,
 			CreatedAt:      timestamppb.New(s.CreatedAt),
 			UpdatedAt:      timestamppb.New(s.UpdatedAt),
+			Transport:      s.Transport,
+			CatalogId:      s.CatalogID,
+			ProcessState:   s.ProcessState,
 		}
 		if s.LastSyncAt != nil {
 			pbServers[i].LastSyncAt = timestamppb.New(*s.LastSyncAt)
@@ -396,36 +400,72 @@ func (c *CoordinatorAPI) CreateMCPServer(_ context.Context, req *pb.CreateMCPSer
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
-	if req.Url == "" {
-		return nil, status.Error(codes.InvalidArgument, "url is required")
-	}
 
-	authType := req.AuthType
-	if authType == "" {
-		if req.ConnectionName != "" {
-			authType = "connection"
-		} else if req.AuthValue != "" {
-			authType = "token"
-		} else {
-			authType = "none"
-		}
+	transport := req.Transport
+	if transport == "" {
+		transport = persistence.MCPTransportHTTP
 	}
 
 	server := &persistence.MCPServer{
-		Name:           req.Name,
-		URL:            req.Url,
-		AuthType:       authType,
-		AuthHeader:     req.AuthHeader,
-		ConnectionName: req.ConnectionName,
-		Status:         "active",
+		Name:      req.Name,
+		Status:    "active",
+		Transport: transport,
 	}
 
-	if req.AuthValue != "" && c.aesgcm != nil {
-		encrypted, err := c.aesgcm.Encrypt(req.AuthValue)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to encrypt auth value: %v", err)
+	switch transport {
+	case persistence.MCPTransportHTTP:
+		if req.Url == "" {
+			return nil, status.Error(codes.InvalidArgument, "url is required for http transport")
 		}
-		server.EncryptedAuthValue = encrypted
+		authType := req.AuthType
+		if authType == "" {
+			if req.ConnectionName != "" {
+				authType = "connection"
+			} else if req.AuthValue != "" {
+				authType = "token"
+			} else {
+				authType = "none"
+			}
+		}
+		server.URL = req.Url
+		server.AuthType = authType
+		server.AuthHeader = req.AuthHeader
+		server.ConnectionName = req.ConnectionName
+		if req.AuthValue != "" && c.aesgcm != nil {
+			encrypted, err := c.aesgcm.Encrypt(req.AuthValue)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to encrypt auth value: %v", err)
+			}
+			server.EncryptedAuthValue = encrypted
+		}
+	case persistence.MCPTransportStdio:
+		if req.CatalogId == "" {
+			return nil, status.Error(codes.InvalidArgument, "catalog_id is required for stdio transport")
+		}
+		entry, ok := mcp.LookupCatalogEntry(req.CatalogId)
+		if !ok {
+			return nil, status.Errorf(codes.InvalidArgument, "unknown catalog entry %q", req.CatalogId)
+		}
+		for _, spec := range entry.EnvSpec {
+			if spec.Required {
+				if v, ok := req.Env[spec.Name]; !ok || v == "" {
+					return nil, status.Errorf(codes.InvalidArgument, "required env var %q missing", spec.Name)
+				}
+			}
+		}
+		server.AuthType = "none"
+		server.CatalogID = req.CatalogId
+		server.Command = entry.Command
+		if req.Env != nil {
+			resolver := mcp.NewEnvResolver(c.secretRepo, c.aesgcm)
+			blob, err := mcp.EncodeEnvBlob(req.Env, resolver)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to encrypt env: %v", err)
+			}
+			server.EncryptedEnv = blob
+		}
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown transport %q", transport)
 	}
 
 	if err := c.mcpServerRepo.Create(server); err != nil {
@@ -443,6 +483,9 @@ func (c *CoordinatorAPI) CreateMCPServer(_ context.Context, req *pb.CreateMCPSer
 		AuthHeader:     server.AuthHeader,
 		ConnectionName: server.ConnectionName,
 		Status:         server.Status,
+		Transport:      server.Transport,
+		CatalogId:      server.CatalogID,
+		ProcessState:   server.ProcessState,
 		CreatedAt:      timestamppb.New(server.CreatedAt),
 		UpdatedAt:      timestamppb.New(server.UpdatedAt),
 	}, nil
@@ -461,24 +504,42 @@ func (c *CoordinatorAPI) UpdateMCPServer(_ context.Context, req *pb.UpdateMCPSer
 	if req.Name != "" {
 		server.Name = req.Name
 	}
-	if req.Url != "" {
-		server.URL = req.Url
-	}
-	if req.AuthType != "" {
-		server.AuthType = req.AuthType
-	}
-	if req.AuthHeader != "" {
-		server.AuthHeader = req.AuthHeader
-	}
-	if req.ConnectionName != "" {
-		server.ConnectionName = req.ConnectionName
-	}
-	if req.AuthValue != "" && c.aesgcm != nil {
-		encrypted, err := c.aesgcm.Encrypt(req.AuthValue)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to encrypt auth value: %v", err)
+
+	stdioEnvChanged := false
+	switch server.Transport {
+	case persistence.MCPTransportStdio:
+		// Catalog ID and command are immutable after create. Env is editable.
+		if req.Env != nil {
+			resolver := mcp.NewEnvResolver(c.secretRepo, c.aesgcm)
+			blob, err := mcp.EncodeEnvBlob(req.Env, resolver)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to encrypt env: %v", err)
+			}
+			server.EncryptedEnv = blob
+			stdioEnvChanged = true
+			// Edits force a fresh process so the new env takes effect.
+			c.mcpHandler.StdioSupervisor().Stop(server.ID)
 		}
-		server.EncryptedAuthValue = encrypted
+	default:
+		if req.Url != "" {
+			server.URL = req.Url
+		}
+		if req.AuthType != "" {
+			server.AuthType = req.AuthType
+		}
+		if req.AuthHeader != "" {
+			server.AuthHeader = req.AuthHeader
+		}
+		if req.ConnectionName != "" {
+			server.ConnectionName = req.ConnectionName
+		}
+		if req.AuthValue != "" && c.aesgcm != nil {
+			encrypted, err := c.aesgcm.Encrypt(req.AuthValue)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to encrypt auth value: %v", err)
+			}
+			server.EncryptedAuthValue = encrypted
+		}
 	}
 
 	// Reset status to active on update (resets circuit breaker)
@@ -486,6 +547,12 @@ func (c *CoordinatorAPI) UpdateMCPServer(_ context.Context, req *pb.UpdateMCPSer
 
 	if err := c.mcpServerRepo.Update(server); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update MCP server: %v", err)
+	}
+
+	// Kick a fresh spawn after env edits so the new env applies without waiting
+	// for the next 30s sync tick.
+	if stdioEnvChanged {
+		_, _ = c.mcpHandler.StdioSupervisor().Get(context.Background(), server)
 	}
 
 	return &pb.MCPServerInfo{
@@ -497,6 +564,9 @@ func (c *CoordinatorAPI) UpdateMCPServer(_ context.Context, req *pb.UpdateMCPSer
 		ConnectionName: server.ConnectionName,
 		Status:         server.Status,
 		ToolCount:      int32(server.ToolCount),
+		Transport:      server.Transport,
+		CatalogId:      server.CatalogID,
+		ProcessState:   server.ProcessState,
 		CreatedAt:      timestamppb.New(server.CreatedAt),
 		UpdatedAt:      timestamppb.New(server.UpdatedAt),
 	}, nil
@@ -507,9 +577,87 @@ func (c *CoordinatorAPI) DeleteMCPServer(_ context.Context, req *pb.DeleteMCPSer
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}
 
+	// Stop the supervised process before dropping the row so we don't leak a
+	// child process whose DB row is gone.
+	c.mcpHandler.StdioSupervisor().Remove(req.Id)
+
 	if err := c.mcpServerRepo.Delete(req.Id); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete MCP server: %v", err)
 	}
 
 	return &pb.CommonResponse{Message: "MCP server deleted"}, nil
+}
+
+func (c *CoordinatorAPI) RestartMCPServer(_ context.Context, req *pb.RestartMCPServerRequest) (*pb.CommonResponse, error) {
+	if req.Id <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+	server, err := c.mcpServerRepo.GetByID(req.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "MCP server not found: %v", err)
+	}
+	if server.Transport != persistence.MCPTransportStdio {
+		return nil, status.Error(codes.FailedPrecondition, "restart is only supported for stdio servers")
+	}
+
+	sup := c.mcpHandler.StdioSupervisor()
+	sup.Stop(server.ID)
+	sup.Restart(server.ID)
+	_ = c.mcpServerRepo.UpdateStatus(server.ID, "active")
+	_ = c.mcpServerRepo.UpdateSyncStatus(server.ID, server.ToolCount, "")
+	// Kick a spawn now so the user does not wait for the next 30s sync tick.
+	// Get returns ErrStarting and does its work in the background.
+	_, _ = sup.Get(context.Background(), server)
+
+	return &pb.CommonResponse{Message: "Server scheduled for restart"}, nil
+}
+
+func (c *CoordinatorAPI) GetMCPServerLogs(_ context.Context, req *pb.GetMCPServerLogsRequest) (*pb.MCPServerLogsResponse, error) {
+	if req.Id <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+	server, err := c.mcpServerRepo.GetByID(req.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "MCP server not found: %v", err)
+	}
+
+	resp := &pb.MCPServerLogsResponse{
+		LastError:    server.LastError,
+		ProcessState: server.ProcessState,
+	}
+	sup := c.mcpHandler.StdioSupervisor()
+	live, stderr := sup.LastError(server.ID)
+	if live != "" {
+		resp.LastError = live
+	}
+	resp.Stderr = stderr
+	resp.ProcessState = sup.State(server.ID)
+	return resp, nil
+}
+
+func (c *CoordinatorAPI) ListMCPCatalog(_ context.Context, _ *emptypb.Empty) (*pb.ListMCPCatalogResponse, error) {
+	entries := mcp.ListCatalogEntries()
+	out := &pb.ListMCPCatalogResponse{Data: make([]*pb.MCPCatalogEntry, 0, len(entries))}
+	for _, e := range entries {
+		pbEntry := &pb.MCPCatalogEntry{
+			Id:          e.ID,
+			DisplayName: e.DisplayName,
+			Description: e.Description,
+			DocsUrl:     e.DocsURL,
+			Maintainer:  string(e.Maintainer),
+			Command:     e.Command,
+			Args:        e.ArgsTemplate,
+		}
+		for _, spec := range e.EnvSpec {
+			pbEntry.EnvSpec = append(pbEntry.EnvSpec, &pb.MCPCatalogEnvSpec{
+				Name:        spec.Name,
+				Description: spec.Description,
+				Required:    spec.Required,
+				Secret:      spec.Secret,
+				Advanced:    spec.Advanced,
+			})
+		}
+		out.Data = append(out.Data, pbEntry)
+	}
+	return out, nil
 }

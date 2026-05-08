@@ -91,7 +91,8 @@ const sidebars = {
         "guides/connections",
         "guides/google-oauth-setup",
         "guides/mcp-server",
-        "guides/mcp-server-proxy",
+        "guides/mcp-remote-servers",
+        "guides/mcp-local-servers",
         "guides/mcp-oauth",
         {
           type: "category",

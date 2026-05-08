@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -34,13 +35,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Server } from "lucide-react";
+import { Plus, Trash2, Server, RefreshCw, Terminal, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/components/toast";
-import { Connection, MCPServer } from "@/lib/entities";
+import {
+  Connection,
+  MCPServer,
+  MCPCatalogEntry,
+  MCPCatalogEnvSpec,
+  MCPServerLogs,
+} from "@/lib/entities";
 import {
   fetchMCPServers,
   createMCPServer,
   deleteMCPServer,
+  restartMCPServer,
+  fetchMCPServerLogs,
+  fetchMCPCatalog,
   fetchConnections,
 } from "@/lib/api";
 import { useRelativeTime } from "@/lib/utils";
@@ -50,34 +60,141 @@ const RelativeTime = ({ dateString }: { dateString: string }) => {
   return <span>{relativeTime}</span>;
 };
 
+const MaintainerBadge = ({ maintainer }: { maintainer: string }) => {
+  if (maintainer !== "official" && maintainer !== "community") return null;
+  const isOfficial = maintainer === "official";
+  return (
+    <span
+      className={
+        "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide " +
+        (isOfficial
+          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200")
+      }
+    >
+      {maintainer}
+    </span>
+  );
+};
+
+type Transport = "http" | "stdio";
+
+// Whole-string ${NAME} ref. Composed strings stay masked because they may
+// surround real secret data.
+const SECRET_REF_RE = /^\s*\$\{[A-Za-z_][A-Za-z0-9_]*\}\s*$/;
+
+const EnvField = ({
+  spec,
+  env,
+  setEnv,
+}: {
+  spec: MCPCatalogEnvSpec;
+  env: Record<string, string>;
+  setEnv: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}) => {
+  const [reveal, setReveal] = useState(false);
+  const value = env[spec.name] || "";
+  const isRef = SECRET_REF_RE.test(value);
+  const masked = spec.secret && !isRef && !reveal;
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`env-${spec.name}`}>
+        {spec.name}
+        {spec.required && <span className="text-destructive"> *</span>}
+        {!spec.required && (
+          <span className="text-muted-foreground"> (optional)</span>
+        )}
+      </Label>
+      <div className="relative">
+        <Input
+          id={`env-${spec.name}`}
+          type={masked ? "password" : "text"}
+          placeholder={spec.secret ? "value or ${SECRET_KEY}" : "value"}
+          value={value}
+          onChange={(e) =>
+            setEnv((prev) => ({
+              ...prev,
+              [spec.name]: e.target.value,
+            }))
+          }
+          required={spec.required}
+          className={spec.secret ? "pr-9" : undefined}
+        />
+        {spec.secret && (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setReveal((v) => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label={masked ? "Show value" : "Hide value"}
+          >
+            {masked ? (
+              <Eye className="h-4 w-4" />
+            ) : (
+              <EyeOff className="h-4 w-4" />
+            )}
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {spec.description}
+        {spec.secret && (
+          <>
+            {" "}
+            Use{" "}
+            <code className="bg-muted px-1 rounded">${"{KEY}"}</code> to
+            reference a saved secret (shown unmasked).
+          </>
+        )}
+      </p>
+    </div>
+  );
+};
+
 export default function MCPServersPage() {
   const { addToast } = useToast();
   const [mcpServers, setMcpServers] = useState<MCPServer[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
+  const [catalog, setCatalog] = useState<MCPCatalogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddServerOpen, setIsAddServerOpen] = useState(false);
   const [isAddingServer, setIsAddingServer] = useState(false);
+  const [transport, setTransport] = useState<Transport>("http");
+
   const [newServerName, setNewServerName] = useState("");
   const [newServerUrl, setNewServerUrl] = useState("");
   const [newServerAuthType, setNewServerAuthType] = useState("none");
   const [newServerAuthHeader, setNewServerAuthHeader] = useState("");
   const [newServerAuthValue, setNewServerAuthValue] = useState("");
   const [newServerConnectionName, setNewServerConnectionName] = useState("");
+
+  const [selectedCatalogId, setSelectedCatalogId] = useState("");
+  const [stdioEnv, setStdioEnv] = useState<Record<string, string>>({});
+  const [showAdvancedEnv, setShowAdvancedEnv] = useState(false);
+
   const [deleteServerConfirmOpen, setDeleteServerConfirmOpen] = useState(false);
   const [serverToDelete, setServerToDelete] = useState<MCPServer | null>(null);
 
+  const [logsOpenForServer, setLogsOpenForServer] = useState<MCPServer | null>(
+    null,
+  );
+  const [logs, setLogs] = useState<MCPServerLogs | null>(null);
+
   useEffect(() => {
-    loadMCPServers();
+    loadAll();
   }, []);
 
-  const loadMCPServers = async () => {
+  const loadAll = async () => {
     try {
-      const [servers, conns] = await Promise.all([
+      const [servers, conns, cat] = await Promise.all([
         fetchMCPServers(),
         fetchConnections().catch(() => []),
+        fetchMCPCatalog().catch(() => []),
       ]);
       setMcpServers(servers);
       setConnections(conns);
+      setCatalog(cat);
     } catch (error) {
       addToast({
         id: "mcp-servers-load-error",
@@ -91,27 +208,59 @@ export default function MCPServersPage() {
     }
   };
 
+  const resetForm = () => {
+    setNewServerName("");
+    setNewServerUrl("");
+    setNewServerAuthType("none");
+    setNewServerAuthHeader("");
+    setNewServerAuthValue("");
+    setNewServerConnectionName("");
+    setSelectedCatalogId("");
+    setStdioEnv({});
+    setShowAdvancedEnv(false);
+    setTransport("http");
+  };
+
+  const selectedCatalog = catalog.find((e) => e.id === selectedCatalogId);
+
   const handleAddServer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newServerName.trim() || !newServerUrl.trim()) return;
+    if (!newServerName.trim()) return;
 
     setIsAddingServer(true);
     try {
-      const server = await createMCPServer({
-        name: newServerName.trim(),
-        url: newServerUrl.trim(),
-        auth_type: newServerAuthType,
-        auth_header: newServerAuthHeader.trim(),
-        auth_value: newServerAuthValue.trim(),
-        connection_name: newServerConnectionName,
-      });
+      let server: MCPServer;
+      if (transport === "stdio") {
+        if (!selectedCatalogId) {
+          addToast({
+            id: "stdio-no-catalog",
+            title: "Pick a server type",
+            description: "Choose an entry from the catalog before saving.",
+            variant: "error",
+          });
+          setIsAddingServer(false);
+          return;
+        }
+        server = await createMCPServer({
+          name: newServerName.trim(),
+          transport: "stdio",
+          catalog_id: selectedCatalogId,
+          env: stdioEnv,
+        });
+      } else {
+        if (!newServerUrl.trim()) return;
+        server = await createMCPServer({
+          name: newServerName.trim(),
+          transport: "http",
+          url: newServerUrl.trim(),
+          auth_type: newServerAuthType,
+          auth_header: newServerAuthHeader.trim(),
+          auth_value: newServerAuthValue.trim(),
+          connection_name: newServerConnectionName,
+        });
+      }
       setMcpServers((prev) => [server, ...prev]);
-      setNewServerName("");
-      setNewServerUrl("");
-      setNewServerAuthType("none");
-      setNewServerAuthHeader("");
-      setNewServerAuthValue("");
-      setNewServerConnectionName("");
+      resetForm();
       setIsAddServerOpen(false);
       addToast({
         id: "server-created",
@@ -161,6 +310,44 @@ export default function MCPServersPage() {
     }
   };
 
+  const handleRestart = async (server: MCPServer) => {
+    try {
+      await restartMCPServer(server.id);
+      addToast({
+        id: "server-restarted",
+        title: "Restart Scheduled",
+        description: `Server "${server.name}" will restart on the next sync.`,
+        variant: "success",
+      });
+      await loadAll();
+    } catch (error) {
+      addToast({
+        id: "server-restart-error",
+        title: "Restart Failed",
+        description:
+          error instanceof Error ? error.message : "Unknown error",
+        variant: "error",
+      });
+    }
+  };
+
+  const handleViewLogs = async (server: MCPServer) => {
+    setLogsOpenForServer(server);
+    setLogs(null);
+    try {
+      const data = await fetchMCPServerLogs(server.id);
+      setLogs(data);
+    } catch (error) {
+      addToast({
+        id: "server-logs-error",
+        title: "Failed to load logs",
+        description:
+          error instanceof Error ? error.message : "Unknown error",
+        variant: "error",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -189,7 +376,13 @@ export default function MCPServersPage() {
                 Qaynaq's /mcp endpoint
               </CardDescription>
             </div>
-            <Dialog open={isAddServerOpen} onOpenChange={setIsAddServerOpen}>
+            <Dialog
+              open={isAddServerOpen}
+              onOpenChange={(open) => {
+                setIsAddServerOpen(open);
+                if (!open) resetForm();
+              }}
+            >
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
@@ -215,106 +408,240 @@ export default function MCPServersPage() {
                       slack__send_message)
                     </p>
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="server-url">Server URL</Label>
-                    <Input
-                      id="server-url"
-                      placeholder="https://mcp-server.example.com/mcp"
-                      value={newServerUrl}
-                      onChange={(e) => setNewServerUrl(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Authentication</Label>
+                    <Label>Server type</Label>
                     <Select
-                      value={newServerAuthType}
-                      onValueChange={setNewServerAuthType}
+                      value={transport}
+                      onValueChange={(v) => setTransport(v as Transport)}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">No authentication</SelectItem>
-                        <SelectItem value="token">
-                          Bearer token / API key
+                        <SelectItem value="http">
+                          Remote (HTTP URL)
                         </SelectItem>
-                        {connections.length > 0 && (
-                          <SelectItem value="connection">
-                            OAuth connection
-                          </SelectItem>
-                        )}
+                        <SelectItem value="stdio">
+                          Local (command / npx)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  {newServerAuthType === "token" && (
+
+                  {transport === "http" && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="server-auth-value">Token</Label>
+                        <Label htmlFor="server-url">Server URL</Label>
                         <Input
-                          id="server-auth-value"
-                          type="password"
-                          placeholder="e.g., xoxb-..., sk-..., or your API key"
-                          value={newServerAuthValue}
-                          onChange={(e) =>
-                            setNewServerAuthValue(e.target.value)
-                          }
+                          id="server-url"
+                          placeholder="https://mcp-server.example.com/mcp"
+                          value={newServerUrl}
+                          onChange={(e) => setNewServerUrl(e.target.value)}
+                          required
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Sent as{" "}
-                          <code className="bg-muted px-1 py-0.5 rounded">
-                            Authorization: Bearer {"{token}"}
-                          </code>{" "}
-                          by default
-                        </p>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="server-auth-header">
-                          Custom Header{" "}
-                          <span className="text-muted-foreground">
-                            (optional)
-                          </span>
-                        </Label>
-                        <Input
-                          id="server-auth-header"
-                          placeholder="e.g., X-API-Key (leave empty for Bearer auth)"
-                          value={newServerAuthHeader}
-                          onChange={(e) =>
-                            setNewServerAuthHeader(e.target.value)
-                          }
-                        />
+                        <Label>Authentication</Label>
+                        <Select
+                          value={newServerAuthType}
+                          onValueChange={setNewServerAuthType}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">
+                              No authentication
+                            </SelectItem>
+                            <SelectItem value="token">
+                              Bearer token / API key
+                            </SelectItem>
+                            {connections.length > 0 && (
+                              <SelectItem value="connection">
+                                OAuth connection
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
+                      {newServerAuthType === "token" && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="server-auth-value">Token</Label>
+                            <Input
+                              id="server-auth-value"
+                              type="password"
+                              placeholder="e.g., xoxb-..., sk-..., or your API key"
+                              value={newServerAuthValue}
+                              onChange={(e) =>
+                                setNewServerAuthValue(e.target.value)
+                              }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Sent as{" "}
+                              <code className="bg-muted px-1 py-0.5 rounded">
+                                Authorization: Bearer {"{token}"}
+                              </code>{" "}
+                              by default
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="server-auth-header">
+                              Custom Header{" "}
+                              <span className="text-muted-foreground">
+                                (optional)
+                              </span>
+                            </Label>
+                            <Input
+                              id="server-auth-header"
+                              placeholder="e.g., X-API-Key (leave empty for Bearer auth)"
+                              value={newServerAuthHeader}
+                              onChange={(e) =>
+                                setNewServerAuthHeader(e.target.value)
+                              }
+                            />
+                          </div>
+                        </>
+                      )}
+                      {newServerAuthType === "connection" && (
+                        <div className="space-y-2">
+                          <Label>Connection</Label>
+                          <Select
+                            value={newServerConnectionName}
+                            onValueChange={setNewServerConnectionName}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a connection" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {connections.map((conn) => (
+                                <SelectItem key={conn.name} value={conn.name}>
+                                  {conn.name} ({conn.provider})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            Uses the OAuth access token from this connection.
+                            Token refresh is automatic.
+                          </p>
+                        </div>
+                      )}
                     </>
                   )}
-                  {newServerAuthType === "connection" && (
-                    <div className="space-y-2">
-                      <Label>Connection</Label>
-                      <Select
-                        value={newServerConnectionName}
-                        onValueChange={setNewServerConnectionName}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a connection" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {connections.map((conn) => (
-                            <SelectItem key={conn.name} value={conn.name}>
-                              {conn.name} ({conn.provider})
-                            </SelectItem>
+
+                  {transport === "stdio" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Catalog</Label>
+                        <Select
+                          value={selectedCatalogId}
+                          onValueChange={(id) => {
+                            setSelectedCatalogId(id);
+                            setStdioEnv({});
+                            setShowAdvancedEnv(false);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pick a server" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {catalog.map((entry) => (
+                              <SelectItem key={entry.id} value={entry.id}>
+                                <span className="flex items-center gap-2">
+                                  {entry.display_name}
+                                  <MaintainerBadge
+                                    maintainer={entry.maintainer}
+                                  />
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedCatalog && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                            <MaintainerBadge
+                              maintainer={selectedCatalog.maintainer}
+                            />
+                            <span>{selectedCatalog.description}</span>
+                            {selectedCatalog.docs_url && (
+                              <a
+                                href={selectedCatalog.docs_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline"
+                              >
+                                docs
+                              </a>
+                            )}
+                          </p>
+                        )}
+                      </div>
+
+                      {selectedCatalog &&
+                        selectedCatalog.env_spec
+                          .filter((s) => !s.advanced)
+                          .map((spec) => (
+                            <EnvField
+                              key={spec.name}
+                              spec={spec}
+                              env={stdioEnv}
+                              setEnv={setStdioEnv}
+                            />
                           ))}
-                        </SelectContent>
-                      </Select>
+
+                      {selectedCatalog &&
+                        selectedCatalog.env_spec.some((s) => s.advanced) && (
+                          <div className="space-y-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowAdvancedEnv((v) => !v)}
+                              className="text-xs text-muted-foreground underline"
+                            >
+                              {showAdvancedEnv
+                                ? "Hide advanced settings"
+                                : "Show advanced settings"}
+                            </button>
+                            {showAdvancedEnv && (
+                              <div className="space-y-4 border-l-2 border-muted pl-3">
+                                {selectedCatalog.env_spec
+                                  .filter((s) => s.advanced)
+                                  .map((spec) => (
+                                    <EnvField
+                                      key={spec.name}
+                                      spec={spec}
+                                      env={stdioEnv}
+                                      setEnv={setStdioEnv}
+                                    />
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                       <p className="text-xs text-muted-foreground">
-                        Uses the OAuth access token from this connection. Token
-                        refresh is automatic.
+                        Command:{" "}
+                        <code className="bg-muted px-1 rounded">
+                          {selectedCatalog
+                            ? [
+                                selectedCatalog.command,
+                                ...selectedCatalog.args,
+                              ].join(" ")
+                            : "select a catalog entry"}
+                        </code>
                       </p>
-                    </div>
+                    </>
                   )}
+
                   <div className="flex justify-end gap-2">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setIsAddServerOpen(false)}
+                      onClick={() => {
+                        setIsAddServerOpen(false);
+                        resetForm();
+                      }}
                       disabled={isAddingServer}
                     >
                       Cancel
@@ -341,71 +668,108 @@ export default function MCPServersPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {mcpServers.map((server) => (
-                <div
-                  key={server.id}
-                  className="flex items-center justify-between border rounded-lg px-4 py-3"
-                >
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{server.name}</p>
-                      <Badge
-                        variant={
-                          server.status === "active"
-                            ? "default"
-                            : server.status === "error"
-                              ? "destructive"
-                              : "secondary"
-                        }
-                        className="text-xs"
-                      >
-                        {server.status}
-                      </Badge>
-                      {server.tool_count > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {server.tool_count} tools
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {server.url}
-                      {server.auth_type === "token" && (
-                        <span className="ml-2">(token auth)</span>
-                      )}
-                      {server.auth_type === "connection" &&
-                        server.connection_name && (
-                          <span className="ml-2">
-                            (via {server.connection_name})
+              {mcpServers.map((server) => {
+                const isStdio = server.transport === "stdio";
+                return (
+                  <div
+                    key={server.id}
+                    className="flex items-center justify-between border rounded-lg px-4 py-3"
+                  >
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-sm">{server.name}</p>
+                        <Badge
+                          variant={
+                            server.status === "active"
+                              ? "default"
+                              : server.status === "error"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="text-xs"
+                        >
+                          {server.status}
+                        </Badge>
+                        {isStdio && server.process_state && (
+                          <Badge variant="outline" className="text-xs">
+                            {server.process_state}
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          {isStdio ? "local" : "remote"}
+                        </Badge>
+                        {server.tool_count > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {server.tool_count} tools
                           </span>
                         )}
-                    </p>
-                    {server.last_error && server.status === "error" && (
-                      <p className="text-xs text-destructive truncate">
-                        {server.last_error}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {isStdio
+                          ? `catalog: ${server.catalog_id}`
+                          : server.url}
+                        {!isStdio && server.auth_type === "token" && (
+                          <span className="ml-2">(token auth)</span>
+                        )}
+                        {!isStdio &&
+                          server.auth_type === "connection" &&
+                          server.connection_name && (
+                            <span className="ml-2">
+                              (via {server.connection_name})
+                            </span>
+                          )}
                       </p>
-                    )}
-                    <div className="flex gap-3 text-xs text-muted-foreground">
-                      <span>
-                        Added <RelativeTime dateString={server.created_at} />
-                      </span>
-                      {server.last_sync_at && (
-                        <span>
-                          Synced{" "}
-                          <RelativeTime dateString={server.last_sync_at} />
-                        </span>
+                      {server.last_error && server.status === "error" && (
+                        <p className="text-xs text-destructive truncate">
+                          {server.last_error}
+                        </p>
                       )}
+                      <div className="flex gap-3 text-xs text-muted-foreground">
+                        <span>
+                          Added{" "}
+                          <RelativeTime dateString={server.created_at} />
+                        </span>
+                        {server.last_sync_at && (
+                          <span>
+                            Synced{" "}
+                            <RelativeTime dateString={server.last_sync_at} />
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    {isStdio && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewLogs(server)}
+                          className="text-muted-foreground hover:text-foreground"
+                          title="View logs"
+                        >
+                          <Terminal className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRestart(server)}
+                          className="text-muted-foreground hover:text-foreground"
+                          title="Restart"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteServer(server)}
+                      className="text-muted-foreground hover:text-destructive ml-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteServer(server)}
-                    className="text-muted-foreground hover:text-destructive ml-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -443,6 +807,53 @@ export default function MCPServersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={!!logsOpenForServer}
+        onOpenChange={(open) => {
+          if (!open) {
+            setLogsOpenForServer(null);
+            setLogs(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Logs for {logsOpenForServer?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {logs ? (
+            <div className="space-y-3">
+              <div>
+                <Label>Process state</Label>
+                <p className="text-sm">{logs.process_state || "unknown"}</p>
+              </div>
+              {logs.last_error && (
+                <div>
+                  <Label>Last error</Label>
+                  <Textarea
+                    readOnly
+                    value={logs.last_error}
+                    className="font-mono text-xs"
+                  />
+                </div>
+              )}
+              <div>
+                <Label>Stderr (last 4 KB)</Label>
+                <Textarea
+                  readOnly
+                  rows={10}
+                  value={logs.stderr || "(empty)"}
+                  className="font-mono text-xs"
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

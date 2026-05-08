@@ -7,6 +7,7 @@ import (
 	"github.com/qaynaq/qaynaq/internal/analytics"
 	"github.com/qaynaq/qaynaq/internal/config"
 	"github.com/qaynaq/qaynaq/internal/connection"
+	"github.com/qaynaq/qaynaq/internal/mcp"
 	pb "github.com/qaynaq/qaynaq/internal/protogen"
 
 	"github.com/qaynaq/qaynaq/internal/persistence"
@@ -59,6 +60,7 @@ type CoordinatorAPI struct {
 	flowWorkerMap     FlowWorkerMap
 	connManager       *connection.Manager
 	mcpServerRepo     persistence.MCPServerRepository
+	mcpHandler        *mcp.MCPHandler
 	authType          config.AuthType
 	mcpOAuthEnabled   bool
 	cache             settingsCache
@@ -90,6 +92,7 @@ func NewCoordinatorAPI(
 	connManager *connection.Manager,
 	flowWorkerMap FlowWorkerMap,
 	mcpServerRepo persistence.MCPServerRepository,
+	mcpHandler *mcp.MCPHandler,
 	authType config.AuthType,
 	mcpOAuthEnabled bool,
 ) *CoordinatorAPI {
@@ -118,6 +121,7 @@ func NewCoordinatorAPI(
 		connManager:       connManager,
 		flowWorkerMap:     flowWorkerMap,
 		mcpServerRepo:     mcpServerRepo,
+		mcpHandler:        mcpHandler,
 		authType:          authType,
 		mcpOAuthEnabled:   mcpOAuthEnabled,
 		tokenUsage:        tokenUsageTracker{pending: make(map[int64]time.Time)},

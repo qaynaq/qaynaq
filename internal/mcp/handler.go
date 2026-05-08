@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -57,21 +58,22 @@ const (
 )
 
 type MCPHandler struct {
-	mcpServer   *server.MCPServer
-	httpHandler *server.StreamableHTTPServer
-	flowRepo    persistence.FlowRepository
-	serverRepo  persistence.MCPServerRepository
-	forwarder   RequestForwarder
-	aesgcm      *vault.AESGCM
-	connManager *connection.Manager
-	mu sync.RWMutex
+	mcpServer       *server.MCPServer
+	httpHandler     *server.StreamableHTTPServer
+	flowRepo        persistence.FlowRepository
+	serverRepo      persistence.MCPServerRepository
+	forwarder       RequestForwarder
+	aesgcm          *vault.AESGCM
+	connManager     *connection.Manager
+	stdioSupervisor *StdioSupervisor
+	mu              sync.RWMutex
 	// tool name -> flow ID, used for forwarding via /ingest/{flowID}
 	toolFlowMap   map[string]int64
 	upstreams     map[string]*upstreamServer
 	lastToolsHash string
 }
 
-func NewMCPHandler(flowRepo persistence.FlowRepository, serverRepo persistence.MCPServerRepository, forwarder RequestForwarder, aesgcm *vault.AESGCM, connManager *connection.Manager, version string) *MCPHandler {
+func NewMCPHandler(flowRepo persistence.FlowRepository, serverRepo persistence.MCPServerRepository, secretRepo persistence.SecretRepository, forwarder RequestForwarder, aesgcm *vault.AESGCM, connManager *connection.Manager, version string) *MCPHandler {
 	mcpServer := server.NewMCPServer(
 		"qaynaq",
 		version,
@@ -80,20 +82,28 @@ func NewMCPHandler(flowRepo persistence.FlowRepository, serverRepo persistence.M
 
 	httpHandler := server.NewStreamableHTTPServer(mcpServer)
 
+	envResolver := NewEnvResolver(secretRepo, aesgcm)
+	stdioSup := NewStdioSupervisor(envResolver)
+
 	h := &MCPHandler{
-		mcpServer:   mcpServer,
-		httpHandler: httpHandler,
-		flowRepo:    flowRepo,
-		serverRepo:  serverRepo,
-		forwarder:   forwarder,
-		aesgcm:      aesgcm,
-		connManager: connManager,
-		toolFlowMap: make(map[string]int64),
-		upstreams:   make(map[string]*upstreamServer),
+		mcpServer:       mcpServer,
+		httpHandler:     httpHandler,
+		flowRepo:        flowRepo,
+		serverRepo:      serverRepo,
+		forwarder:       forwarder,
+		aesgcm:          aesgcm,
+		connManager:     connManager,
+		stdioSupervisor: stdioSup,
+		toolFlowMap:     make(map[string]int64),
+		upstreams:       make(map[string]*upstreamServer),
 	}
 
 	h.SyncTools()
 	return h
+}
+
+func (h *MCPHandler) StdioSupervisor() *StdioSupervisor {
+	return h.stdioSupervisor
 }
 
 func (h *MCPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +208,7 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]se
 		h.mu.Lock()
 		removed := len(h.upstreams) > 0
 		for name, us := range h.upstreams {
-			closeUpstreamClient(us)
+			h.releaseUpstream(us)
 			delete(h.upstreams, name)
 		}
 		h.mu.Unlock()
@@ -215,7 +225,7 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]se
 	rotated := false
 	for name, us := range h.upstreams {
 		if !activeNames[name] {
-			closeUpstreamClient(us)
+			h.releaseUpstream(us)
 			delete(h.upstreams, name)
 			rotated = true
 		}
@@ -277,6 +287,10 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 			return nil, false
 		}
 		log.Debug().Str("server", srv.Name).Msg("Upstream server cooldown elapsed, allowing retry")
+	}
+
+	if srv.Transport == persistence.MCPTransportStdio {
+		return h.syncOneStdioUpstream(ctx, srv, existing, nativeToolNames)
 	}
 
 	auth := h.resolveAuth(srv)
@@ -351,6 +365,89 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 
 	log.Debug().Str("server", srv.Name).Int("tool_count", len(tools)).Msg("Upstream MCP server synced")
 
+	return tools, needReconnect
+}
+
+func (h *MCPHandler) syncOneStdioUpstream(ctx context.Context, srv *persistence.MCPServer, existing *upstreamServer, nativeToolNames map[string]int64) ([]server.ServerTool, bool) {
+	if h.stdioSupervisor == nil {
+		log.Warn().Str("server", srv.Name).Msg("Stdio supervisor not configured, skipping")
+		return nil, false
+	}
+
+	client, err := h.stdioSupervisor.Get(ctx, srv)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrStarting):
+			log.Debug().Str("server", srv.Name).Msg("Stdio MCP server starting, will retry next sync")
+			return nil, false
+		case errors.Is(err, ErrFailed):
+			if h.serverRepo != nil {
+				_ = h.serverRepo.UpdateSyncStatus(srv.ID, 0, err.Error())
+				_ = h.serverRepo.UpdateStatus(srv.ID, "error")
+			}
+			return nil, false
+		case errors.Is(err, ErrCapExceeded):
+			log.Warn().Str("server", srv.Name).Msg("Stdio MCP process cap reached, skipping spawn")
+			return nil, false
+		default:
+			log.Warn().Err(err).Str("server", srv.Name).Msg("Stdio MCP supervisor returned error")
+			h.recordUpstreamFailure(srv, err)
+			return nil, false
+		}
+	}
+
+	needReconnect := existing == nil || existing.client != client
+
+	toolsResult, err := client.ListTools(ctx, mcp.ListToolsRequest{})
+	if err != nil {
+		log.Warn().Err(err).Str("server", srv.Name).Msg("Failed to list tools from stdio MCP server")
+		h.recordUpstreamFailure(srv, err)
+		return nil, needReconnect
+	}
+
+	var tools []server.ServerTool
+	var upstreamToolDefs []mcp.Tool
+	seenNames := make(map[string]bool)
+
+	for _, t := range toolsResult.Tools {
+		namespacedName := srv.Name + "__" + t.Name
+		if _, exists := nativeToolNames[namespacedName]; exists {
+			log.Warn().Str("tool", namespacedName).Str("server", srv.Name).Msg("Upstream tool name collides with native tool, skipping")
+			continue
+		}
+		if seenNames[namespacedName] {
+			continue
+		}
+		seenNames[namespacedName] = true
+
+		toolDef := t
+		toolDef.Name = namespacedName
+		upstreamToolDefs = append(upstreamToolDefs, toolDef)
+
+		tools = append(tools, server.ServerTool{
+			Tool:    toolDef,
+			Handler: h.createStdioToolHandler(srv.ID, srv.Name, t.Name),
+		})
+	}
+
+	h.mu.Lock()
+	h.upstreams[srv.Name] = &upstreamServer{
+		client:       client,
+		serverID:     srv.ID,
+		name:         srv.Name,
+		url:          "",
+		authKey:      "stdio",
+		tools:        upstreamToolDefs,
+		failureCount: 0,
+	}
+	h.mu.Unlock()
+
+	if h.serverRepo != nil {
+		_ = h.serverRepo.UpdateSyncStatus(srv.ID, len(tools), "")
+		_ = h.serverRepo.UpdateProcessState(srv.ID, h.stdioSupervisor.State(srv.ID))
+	}
+
+	log.Debug().Str("server", srv.Name).Int("tool_count", len(tools)).Msg("Stdio MCP server synced")
 	return tools, needReconnect
 }
 
@@ -432,11 +529,58 @@ func (h *MCPHandler) createUpstreamToolHandler(client *mcpclient.Client, origina
 	}
 }
 
+func (h *MCPHandler) createStdioToolHandler(serverID int64, serverName, originalToolName string) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		start := time.Now()
+
+		// Always re-fetch through the supervisor: the client cached when this
+		// handler was registered may have been replaced by a respawn or
+		// stopped by the idle timer.
+		srv, err := h.serverRepo.GetByID(serverID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("MCP server %q lookup failed: %v", serverName, err)), nil
+		}
+		client, err := h.stdioSupervisor.Get(ctx, srv)
+		if err != nil {
+			switch {
+			case errors.Is(err, ErrStarting):
+				return mcp.NewToolResultError(fmt.Sprintf("MCP server %q is starting, retry in 3s", serverName)), nil
+			case errors.Is(err, ErrFailed):
+				return mcp.NewToolResultError(fmt.Sprintf("MCP server %q is in failed state: %v", serverName, err)), nil
+			default:
+				return mcp.NewToolResultError(fmt.Sprintf("MCP server %q unavailable: %v", serverName, err)), nil
+			}
+		}
+
+		result, err := client.CallTool(ctx, mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name:      originalToolName,
+				Arguments: request.GetArguments(),
+			},
+		})
+
+		latency := time.Since(start)
+		log.Debug().
+			Str("tool", originalToolName).
+			Str("server", serverName).
+			Dur("latency", latency).
+			Err(err).
+			Msg("Stdio MCP tool call")
+
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("stdio tool call failed: %v", err)), nil
+		}
+
+		h.stdioSupervisor.Touch(serverID)
+		return result, nil
+	}
+}
+
 // ResetUpstreamServer resets the circuit breaker for a server, allowing it to be re-synced.
 func (h *MCPHandler) ResetUpstreamServer(serverName string) {
 	h.mu.Lock()
 	if us, ok := h.upstreams[serverName]; ok {
-		closeUpstreamClient(us)
+		h.releaseUpstream(us)
 	}
 	delete(h.upstreams, serverName)
 	h.mu.Unlock()
@@ -453,6 +597,21 @@ func closeUpstreamClient(us *upstreamServer) {
 		log.Debug().Err(err).Str("server", us.name).Msg("Failed to close upstream MCP client")
 	}
 	us.client = nil
+}
+
+// releaseUpstream tears down an upstream entry. For stdio servers the
+// supervisor owns the client and the child process, so we route through
+// Remove rather than closing the client directly.
+func (h *MCPHandler) releaseUpstream(us *upstreamServer) {
+	if us == nil {
+		return
+	}
+	if us.authKey == "stdio" && h.stdioSupervisor != nil {
+		h.stdioSupervisor.Remove(us.serverID)
+		us.client = nil
+		return
+	}
+	closeUpstreamClient(us)
 }
 
 // upstreamAuth is everything syncOneUpstream needs to connect to an upstream
