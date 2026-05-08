@@ -15,6 +15,7 @@ const (
 	agfTemperature         = "temperature"
 	agfMCPTools            = "mcp_tools"
 	agfMCPURL              = "mcp_url"
+	agfMCPToken            = "mcp_token"
 	agfMaxToolRounds       = "max_tool_rounds"
 	agfIncludeTools        = "include_tools"
 	agfExcludeTools        = "exclude_tools"
@@ -71,8 +72,13 @@ The processor outputs a structured object containing: content, model, finish_rea
 			Description("When enabled, the AI model can discover and call MCP tools registered in the Qaynaq coordinator. The model will automatically have access to all active MCP tool flows.").
 			Default(true)).
 		Field(service.NewStringField(agfMCPURL).
-			Description("URL of the Qaynaq MCP endpoint for tool discovery and execution.").
+			Description("URL of the Qaynaq MCP endpoint for tool discovery and execution. Supports environment variable substitution (e.g. `${QAYNAQ_MCP_URL}`) so the value can be sourced from a secret or env var.").
 			Default("http://localhost:8080/mcp")).
+		Field(service.NewStringField(agfMCPToken).
+			Description("Bearer token used to authenticate against the Qaynaq MCP endpoint when MCP auth is enabled. Leave empty when the endpoint is unprotected. Supports environment variable substitution (e.g. `${QAYNAQ_MCP_TOKEN}`).").
+			Default("").
+			Secret().
+			Optional()).
 		Field(service.NewIntField(agfMaxToolRounds).
 			Description("Maximum number of tool calling rounds before forcing a final response. Each round allows the model to call one or more tools and receive results.").
 			Default(5).
