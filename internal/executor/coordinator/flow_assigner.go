@@ -16,11 +16,11 @@ type FlowAssigner interface {
 }
 
 type flowAssigner struct {
-	workerManager    WorkerManager
-	flowRepo       persistence.FlowRepository
-	workerFlowRepo persistence.WorkerFlowRepository
-	configBuilder    ConfigBuilder
-	flowWorkerMap  FlowWorkerMap
+	workerManager   WorkerManager
+	flowRepo        persistence.FlowRepository
+	workerFlowRepo  persistence.WorkerFlowRepository
+	configBuilder   ConfigBuilder
+	flowWorkerMap   FlowWorkerMap
 	noWorkersLogged bool
 }
 
@@ -32,10 +32,10 @@ func NewFlowAssigner(
 	flowWorkerMap FlowWorkerMap,
 ) FlowAssigner {
 	return &flowAssigner{
-		workerManager:    workerManager,
+		workerManager:  workerManager,
 		flowRepo:       flowRepo,
 		workerFlowRepo: workerFlowRepo,
-		configBuilder:    configBuilder,
+		configBuilder:  configBuilder,
 		flowWorkerMap:  flowWorkerMap,
 	}
 }
@@ -127,15 +127,17 @@ func (s *flowAssigner) assignFlowToWorker(ctx context.Context, worker persistenc
 
 	resp, err := workerClient.AssignFlow(ctx, &pb.AssignFlowRequest{
 		WorkerFlowId: workerFlow.ID,
-		Config:         buildResult.Config,
-		Files:          flowFiles,
+		Config:       buildResult.Config,
+		Files:        flowFiles,
 	})
 	if err != nil {
 		if err := s.workerFlowRepo.UpdateStatus(workerFlow.ID, persistence.WorkerFlowStatusFailed); err != nil {
 			log.Warn().Err(err).Int64("worker_flow_id", workerFlow.ID).Msg("Failed to update worker flow status after failed assignment")
 		}
 		// If the worker is unreachable, deactivate it so we stop retrying
-		s.workerManager.DeactivateWorker(worker.ID)
+		if dErr := s.workerManager.DeactivateWorker(worker.ID); dErr != nil {
+			log.Warn().Err(dErr).Str("worker_id", worker.ID).Msg("Failed to deactivate worker")
+		}
 		return err
 	}
 

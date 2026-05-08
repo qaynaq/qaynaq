@@ -21,14 +21,14 @@ type binlogEvent struct {
 
 func (be *binlogEvent) ToMap() map[string]any {
 	return map[string]any{
-		"database": be.Database,
-		"table":    be.Table,
-		"type":     string(be.Type),
-		"ts":       be.Ts,
+		"database":  be.Database,
+		"table":     be.Table,
+		"type":      string(be.Type),
+		"ts":        be.Ts,
 		"server_id": be.ServerID,
-		"new":      be.New,
-		"old":      be.Old,
-		"gtid":     be.GTID,
+		"new":       be.New,
+		"old":       be.Old,
+		"gtid":      be.GTID,
 	}
 }
 

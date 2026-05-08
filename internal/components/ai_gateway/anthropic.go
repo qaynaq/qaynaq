@@ -115,7 +115,7 @@ func (a *anthropicProvider) Chat(ctx context.Context, req *ChatRequest) (*ChatRe
 
 	message, err := a.client.Messages.New(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("Anthropic chat request failed: %w", err)
+		return nil, fmt.Errorf("anthropic chat request failed: %w", err)
 	}
 
 	resp := &ChatResponse{

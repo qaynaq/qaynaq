@@ -243,12 +243,12 @@ func newTestServer(t *testing.T, email string) (*Server, *fakeClientRepo, *fakeR
 
 type alwaysApproved struct{}
 
-func (alwaysApproved) Has(string, string, string) (bool, error)              { return true, nil }
-func (alwaysApproved) Upsert(*persistence.OAuthConsent) error                { return nil }
-func (alwaysApproved) ApprovedClientIDs(string) (map[string]bool, error)     { return nil, nil }
-func (alwaysApproved) ClientIDsWithAnyConsent() (map[string]bool, error)     { return nil, nil }
-func (alwaysApproved) DeleteUserClient(string, string) error                 { return nil }
-func (alwaysApproved) DeleteByClient(string) error                           { return nil }
+func (alwaysApproved) Has(string, string, string) (bool, error)          { return true, nil }
+func (alwaysApproved) Upsert(*persistence.OAuthConsent) error            { return nil }
+func (alwaysApproved) ApprovedClientIDs(string) (map[string]bool, error) { return nil, nil }
+func (alwaysApproved) ClientIDsWithAnyConsent() (map[string]bool, error) { return nil, nil }
+func (alwaysApproved) DeleteUserClient(string, string) error             { return nil }
+func (alwaysApproved) DeleteByClient(string) error                       { return nil }
 
 func registerClient(t *testing.T, srv *Server, redirect string) (id, secret string) {
 	t.Helper()

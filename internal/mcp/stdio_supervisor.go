@@ -129,7 +129,7 @@ func (s *StdioSupervisor) Get(ctx context.Context, srv *persistence.MCPServer) (
 	srvCopy := *srv
 	s.mu.Unlock()
 
-	go s.spawn(&srvCopy)
+	go s.spawn(&srvCopy) //nolint:gosec // supervisor manages spawned process lifecycle independently
 	return nil, ErrStarting
 }
 

@@ -8,12 +8,12 @@ import (
 
 type FlowCache struct {
 	ID        int64     `json:"id" gorm:"primaryKey"`
-	FlowID  int64     `json:"flow_id" gorm:"not null"`
+	FlowID    int64     `json:"flow_id" gorm:"not null"`
 	CacheID   int64     `json:"cache_id" gorm:"not null"`
 	CreatedAt time.Time `json:"created_at" gorm:"not null"`
 
-	Flow Flow `json:"flow" gorm:"foreignKey:FlowID"`
-	Cache  Cache  `json:"cache" gorm:"foreignKey:CacheID"`
+	Flow  Flow  `json:"flow" gorm:"foreignKey:FlowID"`
+	Cache Cache `json:"cache" gorm:"foreignKey:CacheID"`
 }
 
 type FlowCacheRepository interface {

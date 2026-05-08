@@ -30,7 +30,7 @@ func (p *Processor) exportFile(ctx context.Context, f *resolvedFields) (map[stri
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -68,7 +68,7 @@ func (p *Processor) uploadFile(ctx context.Context, f *resolvedFields) (map[stri
 		if err != nil {
 			return nil, fmt.Errorf("failed to download file from URL: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("failed to download file from URL: HTTP %d", resp.StatusCode)
 		}
@@ -160,7 +160,7 @@ func (p *Processor) replaceFile(ctx context.Context, f *resolvedFields) (map[str
 		if err != nil {
 			return nil, fmt.Errorf("failed to download file from URL: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("failed to download file from URL: HTTP %d", resp.StatusCode)
 		}

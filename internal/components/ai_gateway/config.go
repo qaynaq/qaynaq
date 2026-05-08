@@ -3,19 +3,19 @@ package ai_gateway
 import "github.com/warpstreamlabs/bento/public/service"
 
 const (
-	agfProvider             = "provider"
-	agfModel                = "model"
-	agfAPIKey               = "api_key"
-	agfBaseURL              = "base_url"
-	agfSystemPrompt         = "system_prompt"
-	agfPrompt               = "prompt"
-	agfArgsMapping          = "args_mapping"
-	agfUnsafeDynamicPrompt  = "unsafe_dynamic_prompt"
-	agfMaxTokens            = "max_tokens"
-	agfTemperature          = "temperature"
-	agfMCPTools             = "mcp_tools"
-	agfMCPURL               = "mcp_url"
-	agfMaxToolRounds        = "max_tool_rounds"
+	agfProvider            = "provider"
+	agfModel               = "model"
+	agfAPIKey              = "api_key"
+	agfBaseURL             = "base_url"
+	agfSystemPrompt        = "system_prompt"
+	agfPrompt              = "prompt"
+	agfArgsMapping         = "args_mapping"
+	agfUnsafeDynamicPrompt = "unsafe_dynamic_prompt"
+	agfMaxTokens           = "max_tokens"
+	agfTemperature         = "temperature"
+	agfMCPTools            = "mcp_tools"
+	agfMCPURL              = "mcp_url"
+	agfMaxToolRounds       = "max_tool_rounds"
 )
 
 func Config() *service.ConfigSpec {

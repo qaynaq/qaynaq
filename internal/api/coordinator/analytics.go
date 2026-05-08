@@ -19,13 +19,13 @@ func (s *CoordinatorAPI) GetAnalytics(_ context.Context, _ *pb.GetAnalyticsReque
 	}
 
 	resp := &pb.GetAnalyticsResponse{
-		TotalFlows:         result.TotalFlows,
-		TotalInputEvents:    result.TotalInputEvents,
-		TotalOutputEvents:   result.TotalOutputEvents,
+		TotalFlows:           result.TotalFlows,
+		TotalInputEvents:     result.TotalInputEvents,
+		TotalOutputEvents:    result.TotalOutputEvents,
 		TotalProcessorErrors: result.TotalProcessorErrors,
-		ActiveWorkers:       result.ActiveWorkers,
-		TotalEvents:         result.TotalEvents,
-		ErrorEvents:         result.ErrorEvents,
+		ActiveWorkers:        result.ActiveWorkers,
+		TotalEvents:          result.TotalEvents,
+		ErrorEvents:          result.ErrorEvents,
 	}
 
 	resp.FlowsByStatus = make([]*pb.GetAnalyticsResponse_FlowStatusCount, len(result.FlowsByStatus))
@@ -39,10 +39,10 @@ func (s *CoordinatorAPI) GetAnalytics(_ context.Context, _ *pb.GetAnalyticsReque
 	resp.EventsOverTime = make([]*pb.GetAnalyticsResponse_TimeSeriesPoint, len(result.EventsOverTime))
 	for i, pt := range result.EventsOverTime {
 		resp.EventsOverTime[i] = &pb.GetAnalyticsResponse_TimeSeriesPoint{
-			Timestamp:   pt.Timestamp.Format("2006-01-02"),
-			InputEvents: pt.InputEvents,
+			Timestamp:    pt.Timestamp.Format("2006-01-02"),
+			InputEvents:  pt.InputEvents,
 			OutputEvents: pt.OutputEvents,
-			ErrorEvents: pt.ErrorEvents,
+			ErrorEvents:  pt.ErrorEvents,
 		}
 	}
 

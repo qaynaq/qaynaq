@@ -13,15 +13,15 @@ type ComponentCount struct {
 }
 
 type TimeSeriesPoint struct {
-	Timestamp   time.Time
-	InputEvents int64
+	Timestamp    time.Time
+	InputEvents  int64
 	OutputEvents int64
-	ErrorEvents int64
+	ErrorEvents  int64
 }
 
 type Result struct {
-	TotalFlows         int64
-	FlowsByStatus      []FlowStatusCount
+	TotalFlows           int64
+	FlowsByStatus        []FlowStatusCount
 	TotalInputEvents     uint64
 	TotalOutputEvents    uint64
 	TotalProcessorErrors uint64

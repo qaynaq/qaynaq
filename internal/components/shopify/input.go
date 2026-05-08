@@ -11,7 +11,9 @@ import (
 	"github.com/warpstreamlabs/bento/public/service"
 )
 
-const rateLimitKeyContextKey = "rate_limit_key"
+type rateLimitCtxKey struct{}
+
+var rateLimitKeyContextKey = rateLimitCtxKey{}
 
 func init() {
 	err := service.RegisterBatchInput(
@@ -364,7 +366,7 @@ func (s *Input) fetchOrdersPage(ctx context.Context) ([]any, error) {
 		},
 	}
 	if s.lastUpdatedAt != nil {
-		options.ListOptions.UpdatedAtMin = *s.lastUpdatedAt
+		options.UpdatedAtMin = *s.lastUpdatedAt
 	}
 
 	orders, err := s.client.Order.List(ctx, options)

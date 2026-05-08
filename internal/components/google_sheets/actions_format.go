@@ -228,10 +228,10 @@ func (p *Processor) sortRange(ctx context.Context, f *resolvedFields) (map[strin
 	}
 
 	return map[string]any{
-		"sorted":       true,
-		"range":        f.rangeField,
-		"sort_column":  f.sortColumnIndex,
-		"sort_order":   f.sortOrder,
+		"sorted":      true,
+		"range":       f.rangeField,
+		"sort_column": f.sortColumnIndex,
+		"sort_order":  f.sortOrder,
 	}, nil
 }
 
@@ -390,8 +390,8 @@ func (p *Processor) setDataValidation(ctx context.Context, f *resolvedFields) (m
 		Condition: &sheets.BooleanCondition{
 			Type: f.validationType,
 		},
-		Strict:         true,
-		ShowCustomUi:   true,
+		Strict:       true,
+		ShowCustomUi: true,
 	}
 
 	if f.validationValues != "" {

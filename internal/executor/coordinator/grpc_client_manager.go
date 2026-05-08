@@ -43,7 +43,7 @@ func (m *grpcClientManager) GetClient(worker *persistence.Worker) (pb.WorkerClie
 		}
 		// worker address changed (e.g. after restart) - close stale connection
 		log.Info().Str("worker_id", worker.ID).Str("old", entry.address).Str("new", worker.Address).Msg("Worker address changed, reconnecting")
-		entry.conn.Close()
+		_ = entry.conn.Close()
 		delete(m.workerClients, worker.ID)
 	}
 
@@ -68,7 +68,7 @@ func (m *grpcClientManager) RemoveClient(workerID string) {
 	defer m.mu.Unlock()
 
 	if entry, exists := m.workerClients[workerID]; exists {
-		entry.conn.Close()
+		_ = entry.conn.Close()
 		delete(m.workerClients, workerID)
 	}
 	log.Debug().Str("worker_id", workerID).Msg("Removed grpc client for worker")

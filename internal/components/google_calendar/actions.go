@@ -178,15 +178,15 @@ func (p *Processor) findCalendars(ctx context.Context, f *resolvedFields) (map[s
 	calendars := make([]map[string]any, 0, len(resp.Items))
 	for _, item := range resp.Items {
 		calendars = append(calendars, map[string]any{
-			"id":           item.Id,
-			"summary":      item.Summary,
-			"description":  item.Description,
-			"time_zone":    item.TimeZone,
-			"access_role":  item.AccessRole,
-			"primary":      item.Primary,
-			"hidden":       item.Hidden,
-			"selected":     item.Selected,
-			"color_id":     item.ColorId,
+			"id":               item.Id,
+			"summary":          item.Summary,
+			"description":      item.Description,
+			"time_zone":        item.TimeZone,
+			"access_role":      item.AccessRole,
+			"primary":          item.Primary,
+			"hidden":           item.Hidden,
+			"selected":         item.Selected,
+			"color_id":         item.ColorId,
 			"background_color": item.BackgroundColor,
 			"foreground_color": item.ForegroundColor,
 		})
@@ -462,13 +462,13 @@ func (p *Processor) buildEvent(f *resolvedFields) *calendar.Event {
 func eventToMap(event *calendar.Event) map[string]any {
 	data, _ := json.Marshal(event)
 	var result map[string]any
-	json.Unmarshal(data, &result)
+	_ = json.Unmarshal(data, &result)
 	return result
 }
 
 func calendarToMap(cal *calendar.Calendar) map[string]any {
 	data, _ := json.Marshal(cal)
 	var result map[string]any
-	json.Unmarshal(data, &result)
+	_ = json.Unmarshal(data, &result)
 	return result
 }

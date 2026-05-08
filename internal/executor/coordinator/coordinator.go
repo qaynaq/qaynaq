@@ -18,10 +18,10 @@ type CoordinatorExecutor interface {
 }
 
 type coordinatorExecutor struct {
-	flowAssigner   FlowAssigner
+	flowAssigner     FlowAssigner
 	requestForwarder RequestForwarder
-	flowWorkerMap  FlowWorkerMap
-	workerFlowRepo persistence.WorkerFlowRepository
+	flowWorkerMap    FlowWorkerMap
+	workerFlowRepo   persistence.WorkerFlowRepository
 	workerRepo       persistence.WorkerRepository
 }
 
@@ -47,10 +47,10 @@ func NewCoordinatorExecutor(
 	requestForwarder := NewRequestForwarder(workerManager, flowWorkerMap, flowRepo)
 
 	return &coordinatorExecutor{
-		flowAssigner:   flowAssigner,
+		flowAssigner:     flowAssigner,
 		requestForwarder: requestForwarder,
-		flowWorkerMap:  flowWorkerMap,
-		workerFlowRepo: workerFlowRepo,
+		flowWorkerMap:    flowWorkerMap,
+		workerFlowRepo:   workerFlowRepo,
 		workerRepo:       workerRepo,
 	}
 }

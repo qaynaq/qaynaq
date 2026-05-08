@@ -447,10 +447,10 @@ type Config struct {
 }
 
 type ConnectionData struct {
-	ClientID     string     `json:"client_id"`
-	ClientSecret string     `json:"client_secret"`
-	Provider     string     `json:"provider"`
-	Token        TokenData  `json:"token"`
+	ClientID     string    `json:"client_id"`
+	ClientSecret string    `json:"client_secret"`
+	Provider     string    `json:"provider"`
+	Token        TokenData `json:"token"`
 }
 
 type TokenData struct {

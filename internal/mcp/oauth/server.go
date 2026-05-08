@@ -198,9 +198,9 @@ func (s *Server) HandleAuthorizationServerMetadata(w http.ResponseWriter, r *htt
 func (s *Server) HandleProtectedResourceMetadata(w http.ResponseWriter, r *http.Request) {
 	issuer := s.issuerURL(r)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"resource":              issuer + "/mcp",
-		"authorization_servers": []string{issuer},
-		"scopes_supported":      []string{"mcp"},
+		"resource":                 issuer + "/mcp",
+		"authorization_servers":    []string{issuer},
+		"scopes_supported":         []string{"mcp"},
 		"bearer_methods_supported": []string{"header"},
 	})
 }
@@ -536,6 +536,7 @@ func (s *Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		writeOAuthError(w, http.StatusMethodNotAllowed, "invalid_request", "POST required")
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	if err := r.ParseForm(); err != nil {
 		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "could not parse form")
 		return
@@ -706,6 +707,7 @@ func (s *Server) HandleRevoke(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	if err := r.ParseForm(); err != nil {
 		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "could not parse form")
 		return
@@ -858,5 +860,5 @@ func redirectError(w http.ResponseWriter, r *http.Request, redirectURI, state, c
 		values.Set("state", state)
 	}
 	dest.RawQuery = values.Encode()
-	http.Redirect(w, r, dest.String(), http.StatusFound)
+	http.Redirect(w, r, dest.String(), http.StatusFound) //nolint:gosec // redirectURI is validated against the client's registered URIs by callers
 }

@@ -426,9 +426,9 @@ func resolveBool(field *service.InterpolatedString, msg *service.Message) bool {
 
 func fileToMap(f *drive.File) map[string]any {
 	result := map[string]any{
-		"id":        f.Id,
-		"name":      f.Name,
-		"mime_type":  f.MimeType,
+		"id":            f.Id,
+		"name":          f.Name,
+		"mime_type":     f.MimeType,
 		"web_view_link": f.WebViewLink,
 	}
 	if f.Parents != nil {

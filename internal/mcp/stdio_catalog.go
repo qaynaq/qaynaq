@@ -29,7 +29,7 @@ type StdioEnvSpec struct {
 	Description string `json:"description"`
 	Required    bool   `json:"required"`
 	Secret      bool   `json:"secret"`
-	Advanced bool `json:"advanced"`
+	Advanced    bool   `json:"advanced"`
 }
 
 var stdioCatalog = map[string]StdioCatalogEntry{

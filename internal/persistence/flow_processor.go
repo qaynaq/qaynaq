@@ -8,7 +8,7 @@ import (
 
 type FlowProcessor struct {
 	ID        int64     `json:"id" gorm:"primaryKey"`
-	FlowID  int64     `json:"flow_id" gorm:"not null"`
+	FlowID    int64     `json:"flow_id" gorm:"not null"`
 	Component string    `json:"component" gorm:"not null"`
 	Label     string    `json:"label"`
 	Config    []byte    `json:"config"`

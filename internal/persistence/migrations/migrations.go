@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // md5 used only as a non-cryptographic checksum for migration content
 	"database/sql"
 	"embed"
 	"fmt"
@@ -58,8 +58,8 @@ func Run(db *sql.DB, dialect string) error {
 	}
 	sort.Strings(files)
 
-	selectQuery := fmt.Sprintf("SELECT checksum FROM schema_migrations WHERE version = %s", placeholder[0])
-	insertQuery := fmt.Sprintf("INSERT INTO schema_migrations (version, checksum) VALUES (%s, %s)", placeholder[0], placeholder[1])
+	selectQuery := fmt.Sprintf("SELECT checksum FROM schema_migrations WHERE version = %s", placeholder[0])                         //nolint:gosec // placeholder is a static dialect token
+	insertQuery := fmt.Sprintf("INSERT INTO schema_migrations (version, checksum) VALUES (%s, %s)", placeholder[0], placeholder[1]) //nolint:gosec // placeholders are static dialect tokens
 
 	for _, name := range files {
 		version := strings.TrimSuffix(name, ".sql")
@@ -69,7 +69,7 @@ func Run(db *sql.DB, dialect string) error {
 			return fmt.Errorf("failed to read migration %s: %w", name, err)
 		}
 
-		checksum := fmt.Sprintf("%x", md5.Sum(content))
+		checksum := fmt.Sprintf("%x", md5.Sum(content)) //nolint:gosec // non-cryptographic checksum
 
 		var storedChecksum string
 		err = db.QueryRow(selectQuery, version).Scan(&storedChecksum)

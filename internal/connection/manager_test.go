@@ -74,15 +74,15 @@ func TestGetDisplayName(t *testing.T) {
 func TestValidateShopSubdomain(t *testing.T) {
 	valid := []string{"my-store", "store123", "a", "abc-def-ghi"}
 	invalid := []string{
-		"",                                 // empty
-		"My-Store",                         // uppercase
-		"my_store",                         // underscore
-		"my.store",                         // dot
-		"-leading-dash",                    // leading dash
-		"my-store/admin",                   // slash injection
-		"evil.com",                         // dot
-		strings.Repeat("a", 64),            // too long
-		"my-store?query=injection",         // query string
+		"",                         // empty
+		"My-Store",                 // uppercase
+		"my_store",                 // underscore
+		"my.store",                 // dot
+		"-leading-dash",            // leading dash
+		"my-store/admin",           // slash injection
+		"evil.com",                 // dot
+		strings.Repeat("a", 64),    // too long
+		"my-store?query=injection", // query string
 	}
 	for _, s := range valid {
 		if err := ValidateShopSubdomain(s); err != nil {
@@ -105,10 +105,10 @@ func TestValidateCloudID(t *testing.T) {
 	invalid := []string{
 		"",
 		"not-a-uuid",
-		"1324a887-45db-1bf4-1e99",                          // too short
-		"1324a887-45db-1bf4-1e99-ef0ff456d987-extra",       // too long
-		"zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz",             // non-hex
-		"1324a887_45db_1bf4_1e99_ef0ff456d987",             // wrong separator
+		"1324a887-45db-1bf4-1e99", // too short
+		"1324a887-45db-1bf4-1e99-ef0ff456d987-extra", // too long
+		"zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz",       // non-hex
+		"1324a887_45db_1bf4_1e99_ef0ff456d987",       // wrong separator
 	}
 	for _, s := range valid {
 		if err := ValidateCloudID(s); err != nil {

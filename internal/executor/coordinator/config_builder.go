@@ -30,14 +30,14 @@ type ConfigBuilder interface {
 type configBuilder struct {
 	flowCacheRepo     persistence.FlowCacheRepository
 	flowRateLimitRepo persistence.FlowRateLimitRepository
-	fileRepo            persistence.FileRepository
+	fileRepo          persistence.FileRepository
 }
 
 func NewConfigBuilder(flowCacheRepo persistence.FlowCacheRepository, flowRateLimitRepo persistence.FlowRateLimitRepository, fileRepo persistence.FileRepository) ConfigBuilder {
 	return &configBuilder{
 		flowCacheRepo:     flowCacheRepo,
 		flowRateLimitRepo: flowRateLimitRepo,
-		fileRepo:            fileRepo,
+		fileRepo:          fileRepo,
 	}
 }
 
@@ -257,7 +257,6 @@ func (b *configBuilder) buildProcessorConfig(processor persistence.FlowProcessor
 	processorConfig["label"] = processor.Label
 	return processorConfig, nil
 }
-
 
 func (b *configBuilder) buildCacheResourcesConfig(flowID int64) ([]map[string]any, error) {
 	flowCaches, err := b.flowCacheRepo.FindByFlowID(flowID)

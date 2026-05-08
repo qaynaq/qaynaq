@@ -36,27 +36,27 @@ type FlowWorkerMap interface {
 
 type CoordinatorAPI struct {
 	pb.UnimplementedCoordinatorServer
-	eventRepo           persistence.EventRepository
-	workerRepo          persistence.WorkerRepository
+	eventRepo         persistence.EventRepository
+	workerRepo        persistence.WorkerRepository
 	flowRepo          persistence.FlowRepository
 	flowCacheRepo     persistence.FlowCacheRepository
 	flowRateLimitRepo persistence.FlowRateLimitRepository
-	flowBufferRepo      persistence.FlowBufferRepository
+	flowBufferRepo    persistence.FlowBufferRepository
 	flowProcessorRepo persistence.FlowProcessorRepository
 	workerFlowRepo    persistence.WorkerFlowRepository
-	secretRepo          persistence.SecretRepository
-	cacheRepo           persistence.CacheRepository
-	bufferRepo          persistence.BufferRepository
-	rateLimitRepo       persistence.RateLimitRepository
-	fileRepo            persistence.FileRepository
-	settingRepo         persistence.SettingRepository
-	apiTokenRepo        persistence.APITokenRepository
-	oauthClientRepo     persistence.OAuthClientRepository
-	oauthRefreshRepo    persistence.OAuthRefreshTokenRepository
-	oauthConsentRepo    persistence.OAuthConsentRepository
-	rateLimiterEngine   *ratelimiter.Engine
-	aesgcm              *vault.AESGCM
-	analyticsProvider   analytics.Provider
+	secretRepo        persistence.SecretRepository
+	cacheRepo         persistence.CacheRepository
+	bufferRepo        persistence.BufferRepository
+	rateLimitRepo     persistence.RateLimitRepository
+	fileRepo          persistence.FileRepository
+	settingRepo       persistence.SettingRepository
+	apiTokenRepo      persistence.APITokenRepository
+	oauthClientRepo   persistence.OAuthClientRepository
+	oauthRefreshRepo  persistence.OAuthRefreshTokenRepository
+	oauthConsentRepo  persistence.OAuthConsentRepository
+	rateLimiterEngine *ratelimiter.Engine
+	aesgcm            *vault.AESGCM
+	analyticsProvider analytics.Provider
 	flowWorkerMap     FlowWorkerMap
 	connManager       *connection.Manager
 	mcpServerRepo     persistence.MCPServerRepository
@@ -97,27 +97,27 @@ func NewCoordinatorAPI(
 	mcpOAuthEnabled bool,
 ) *CoordinatorAPI {
 	return &CoordinatorAPI{
-		eventRepo:           eventRepo,
+		eventRepo:         eventRepo,
 		flowRepo:          flowRepo,
 		flowCacheRepo:     flowCacheRepo,
 		flowRateLimitRepo: flowRateLimitRepo,
-		flowBufferRepo:      flowBufferRepo,
+		flowBufferRepo:    flowBufferRepo,
 		flowProcessorRepo: flowProcessorRepo,
-		workerRepo:          workerRepo,
+		workerRepo:        workerRepo,
 		workerFlowRepo:    workerFlowRepo,
-		secretRepo:          secretRepo,
-		cacheRepo:           cacheRepo,
-		bufferRepo:          bufferRepo,
-		rateLimitRepo:       rateLimitRepo,
-		fileRepo:            fileRepo,
-		settingRepo:         settingRepo,
-		apiTokenRepo:        apiTokenRepo,
-		oauthClientRepo:     oauthClientRepo,
-		oauthRefreshRepo:    oauthRefreshRepo,
-		oauthConsentRepo:    oauthConsentRepo,
-		rateLimiterEngine:   rateLimiterEngine,
-		aesgcm:              aesgcm,
-		analyticsProvider:   analyticsProvider,
+		secretRepo:        secretRepo,
+		cacheRepo:         cacheRepo,
+		bufferRepo:        bufferRepo,
+		rateLimitRepo:     rateLimitRepo,
+		fileRepo:          fileRepo,
+		settingRepo:       settingRepo,
+		apiTokenRepo:      apiTokenRepo,
+		oauthClientRepo:   oauthClientRepo,
+		oauthRefreshRepo:  oauthRefreshRepo,
+		oauthConsentRepo:  oauthConsentRepo,
+		rateLimiterEngine: rateLimiterEngine,
+		aesgcm:            aesgcm,
+		analyticsProvider: analyticsProvider,
 		connManager:       connManager,
 		flowWorkerMap:     flowWorkerMap,
 		mcpServerRepo:     mcpServerRepo,

@@ -152,8 +152,8 @@ func (c *CoordinatorAPI) CreateFlow(_ context.Context, in *pb.Flow) (*pb.FlowRes
 		}
 
 		flowCache := persistence.FlowCache{
-			FlowID: flow.ID,
-			CacheID:  cache.ID,
+			FlowID:  flow.ID,
+			CacheID: cache.ID,
 		}
 
 		if err := c.flowCacheRepo.Create(flowCache); err != nil {
@@ -187,7 +187,7 @@ func (c *CoordinatorAPI) CreateFlow(_ context.Context, in *pb.Flow) (*pb.FlowRes
 		}
 
 		flowRateLimit := persistence.FlowRateLimit{
-			FlowID:    flow.ID,
+			FlowID:      flow.ID,
 			RateLimitID: rateLimit.ID,
 		}
 
@@ -222,7 +222,7 @@ func (c *CoordinatorAPI) CreateFlow(_ context.Context, in *pb.Flow) (*pb.FlowRes
 		}
 
 		flowBuffer := persistence.FlowBuffer{
-			FlowID: flow.ID,
+			FlowID:   flow.ID,
 			BufferID: buffer.ID,
 		}
 
@@ -436,8 +436,8 @@ func (c *CoordinatorAPI) UpdateFlow(_ context.Context, in *pb.Flow) (*pb.FlowRes
 		}
 
 		flowCache := persistence.FlowCache{
-			FlowID: newFlow.ID,
-			CacheID:  cache.ID,
+			FlowID:  newFlow.ID,
+			CacheID: cache.ID,
 		}
 
 		if err := c.flowCacheRepo.Create(flowCache); err != nil {
@@ -476,7 +476,7 @@ func (c *CoordinatorAPI) UpdateFlow(_ context.Context, in *pb.Flow) (*pb.FlowRes
 		}
 
 		flowRateLimit := persistence.FlowRateLimit{
-			FlowID:    newFlow.ID,
+			FlowID:      newFlow.ID,
 			RateLimitID: rateLimit.ID,
 		}
 

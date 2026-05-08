@@ -38,9 +38,9 @@ type Processor struct {
 	maxToolRounds int
 	logger        *service.Logger
 
-	mcpClient     *mcpclient.Client
-	mcpOnce       sync.Once
-	mcpInitErr    error
+	mcpClient  *mcpclient.Client
+	mcpOnce    sync.Once
+	mcpInitErr error
 }
 
 func NewFromConfig(conf *service.ParsedConfig, mgr *service.Resources) (*Processor, error) {

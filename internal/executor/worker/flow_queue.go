@@ -12,13 +12,13 @@ import (
 
 const (
 	MaxItemsInFlowQueue = 10
-	EventStreamMaxDelay        = 30 * time.Second
+	EventStreamMaxDelay = 30 * time.Second
 )
 
 type FlowQueueItem struct {
 	WorkerFlowID int64
-	Config         string
-	Files          []*pb.FlowFile
+	Config       string
+	Files        []*pb.FlowFile
 }
 
 type FlowQueue interface {
@@ -27,13 +27,13 @@ type FlowQueue interface {
 }
 
 type flowQueue struct {
-	queue         chan FlowQueueItem
+	queue       chan FlowQueueItem
 	flowManager FlowManager
 }
 
 func NewFlowQueue(flowManager FlowManager) FlowQueue {
 	return &flowQueue{
-		queue:         make(chan FlowQueueItem, MaxItemsInFlowQueue),
+		queue:       make(chan FlowQueueItem, MaxItemsInFlowQueue),
 		flowManager: flowManager,
 	}
 }
@@ -41,8 +41,8 @@ func NewFlowQueue(flowManager FlowManager) FlowQueue {
 func (q *flowQueue) AddFlowToQueue(workerFlowID int64, config string, files []*pb.FlowFile) error {
 	item := FlowQueueItem{
 		WorkerFlowID: workerFlowID,
-		Config:         config,
-		Files:          files,
+		Config:       config,
+		Files:        files,
 	}
 
 	select {

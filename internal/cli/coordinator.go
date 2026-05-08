@@ -238,12 +238,12 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 			return
 		}
 		w.WriteHeader(int(statusCode))
-		w.Write(response)
+		_, _ = w.Write(response) //nolint:gosec // forwarding worker response payload to caller
 	})
 	mainMux.HandleFunc("/.well-known/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error":"not found"}`))
+		_, _ = w.Write([]byte(`{"error":"not found"}`))
 	})
 	if c.mcpOAuthServer != nil {
 		c.mcpOAuthServer.MountRoutes(mainMux)
@@ -258,8 +258,9 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 	mainMux.HandleFunc("/", serveSpa(statikFS, "/index.html"))
 
 	httpServer := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", c.httpPort),
-		Handler: corsMiddleware.Handler(mainMux),
+		Addr:              fmt.Sprintf("0.0.0.0:%d", c.httpPort),
+		Handler:           corsMiddleware.Handler(mainMux),
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	g.Go(func() error {
@@ -336,7 +337,7 @@ func serveSpa(fs http.FileSystem, indexFile string) http.HandlerFunc {
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
-				defer index.Close()
+				defer func() { _ = index.Close() }()
 
 				fi, err := index.Stat()
 				if err != nil {
@@ -350,15 +351,14 @@ func serveSpa(fs http.FileSystem, indexFile string) http.HandlerFunc {
 				w.Header().Set("Cache-Control", "no-cache")
 				http.ServeContent(w, r, indexFile, fi.ModTime(), index)
 				return
-			} else {
-				// Other error opening the file
-				log.Error().Err(err).Str("path", reqPath).Msg("Error opening file from statikFS")
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
 			}
+			// Other error opening the file
+			log.Error().Err(err).Str("path", reqPath).Msg("Error opening file from statikFS")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
 		}
 		// File exists, close the handle used for checking
-		f.Close()
+		_ = f.Close()
 
 		// Let the default file server handle serving the existing file
 		fileServer.ServeHTTP(w, r)

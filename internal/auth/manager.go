@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"github.com/qaynaq/qaynaq/internal/config"
+	"github.com/rs/zerolog/log"
 )
 
 type Manager struct {
@@ -94,14 +94,14 @@ func (m *Manager) HandleAuthInfo(w http.ResponseWriter, r *http.Request) {
 	response := map[string]string{
 		"auth_type": string(m.authType),
 	}
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (m *Manager) HandleSessionCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if m.authType == config.AuthTypeNone {
-		json.NewEncoder(w).Encode(map[string]bool{"authenticated": true})
+		_ = json.NewEncoder(w).Encode(map[string]bool{"authenticated": true})
 		return
 	}
 
@@ -120,7 +120,7 @@ func (m *Manager) HandleSessionCheck(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	json.NewEncoder(w).Encode(map[string]bool{"authenticated": authenticated})
+	_ = json.NewEncoder(w).Encode(map[string]bool{"authenticated": authenticated})
 }
 
 // HandleExchange writes the SPA's localStorage JWT (sent as a Bearer header)
@@ -157,7 +157,7 @@ func (m *Manager) HandleExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // HttpOnly, Secure, SameSite all set below
 		Name:     cookieName,
 		Value:    token,
 		Path:     "/",

@@ -22,19 +22,19 @@ const (
 )
 
 type WorkerFlow struct {
-	ID              int64              `json:"id" gorm:"primaryKey"`
-	WorkerID        string             `json:"worker_id" gorm:"not null"`
-	FlowID        int64              `json:"flow_id" gorm:"not null"`
-	InputEvents     uint64             `json:"input_events" gorm:"not null" default:"0"`
-	ProcessorErrors uint64             `json:"processor_errors" gorm:"not null" default:"0"`
-	OutputEvents    uint64             `json:"output_events" gorm:"not null" default:"0"`
+	ID              int64            `json:"id" gorm:"primaryKey"`
+	WorkerID        string           `json:"worker_id" gorm:"not null"`
+	FlowID          int64            `json:"flow_id" gorm:"not null"`
+	InputEvents     uint64           `json:"input_events" gorm:"not null" default:"0"`
+	ProcessorErrors uint64           `json:"processor_errors" gorm:"not null" default:"0"`
+	OutputEvents    uint64           `json:"output_events" gorm:"not null" default:"0"`
 	Status          WorkerFlowStatus `json:"status" gorm:"not null"`
-	LeaseExpiresAt  time.Time          `json:"lease_expires_at"`
-	CreatedAt       time.Time          `json:"created_at" gorm:"not null"`
-	UpdatedAt       time.Time          `json:"updated_at"`
+	LeaseExpiresAt  time.Time        `json:"lease_expires_at"`
+	CreatedAt       time.Time        `json:"created_at" gorm:"not null"`
+	UpdatedAt       time.Time        `json:"updated_at"`
 
 	Worker Worker `json:"worker" gorm:"foreignKey:WorkerID"`
-	Flow Flow `json:"flow" gorm:"foreignKey:FlowID"`
+	Flow   Flow   `json:"flow" gorm:"foreignKey:FlowID"`
 }
 
 type WorkerFlowRepository interface {
@@ -62,7 +62,7 @@ func NewWorkerFlowRepository(db *gorm.DB) WorkerFlowRepository {
 func (r *workerFlowRepository) Queue(workerID string, flowID int64) (WorkerFlow, error) {
 	workerFlow := WorkerFlow{
 		WorkerID:       workerID,
-		FlowID:       flowID,
+		FlowID:         flowID,
 		Status:         WorkerFlowStatusWaiting,
 		LeaseExpiresAt: time.Now().Add(FlowLeaseInterval),
 		CreatedAt:      time.Now(),

@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"github.com/qaynaq/qaynaq/internal/config"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 )
 
@@ -167,7 +167,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// HttpOnly cookie so /mcp/oauth/authorize can identify the user.
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // HttpOnly, Secure, SameSite all set below
 		Name:     h.cookieName,
 		Value:    jwtToken,
 		Path:     "/",
@@ -185,7 +185,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OAuth2Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // logout cookie: empty value with MaxAge=-1
 		Name:     h.cookieName,
 		Value:    "",
 		Path:     "/",
@@ -194,7 +194,7 @@ func (h *OAuth2Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Logged out successfully"))
+	_, _ = w.Write([]byte("Logged out successfully"))
 }
 
 func (h *OAuth2Handler) fetchUserInfo(token *oauth2.Token) (*UserInfo, error) {
@@ -209,7 +209,7 @@ func (h *OAuth2Handler) fetchUserInfo(token *oauth2.Token) (*UserInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
