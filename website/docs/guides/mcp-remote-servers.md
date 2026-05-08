@@ -72,11 +72,11 @@ Native tools (your own flows) win on collisions. If you have a flow whose MCP to
 The proxy keeps each upstream server's MCP session open and reuses it across sync ticks. Two recovery mechanisms run automatically:
 
 - **In-transport 401 retry** (OAuth connection auth only): if the upstream returns 401 on a tool call or list-tools, the proxy force-refreshes the connection's access token, replaces the Authorization header, and retries the same request once. This is silent - the calling AI client sees the successful response.
-- **Circuit breaker** (all auth modes): if a server fails 3 syncs in a row (network error, 5xx, repeated 401 even after refresh), it goes into a 5-minute cooldown. The status badge flips to red and `last_error` is shown. After the cooldown elapses, one attempt is allowed through; success clears the breaker, another failure restarts the cooldown. To force an immediate retry, edit the server in the UI - any update resets the breaker.
+- **Circuit breaker** (all auth modes): if a server fails 3 syncs in a row (network error, 5xx, repeated 401 even after refresh), it goes into a 5-minute cooldown. The status badge flips to red and `last_error` is shown. After the cooldown elapses, one attempt is allowed through; success clears the breaker and flips the status back to active automatically, another failure restarts the cooldown. The breaker survives coordinator restarts: an errored server is still picked up by the next sync tick. To force an immediate retry, click the **Restart** icon on the server's row (or edit the server - any update also resets the breaker).
 
 If a server stays errored: check the `last_error` shown on the server's row. Common causes:
 
-- **`unauthorized (401)`** with `OAuth connection` auth: the connection's refresh token is invalid (user revoked access, expired beyond the rotation window). Re-authorize the connection in **Connections**, then save the MCP server again to clear the breaker.
+- **`unauthorized (401)`** with `OAuth connection` auth: the connection's refresh token is invalid (user revoked access, expired beyond the rotation window). Re-authorize the connection in **Connections**, then click **Restart** on the MCP server row to retry immediately.
 - **`unauthorized (401)`** with `Bearer token` auth: the static token was revoked or rotated upstream. Edit the server and paste a new token.
 - **`connection refused`** / **`no such host`**: the URL is unreachable from the coordinator. Check connectivity.
 - **`session terminated`**: the upstream rotated its session ID. Should auto-recover on the next sync.

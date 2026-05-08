@@ -198,7 +198,7 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]se
 		return nil, false
 	}
 
-	servers, err := h.serverRepo.ListByStatus("active")
+	servers, err := h.serverRepo.ListMonitored()
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list MCP servers for upstream sync")
 		return nil, false
@@ -361,6 +361,12 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 
 	if h.serverRepo != nil {
 		_ = h.serverRepo.UpdateSyncStatus(srv.ID, len(tools), "")
+		// If the server was previously circuit-broken, flip it back to active
+		// now that it's responding again. Without this the UI would keep
+		// showing "error" forever after a recovery.
+		if srv.Status == "error" {
+			_ = h.serverRepo.UpdateStatus(srv.ID, "active")
+		}
 	}
 
 	log.Debug().Str("server", srv.Name).Int("tool_count", len(tools)).Msg("Upstream MCP server synced")
@@ -445,6 +451,9 @@ func (h *MCPHandler) syncOneStdioUpstream(ctx context.Context, srv *persistence.
 	if h.serverRepo != nil {
 		_ = h.serverRepo.UpdateSyncStatus(srv.ID, len(tools), "")
 		_ = h.serverRepo.UpdateProcessState(srv.ID, h.stdioSupervisor.State(srv.ID))
+		if srv.Status == "error" {
+			_ = h.serverRepo.UpdateStatus(srv.ID, "active")
+		}
 	}
 
 	log.Debug().Str("server", srv.Name).Int("tool_count", len(tools)).Msg("Stdio MCP server synced")
