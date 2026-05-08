@@ -28,13 +28,24 @@ jobs:
           swap-storage: true
 
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: 1.25.x
           check-latest: true
+          cache: false
+
+      - name: Cache Go build + module cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-release-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-release-
 
       - name: GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
           args: release --timeout 120m
@@ -71,11 +82,11 @@ jobs:
 
       - name: Install Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ghcr.io/${{ github.repository_owner }}/qaynaq
@@ -85,7 +96,7 @@ jobs:
             type=semver,pattern={{major}}
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./
           file: .container/Dockerfile
@@ -93,9 +104,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
-          cache-from: |
-            type=gha,scope=buildkit-qaynaq
-            type=registry,ref=ghcr.io/${{ github.repository_owner }}/qaynaq:buildcache
+          cache-from: type=gha,scope=buildkit-qaynaq
           cache-to: type=gha,mode=max,scope=buildkit-qaynaq
           provenance: false
           sbom: false
