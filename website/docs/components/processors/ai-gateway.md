@@ -14,6 +14,11 @@ Calls an AI chat completion API and maps the response into the message.
 | Unsafe Dynamic Prompt | boolean | `false` | Enables `${!this.field}` interpolation in prompt fields |
 | Max Tokens | integer | `1024` | Maximum tokens to generate |
 | Temperature | float | `1.0` | Sampling temperature (higher = more random) |
+| MCP Tools | boolean | `true` | Discover and call MCP tools registered in Qaynaq |
+| MCP URL | string | `http://localhost:8080/mcp` | Qaynaq MCP endpoint for tool discovery and execution |
+| Max Tool Rounds | integer | `5` | Maximum tool-calling rounds before forcing a final response |
+| Include Tools | string | — | Comma-separated allowlist of MCP tool names; when set, only these tools are exposed |
+| Exclude Tools | string | — | Comma-separated blocklist of MCP tool names to hide from the model |
 | Result Map | bloblang | — | Mapping to apply the AI response to the original message (required) |
 
 ## Providers
@@ -44,6 +49,18 @@ The AI response object contains:
 - **finish_reason** — Why generation stopped (e.g. `stop`, `end_turn`, `length`)
 - **usage.input_tokens** — Number of input tokens consumed
 - **usage.output_tokens** — Number of output tokens generated
+
+## MCP Tools
+
+When MCP Tools is enabled the processor lists every tool registered with the Qaynaq MCP endpoint and exposes it to the model. The model can issue tool calls across up to Max Tool Rounds rounds; results are fed back as `tool` messages and the model is re-prompted.
+
+Use Include Tools to limit the surface area to a known set, or Exclude Tools to drop tools you do not want exposed. Names are comma-separated and matched exactly. When Include Tools is non-empty only listed tools are exposed; everything else is filtered out. When Include Tools is empty every discovered tool is allowed except those listed in Exclude Tools. A name appearing in both lists is dropped.
+
+### Avoiding Self-Recursion
+
+When this processor lives inside an `mcp_tool` flow, the MCP endpoint exposes the flow's own tool back to the model. If the model picks that tool, the worker forwards the call into itself, the inner request blocks waiting for the outer pipeline to finish, and the call eventually fails with `408 Request timed out`.
+
+Add the flow's own tool name to Exclude Tools to prevent this. For example, if your `mcp_tool` flow defines `name: top_customer_details`, set `exclude_tools: top_customer_details` on the AI Gateway processor inside that flow.
 
 :::tip
 Combine the AI Gateway processor with [Mapping](/docs/components/processors/mapping) processors to pre-process data before sending to the AI, or post-process the AI response further.

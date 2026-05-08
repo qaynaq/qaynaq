@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	mcpclient "github.com/mark3labs/mcp-go/client"
@@ -36,6 +37,8 @@ type Processor struct {
 	mcpTools      bool
 	mcpURL        string
 	maxToolRounds int
+	includeTools  map[string]struct{}
+	excludeTools  map[string]struct{}
 	logger        *service.Logger
 
 	mcpClient  *mcpclient.Client
@@ -130,6 +133,18 @@ func NewFromConfig(conf *service.ParsedConfig, mgr *service.Resources) (*Process
 		return nil, err
 	}
 
+	includeRaw, err := conf.FieldString(agfIncludeTools)
+	if err != nil {
+		return nil, err
+	}
+	p.includeTools = parseToolNameSet(includeRaw)
+
+	excludeRaw, err := conf.FieldString(agfExcludeTools)
+	if err != nil {
+		return nil, err
+	}
+	p.excludeTools = parseToolNameSet(excludeRaw)
+
 	p.provider, err = NewProvider(providerName, apiKey, baseURL)
 	if err != nil {
 		return nil, err
@@ -170,7 +185,12 @@ func (p *Processor) fetchMCPTools(ctx context.Context) ([]ToolDefinition, error)
 	}
 
 	tools := make([]ToolDefinition, 0, len(result.Tools))
+	var skipped []string
 	for _, t := range result.Tools {
+		if !p.toolAllowed(t.Name) {
+			skipped = append(skipped, t.Name)
+			continue
+		}
 		schemaBytes, err := json.Marshal(t.InputSchema)
 		if err != nil {
 			p.logger.Warnf("Failed to marshal input schema for tool %s: %v", t.Name, err)
@@ -183,7 +203,37 @@ func (p *Processor) fetchMCPTools(ctx context.Context) ([]ToolDefinition, error)
 		})
 	}
 
+	if len(skipped) > 0 {
+		p.logger.Debugf("MCP tool filter dropped %d tool(s): %s", len(skipped), strings.Join(skipped, ", "))
+	}
+
 	return tools, nil
+}
+
+func (p *Processor) toolAllowed(name string) bool {
+	if _, blocked := p.excludeTools[name]; blocked {
+		return false
+	}
+	if len(p.includeTools) == 0 {
+		return true
+	}
+	_, ok := p.includeTools[name]
+	return ok
+}
+
+func parseToolNameSet(raw string) map[string]struct{} {
+	if raw == "" {
+		return nil
+	}
+	out := make(map[string]struct{})
+	for _, name := range strings.Split(raw, ",") {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		out[name] = struct{}{}
+	}
+	return out
 }
 
 func (p *Processor) executeMCPTool(ctx context.Context, name string, arguments json.RawMessage) (string, error) {
@@ -301,23 +351,19 @@ func (p *Processor) Process(ctx context.Context, msg *service.Message) (service.
 		return nil, fmt.Errorf("AI chat request failed: %w", err)
 	}
 
-	// Tool calling loop
+	// Tool calling loop. The message history is grown across rounds so the
+	// model sees every prior assistant turn and tool result; rebuilding it
+	// each iteration would drop earlier tool outputs and force the model to
+	// keep guessing.
+	messages := []ChatMessage{{Role: "user", Content: promptStr}}
 	for round := 0; round < p.maxToolRounds && len(chatResp.ToolCalls) > 0; round++ {
 		p.logger.Debugf("Tool calling round %d: %d tool calls", round+1, len(chatResp.ToolCalls))
 
-		messages := []ChatMessage{
-			{Role: "user", Content: promptStr},
-			{Role: "assistant", Content: chatResp.Content, ToolCalls: chatResp.ToolCalls},
-		}
-
-		if round > 0 && len(chatReq.Messages) > 0 {
-			messages = chatReq.Messages
-			messages = append(messages, ChatMessage{
-				Role:      "assistant",
-				Content:   chatResp.Content,
-				ToolCalls: chatResp.ToolCalls,
-			})
-		}
+		messages = append(messages, ChatMessage{
+			Role:      "assistant",
+			Content:   chatResp.Content,
+			ToolCalls: chatResp.ToolCalls,
+		})
 
 		for _, tc := range chatResp.ToolCalls {
 			p.logger.Debugf("Executing MCP tool: %s", tc.Name)
@@ -351,6 +397,10 @@ func (p *Processor) Process(ctx context.Context, msg *service.Message) (service.
 		if err != nil {
 			return nil, fmt.Errorf("AI chat request failed during tool calling round %d: %w", round+1, err)
 		}
+	}
+
+	if len(chatResp.ToolCalls) > 0 && chatResp.Content == "" {
+		p.logger.Warnf("AI gateway exhausted max_tool_rounds=%d with pending tool calls; the model never produced a final answer. Increase max_tool_rounds or narrow the tool set.", p.maxToolRounds)
 	}
 
 	p.logger.Debugf("AI gateway response: model=%s, finish_reason=%s, content_len=%d, input_tokens=%d, output_tokens=%d",

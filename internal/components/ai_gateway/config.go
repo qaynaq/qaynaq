@@ -16,6 +16,8 @@ const (
 	agfMCPTools            = "mcp_tools"
 	agfMCPURL              = "mcp_url"
 	agfMaxToolRounds       = "max_tool_rounds"
+	agfIncludeTools        = "include_tools"
+	agfExcludeTools        = "exclude_tools"
 )
 
 func Config() *service.ConfigSpec {
@@ -74,6 +76,14 @@ The processor outputs a structured object containing: content, model, finish_rea
 		Field(service.NewIntField(agfMaxToolRounds).
 			Description("Maximum number of tool calling rounds before forcing a final response. Each round allows the model to call one or more tools and receive results.").
 			Default(5).
+			Advanced()).
+		Field(service.NewStringField(agfIncludeTools).
+			Description("Comma-separated allowlist of MCP tool names. When non-empty, only listed tools are exposed to the model; everything else is filtered out. A name appearing in both include_tools and exclude_tools is dropped.").
+			Default("").
+			Advanced()).
+		Field(service.NewStringField(agfExcludeTools).
+			Description("Comma-separated blocklist of MCP tool names to hide from the model. Useful for stopping an mcp_tool orchestrator flow from recursively invoking itself. A name appearing in both include_tools and exclude_tools is dropped.").
+			Default("").
 			Advanced()).
 		Version("1.0.0")
 }

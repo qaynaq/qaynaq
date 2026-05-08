@@ -985,6 +985,20 @@ export const componentSchemas = {
             "Maximum number of tool calling rounds before forcing a final response.",
           default: 5,
         },
+        include_tools: {
+          type: "input",
+          title: "Include Tools",
+          description:
+            "Comma-separated allowlist of MCP tool names. When non-empty, only listed tools are exposed to the model. A name appearing in both lists is dropped.",
+          default: "",
+        },
+        exclude_tools: {
+          type: "input",
+          title: "Exclude Tools",
+          description:
+            "Comma-separated blocklist of MCP tool names to hide from the model. For mcp_tool flows the owning tool name is auto-added to prevent self-recursion.",
+          default: "",
+        },
       },
     },
     google_calendar: {
