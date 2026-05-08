@@ -10,6 +10,8 @@ import {
   Analytics,
   MCPSettings,
   MCPServer,
+  MCPCatalogEntry,
+  MCPServerLogs,
   APIToken,
   OAuthClients,
   OAuthSessions,
@@ -1599,15 +1601,44 @@ export async function fetchMCPServers(): Promise<MCPServer[]> {
 
 export async function createMCPServer(params: {
   name: string;
-  url: string;
+  url?: string;
   auth_type?: string;
   auth_header?: string;
   auth_value?: string;
   connection_name?: string;
+  transport?: string;
+  catalog_id?: string;
+  env?: Record<string, string>;
 }): Promise<MCPServer> {
   const response = await handleResponse(
     await fetch(`${API_BASE_URL}/settings/mcp/servers`, {
       method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    }),
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function updateMCPServer(
+  id: number,
+  params: {
+    name?: string;
+    url?: string;
+    auth_type?: string;
+    auth_header?: string;
+    auth_value?: string;
+    connection_name?: string;
+    env?: Record<string, string>;
+  },
+): Promise<MCPServer> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/servers/${id}`, {
+      method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify(params),
     }),
@@ -1629,4 +1660,42 @@ export async function deleteMCPServer(id: number): Promise<void> {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
+}
+
+export async function restartMCPServer(id: number): Promise<void> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/servers/${id}/restart`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: "{}",
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+}
+
+export async function fetchMCPServerLogs(id: number): Promise<MCPServerLogs> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/servers/${id}/logs`, {
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function fetchMCPCatalog(): Promise<MCPCatalogEntry[]> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/mcp/catalog`, {
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.data || [];
 }
