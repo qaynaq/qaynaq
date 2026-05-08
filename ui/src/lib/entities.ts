@@ -214,6 +214,7 @@ export type MCPCatalogEntry = {
   display_name: string;
   description: string;
   docs_url: string;
+  maintainer: "official" | "community" | string;
   command: string;
   args: string[];
   env_spec: MCPCatalogEnvSpec[];

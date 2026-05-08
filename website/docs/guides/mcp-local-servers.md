@@ -26,15 +26,18 @@ Both can coexist in the same Qaynaq instance.
 
 ## The Catalog
 
-Local servers in v1 come from a curated allowlist. You don't type a free-form `npx <pkg>` command - you pick from the catalog. This is intentional: spawning arbitrary executables is a footgun, especially in shared deployments. The catalog ships with the well-known `@modelcontextprotocol/server-*` set:
+Local servers come from a curated allowlist. You don't type a free-form `npx <pkg>` command, you pick from the catalog. This is intentional: spawning arbitrary executables is a footgun, especially in shared deployments. Each entry is tagged with a maintainer tier so you can see at a glance who stands behind it:
 
-| Catalog ID | What it does | Required env |
-|------------|--------------|--------------|
-| `filesystem` | Read/write files in a sandboxed dir | `ALLOWED_DIR` |
-| `git` | Read git repos | `REPO_PATH` |
-| `github` | Issues, PRs, repos via GitHub API | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| `slack` | Read/post Slack messages | `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID` |
-| `postgres` | Read-only Postgres queries | `POSTGRES_URL` |
+- **official** — vendor-maintained (Anthropic, Microsoft, Sentry, etc.).
+- **community** — single maintainer or unaffiliated team. Useful but lower bus factor.
+
+| Catalog ID | Maintainer | What it does | Required env |
+|------------|------------|--------------|--------------|
+| `filesystem` | official | Read/write files in a sandboxed dir | `ALLOWED_DIR` |
+| `slack` | community | Read/post Slack messages | `SLACK_MCP_XOXP_TOKEN` |
+| `playwright` | official | Browser automation (headless or headed) | none |
+| `sentry` | official | Sentry issues, events, performance lookup | `SENTRY_AUTH_TOKEN` |
+| `redash` | community | Run SQL queries, browse schemas, manage dashboards | `REDASH_URL`, `REDASH_API_KEY` |
 
 If you need an entry that isn't there, file an issue. We treat the catalog as something the project owns.
 

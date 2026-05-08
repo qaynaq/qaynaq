@@ -2,6 +2,15 @@ package mcp
 
 import "sort"
 
+// Maintainer tags catalog entries with their trust tier so users can see at
+// a glance whether an MCP server is vendor-maintained or community-maintained.
+type Maintainer string
+
+const (
+	MaintainerOfficial  Maintainer = "official"
+	MaintainerCommunity Maintainer = "community"
+)
+
 // StdioCatalogEntry describes one allowlisted command-line MCP server.
 // v1 is hardcoded; free-form commands are deliberately not supported.
 type StdioCatalogEntry struct {
@@ -9,6 +18,7 @@ type StdioCatalogEntry struct {
 	DisplayName  string         `json:"display_name"`
 	Description  string         `json:"description"`
 	DocsURL      string         `json:"docs_url,omitempty"`
+	Maintainer   Maintainer     `json:"maintainer"`
 	Command      string         `json:"command"`
 	ArgsTemplate []string       `json:"args"`
 	EnvSpec      []StdioEnvSpec `json:"env_spec"`
@@ -27,55 +37,59 @@ var stdioCatalog = map[string]StdioCatalogEntry{
 		DisplayName:  "Filesystem",
 		Description:  "Read and write files in a sandboxed directory.",
 		DocsURL:      "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
+		Maintainer:   MaintainerOfficial,
 		Command:      "npx",
-		ArgsTemplate: []string{"-y", "@modelcontextprotocol/server-filesystem@^0.6.0", "${ALLOWED_DIR}"},
+		ArgsTemplate: []string{"-y", "@modelcontextprotocol/server-filesystem", "${ALLOWED_DIR}"},
 		EnvSpec: []StdioEnvSpec{
 			{Name: "ALLOWED_DIR", Description: "Absolute path the server is allowed to read/write.", Required: true},
-		},
-	},
-	"git": {
-		ID:           "git",
-		DisplayName:  "Git",
-		Description:  "Read and search git repositories.",
-		DocsURL:      "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
-		Command:      "npx",
-		ArgsTemplate: []string{"-y", "@modelcontextprotocol/server-git@^0.6.0", "--repository", "${REPO_PATH}"},
-		EnvSpec: []StdioEnvSpec{
-			{Name: "REPO_PATH", Description: "Absolute path to the git repository.", Required: true},
-		},
-	},
-	"github": {
-		ID:           "github",
-		DisplayName:  "GitHub",
-		Description:  "Interact with GitHub repos, issues, and PRs.",
-		DocsURL:      "https://github.com/modelcontextprotocol/servers/tree/main/src/github",
-		Command:      "npx",
-		ArgsTemplate: []string{"-y", "@modelcontextprotocol/server-github@^0.6.0"},
-		EnvSpec: []StdioEnvSpec{
-			{Name: "GITHUB_PERSONAL_ACCESS_TOKEN", Description: "Personal access token (or ${SECRET_KEY}).", Required: true, Secret: true},
 		},
 	},
 	"slack": {
 		ID:           "slack",
 		DisplayName:  "Slack",
 		Description:  "Read and post Slack messages.",
-		DocsURL:      "https://github.com/modelcontextprotocol/servers/tree/main/src/slack",
+		DocsURL:      "https://github.com/korotovsky/slack-mcp-server",
+		Maintainer:   MaintainerCommunity,
 		Command:      "npx",
-		ArgsTemplate: []string{"-y", "@modelcontextprotocol/server-slack@^0.6.0"},
+		ArgsTemplate: []string{"-y", "slack-mcp-server@^1.1.0"},
 		EnvSpec: []StdioEnvSpec{
-			{Name: "SLACK_BOT_TOKEN", Description: "Bot user OAuth token (xoxb-...).", Required: true, Secret: true},
-			{Name: "SLACK_TEAM_ID", Description: "Team ID (T...).", Required: true},
+			{Name: "SLACK_MCP_XOXP_TOKEN", Description: "User token (xoxp-...) - see slack-mcp-server docs.", Required: true, Secret: true},
 		},
 	},
-	"postgres": {
-		ID:           "postgres",
-		DisplayName:  "Postgres",
-		Description:  "Read-only access to a Postgres database.",
-		DocsURL:      "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres",
+	"playwright": {
+		ID:           "playwright",
+		DisplayName:  "Playwright",
+		Description:  "Browser automation, headless by default.",
+		DocsURL:      "https://github.com/microsoft/playwright-mcp",
+		Maintainer:   MaintainerOfficial,
 		Command:      "npx",
-		ArgsTemplate: []string{"-y", "@modelcontextprotocol/server-postgres@^0.6.0", "${POSTGRES_URL}"},
+		ArgsTemplate: []string{"-y", "@playwright/mcp@latest"},
+	},
+	"sentry": {
+		ID:           "sentry",
+		DisplayName:  "Sentry",
+		Description:  "Sentry issues, events, and performance lookup.",
+		DocsURL:      "https://github.com/getsentry/sentry-mcp",
+		Maintainer:   MaintainerOfficial,
+		Command:      "npx",
+		ArgsTemplate: []string{"-y", "@sentry/mcp-server"},
 		EnvSpec: []StdioEnvSpec{
-			{Name: "POSTGRES_URL", Description: "Connection URL (postgres://...).", Required: true, Secret: true},
+			{Name: "SENTRY_AUTH_TOKEN", Description: "Sentry auth token (or ${SECRET_KEY}).", Required: true, Secret: true},
+			{Name: "SENTRY_HOST", Description: "Sentry host (defaults to sentry.io).", Required: false},
+		},
+	},
+	"redash": {
+		ID:           "redash",
+		DisplayName:  "Redash",
+		Description:  "Run SQL queries, browse schemas, manage dashboards.",
+		DocsURL:      "https://github.com/seob717/redash-mcp",
+		Maintainer:   MaintainerCommunity,
+		Command:      "npx",
+		ArgsTemplate: []string{"-y", "redash-mcp@^3.0.0"},
+		EnvSpec: []StdioEnvSpec{
+			{Name: "REDASH_URL", Description: "Redash base URL (https://redash.example.com).", Required: true},
+			{Name: "REDASH_API_KEY", Description: "User API key from Redash settings.", Required: true, Secret: true},
+			{Name: "REDASH_SAFETY_MODE", Description: "off | warn (default) | strict - strict recommended.", Required: false},
 		},
 	},
 }

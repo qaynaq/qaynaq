@@ -7970,6 +7970,8 @@ func (m *MCPCatalogEntry) validate(all bool) error {
 
 	}
 
+	// no validation rules for Maintainer
+
 	if len(errors) > 0 {
 		return MCPCatalogEntryMultiError(errors)
 	}

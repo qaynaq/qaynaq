@@ -3453,6 +3453,7 @@ type MCPCatalogEntry struct {
 	Command       string                 `protobuf:"bytes,5,opt,name=command,proto3" json:"command,omitempty"`
 	Args          []string               `protobuf:"bytes,6,rep,name=args,proto3" json:"args,omitempty"`
 	EnvSpec       []*MCPCatalogEnvSpec   `protobuf:"bytes,7,rep,name=env_spec,proto3" json:"env_spec,omitempty"`
+	Maintainer    string                 `protobuf:"bytes,8,opt,name=maintainer,proto3" json:"maintainer,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3534,6 +3535,13 @@ func (x *MCPCatalogEntry) GetEnvSpec() []*MCPCatalogEnvSpec {
 		return x.EnvSpec
 	}
 	return nil
+}
+
+func (x *MCPCatalogEntry) GetMaintainer() string {
+	if x != nil {
+		return x.Maintainer
+	}
+	return ""
 }
 
 type MCPCatalogEnvSpec struct {
@@ -5078,7 +5086,7 @@ const file_coordinator_proto_rawDesc = "" +
 	"last_error\x18\x01 \x01(\tR\n" +
 	"last_error\x12\x16\n" +
 	"\x06stderr\x18\x02 \x01(\tR\x06stderr\x12$\n" +
-	"\rprocess_state\x18\x03 \x01(\tR\rprocess_state\"\xed\x01\n" +
+	"\rprocess_state\x18\x03 \x01(\tR\rprocess_state\"\x8d\x02\n" +
 	"\x0fMCPCatalogEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\fdisplay_name\x12 \n" +
@@ -5086,7 +5094,10 @@ const file_coordinator_proto_rawDesc = "" +
 	"\bdocs_url\x18\x04 \x01(\tR\bdocs_url\x12\x18\n" +
 	"\acommand\x18\x05 \x01(\tR\acommand\x12\x12\n" +
 	"\x04args\x18\x06 \x03(\tR\x04args\x12:\n" +
-	"\benv_spec\x18\a \x03(\v2\x1e.protorender.MCPCatalogEnvSpecR\benv_spec\"}\n" +
+	"\benv_spec\x18\a \x03(\v2\x1e.protorender.MCPCatalogEnvSpecR\benv_spec\x12\x1e\n" +
+	"\n" +
+	"maintainer\x18\b \x01(\tR\n" +
+	"maintainer\"}\n" +
 	"\x11MCPCatalogEnvSpec\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1a\n" +

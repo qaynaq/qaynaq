@@ -644,6 +644,7 @@ func (c *CoordinatorAPI) ListMCPCatalog(_ context.Context, _ *emptypb.Empty) (*p
 			DisplayName: e.DisplayName,
 			Description: e.Description,
 			DocsUrl:     e.DocsURL,
+			Maintainer:  string(e.Maintainer),
 			Command:     e.Command,
 			Args:        e.ArgsTemplate,
 		}

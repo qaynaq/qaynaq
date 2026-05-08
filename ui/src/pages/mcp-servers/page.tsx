@@ -59,6 +59,23 @@ const RelativeTime = ({ dateString }: { dateString: string }) => {
   return <span>{relativeTime}</span>;
 };
 
+const MaintainerBadge = ({ maintainer }: { maintainer: string }) => {
+  if (maintainer !== "official" && maintainer !== "community") return null;
+  const isOfficial = maintainer === "official";
+  return (
+    <span
+      className={
+        "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide " +
+        (isOfficial
+          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200")
+      }
+    >
+      {maintainer}
+    </span>
+  );
+};
+
 type Transport = "http" | "stdio";
 
 export default function MCPServersPage() {
@@ -458,26 +475,31 @@ export default function MCPServersPage() {
                           <SelectContent>
                             {catalog.map((entry) => (
                               <SelectItem key={entry.id} value={entry.id}>
-                                {entry.display_name}
+                                <span className="flex items-center gap-2">
+                                  {entry.display_name}
+                                  <MaintainerBadge
+                                    maintainer={entry.maintainer}
+                                  />
+                                </span>
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                         {selectedCatalog && (
-                          <p className="text-xs text-muted-foreground">
-                            {selectedCatalog.description}
+                          <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                            <MaintainerBadge
+                              maintainer={selectedCatalog.maintainer}
+                            />
+                            <span>{selectedCatalog.description}</span>
                             {selectedCatalog.docs_url && (
-                              <>
-                                {" "}
-                                <a
-                                  href={selectedCatalog.docs_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="underline"
-                                >
-                                  docs
-                                </a>
-                              </>
+                              <a
+                                href={selectedCatalog.docs_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline"
+                              >
+                                docs
+                              </a>
                             )}
                           </p>
                         )}

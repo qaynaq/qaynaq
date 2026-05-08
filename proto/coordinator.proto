@@ -410,6 +410,7 @@ message MCPCatalogEntry {
   string command = 5 [json_name = "command"];
   repeated string args = 6 [json_name = "args"];
   repeated MCPCatalogEnvSpec env_spec = 7 [json_name = "env_spec"];
+  string maintainer = 8 [json_name = "maintainer"];
 }
 
 message MCPCatalogEnvSpec {

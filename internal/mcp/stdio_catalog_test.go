@@ -3,7 +3,7 @@ package mcp
 import "testing"
 
 func TestCatalog_KnownEntries(t *testing.T) {
-	required := []string{"filesystem", "git", "github", "slack", "postgres"}
+	required := []string{"filesystem", "slack", "playwright", "sentry", "redash"}
 	for _, id := range required {
 		if _, ok := LookupCatalogEntry(id); !ok {
 			t.Errorf("expected catalog entry %q to exist", id)
@@ -35,16 +35,24 @@ func TestCatalog_ListSorted(t *testing.T) {
 	}
 }
 
+func TestCatalog_AllEntriesHaveMaintainer(t *testing.T) {
+	for _, e := range ListCatalogEntries() {
+		if e.Maintainer != MaintainerOfficial && e.Maintainer != MaintainerCommunity {
+			t.Errorf("entry %q has invalid maintainer %q", e.ID, e.Maintainer)
+		}
+	}
+}
+
 func TestCatalog_RequiredEnvSpecsResolved(t *testing.T) {
-	gh, _ := LookupCatalogEntry("github")
+	slack, _ := LookupCatalogEntry("slack")
 	hasRequired := false
-	for _, s := range gh.EnvSpec {
+	for _, s := range slack.EnvSpec {
 		if s.Required {
 			hasRequired = true
 			break
 		}
 	}
 	if !hasRequired {
-		t.Error("github catalog entry has no required env spec")
+		t.Error("slack catalog entry has no required env spec")
 	}
 }
