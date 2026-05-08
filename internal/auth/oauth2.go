@@ -167,7 +167,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// HttpOnly cookie so /mcp/oauth/authorize can identify the user.
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // HttpOnly, Secure, SameSite all set below
 		Name:     h.cookieName,
 		Value:    jwtToken,
 		Path:     "/",
@@ -185,7 +185,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OAuth2Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // logout cookie: empty value with MaxAge=-1
 		Name:     h.cookieName,
 		Value:    "",
 		Path:     "/",

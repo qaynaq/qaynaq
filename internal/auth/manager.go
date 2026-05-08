@@ -157,7 +157,7 @@ func (m *Manager) HandleExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // HttpOnly, Secure, SameSite all set below
 		Name:     cookieName,
 		Value:    token,
 		Path:     "/",

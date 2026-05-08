@@ -860,5 +860,5 @@ func redirectError(w http.ResponseWriter, r *http.Request, redirectURI, state, c
 		values.Set("state", state)
 	}
 	dest.RawQuery = values.Encode()
-	http.Redirect(w, r, dest.String(), http.StatusFound)
+	http.Redirect(w, r, dest.String(), http.StatusFound) //nolint:gosec // redirectURI is validated against the client's registered URIs by callers
 }

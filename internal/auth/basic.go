@@ -87,7 +87,7 @@ func (h *BasicAuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (h *BasicAuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	// Clear the cookie set by /auth/exchange.
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // logout cookie: empty value with MaxAge=-1
 		Name:     h.cookieName,
 		Value:    "",
 		Path:     "/",
