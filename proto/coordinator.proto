@@ -352,6 +352,9 @@ message MCPServerInfo {
   google.protobuf.Timestamp created_at = 10 [json_name = "created_at"];
   google.protobuf.Timestamp updated_at = 11 [json_name = "updated_at"];
   optional google.protobuf.Timestamp last_sync_at = 12 [json_name = "last_sync_at"];
+  string transport = 13 [json_name = "transport"];
+  string catalog_id = 14 [json_name = "catalog_id"];
+  string process_state = 15 [json_name = "process_state"];
 }
 
 message ListMCPServersResponse {
@@ -360,11 +363,14 @@ message ListMCPServersResponse {
 
 message CreateMCPServerRequest {
   string name = 1 [(validate.rules).string = {min_len: 1, max_len: 100}];
-  string url = 2 [(validate.rules).string.min_len = 1];
+  string url = 2 [json_name = "url"];
   string auth_type = 3 [json_name = "auth_type"];
   string auth_header = 4 [json_name = "auth_header"];
   string auth_value = 5 [json_name = "auth_value"];
   string connection_name = 6 [json_name = "connection_name"];
+  string transport = 7 [json_name = "transport"];
+  string catalog_id = 8 [json_name = "catalog_id"];
+  map<string, string> env = 9 [json_name = "env"];
 }
 
 message UpdateMCPServerRequest {
@@ -375,10 +381,46 @@ message UpdateMCPServerRequest {
   string auth_header = 5 [json_name = "auth_header"];
   string auth_value = 6 [json_name = "auth_value"];
   string connection_name = 7 [json_name = "connection_name"];
+  map<string, string> env = 8 [json_name = "env"];
 }
 
 message DeleteMCPServerRequest {
   int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message RestartMCPServerRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message GetMCPServerLogsRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message MCPServerLogsResponse {
+  string last_error = 1 [json_name = "last_error"];
+  string stderr = 2 [json_name = "stderr"];
+  string process_state = 3 [json_name = "process_state"];
+}
+
+message MCPCatalogEntry {
+  string id = 1 [json_name = "id"];
+  string display_name = 2 [json_name = "display_name"];
+  string description = 3 [json_name = "description"];
+  string docs_url = 4 [json_name = "docs_url"];
+  string command = 5 [json_name = "command"];
+  repeated string args = 6 [json_name = "args"];
+  repeated MCPCatalogEnvSpec env_spec = 7 [json_name = "env_spec"];
+}
+
+message MCPCatalogEnvSpec {
+  string name = 1 [json_name = "name"];
+  string description = 2 [json_name = "description"];
+  bool required = 3 [json_name = "required"];
+  bool secret = 4 [json_name = "secret"];
+}
+
+message ListMCPCatalogResponse {
+  repeated MCPCatalogEntry data = 1 [json_name = "data"];
 }
 
 message ConnectionRequest {
@@ -694,6 +736,18 @@ service Coordinator {
   }
   rpc DeleteMCPServer(DeleteMCPServerRequest) returns (CommonResponse) {
     option (google.api.http) = {delete: "/v0/settings/mcp/servers/{id}"};
+  }
+  rpc RestartMCPServer(RestartMCPServerRequest) returns (CommonResponse) {
+    option (google.api.http) = {
+      post: "/v0/settings/mcp/servers/{id}/restart"
+      body: "*"
+    };
+  }
+  rpc GetMCPServerLogs(GetMCPServerLogsRequest) returns (MCPServerLogsResponse) {
+    option (google.api.http) = {get: "/v0/settings/mcp/servers/{id}/logs"};
+  }
+  rpc ListMCPCatalog(google.protobuf.Empty) returns (ListMCPCatalogResponse) {
+    option (google.api.http) = {get: "/v0/settings/mcp/catalog"};
   }
 
   // Connection methods

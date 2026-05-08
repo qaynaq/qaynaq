@@ -7,6 +7,7 @@ import (
 	"github.com/qaynaq/qaynaq/internal/analytics"
 	"github.com/qaynaq/qaynaq/internal/config"
 	"github.com/qaynaq/qaynaq/internal/connection"
+	"github.com/qaynaq/qaynaq/internal/mcp"
 	pb "github.com/qaynaq/qaynaq/internal/protogen"
 
 	"github.com/qaynaq/qaynaq/internal/persistence"
@@ -59,10 +60,18 @@ type CoordinatorAPI struct {
 	flowWorkerMap     FlowWorkerMap
 	connManager       *connection.Manager
 	mcpServerRepo     persistence.MCPServerRepository
+	mcpHandler        *mcp.MCPHandler
 	authType          config.AuthType
 	mcpOAuthEnabled   bool
 	cache             settingsCache
 	tokenUsage        tokenUsageTracker
+}
+
+// SetMCPHandler is called from deps.go after the MCP handler is constructed
+// (the API and the MCP handler have a circular dependency that we break by
+// setting the pointer post-construction).
+func (c *CoordinatorAPI) SetMCPHandler(h *mcp.MCPHandler) {
+	c.mcpHandler = h
 }
 
 func NewCoordinatorAPI(
