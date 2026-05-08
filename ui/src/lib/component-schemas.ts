@@ -975,8 +975,15 @@ export const componentSchemas = {
           type: "input",
           title: "MCP URL",
           description:
-            "URL of the Qaynaq MCP endpoint for tool discovery and execution.",
+            "URL of the Qaynaq MCP endpoint for tool discovery and execution. Supports environment variable substitution (e.g. ${QAYNAQ_MCP_URL}).",
           default: "http://localhost:8080/mcp",
+        },
+        mcp_token: {
+          type: "input",
+          title: "MCP Token",
+          description:
+            "Bearer token for the Qaynaq MCP endpoint when auth is enabled. Leave empty when the endpoint is unprotected. Supports environment variable substitution (e.g. ${QAYNAQ_MCP_TOKEN}).",
+          default: "",
         },
         max_tool_rounds: {
           type: "number",

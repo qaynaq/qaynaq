@@ -15,7 +15,8 @@ Calls an AI chat completion API and maps the response into the message.
 | Max Tokens | integer | `1024` | Maximum tokens to generate |
 | Temperature | float | `1.0` | Sampling temperature (higher = more random) |
 | MCP Tools | boolean | `true` | Discover and call MCP tools registered in Qaynaq |
-| MCP URL | string | `http://localhost:8080/mcp` | Qaynaq MCP endpoint for tool discovery and execution |
+| MCP URL | string | `http://localhost:8080/mcp` | Qaynaq MCP endpoint for tool discovery and execution. Supports `${ENV_VAR}` substitution |
+| MCP Token | string (secret) | — | Bearer token for the Qaynaq MCP endpoint when auth is enabled. Supports `${ENV_VAR}` substitution |
 | Max Tool Rounds | integer | `5` | Maximum tool-calling rounds before forcing a final response |
 | Include Tools | string | — | Comma-separated allowlist of MCP tool names; when set, only these tools are exposed |
 | Exclude Tools | string | — | Comma-separated blocklist of MCP tool names to hide from the model |
@@ -53,6 +54,8 @@ The AI response object contains:
 ## MCP Tools
 
 When MCP Tools is enabled the processor lists every tool registered with the Qaynaq MCP endpoint and exposes it to the model. The model can issue tool calls across up to Max Tool Rounds rounds; results are fed back as `tool` messages and the model is re-prompted.
+
+If your Qaynaq instance protects the MCP endpoint with an access token, set MCP Token to a valid token. The processor sends it as `Authorization: Bearer <token>` on every MCP request. Both MCP URL and MCP Token accept `${ENV_VAR}` references so you can keep the values out of your YAML, e.g. `mcp_token: ${QAYNAQ_MCP_TOKEN}`.
 
 Use Include Tools to limit the surface area to a known set, or Exclude Tools to drop tools you do not want exposed. Names are comma-separated and matched exactly. When Include Tools is non-empty only listed tools are exposed; everything else is filtered out. When Include Tools is empty every discovered tool is allowed except those listed in Exclude Tools. A name appearing in both lists is dropped.
 

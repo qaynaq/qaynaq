@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	mcpclient "github.com/mark3labs/mcp-go/client"
+	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/warpstreamlabs/bento/public/bloblang"
 	"github.com/warpstreamlabs/bento/public/service"
@@ -36,6 +37,7 @@ type Processor struct {
 	temperature   float64
 	mcpTools      bool
 	mcpURL        string
+	mcpToken      string
 	maxToolRounds int
 	includeTools  map[string]struct{}
 	excludeTools  map[string]struct{}
@@ -128,6 +130,13 @@ func NewFromConfig(conf *service.ParsedConfig, mgr *service.Resources) (*Process
 		return nil, err
 	}
 
+	if conf.Contains(agfMCPToken) {
+		p.mcpToken, err = conf.FieldString(agfMCPToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	p.maxToolRounds, err = conf.FieldInt(agfMaxToolRounds)
 	if err != nil {
 		return nil, err
@@ -156,7 +165,13 @@ func NewFromConfig(conf *service.ParsedConfig, mgr *service.Resources) (*Process
 func (p *Processor) initMCPClient() (*mcpclient.Client, error) {
 	p.mcpOnce.Do(func() {
 		p.logger.Debugf("Connecting to MCP server at %s", p.mcpURL)
-		c, err := mcpclient.NewStreamableHttpClient(p.mcpURL)
+		var opts []transport.StreamableHTTPCOption
+		if p.mcpToken != "" {
+			opts = append(opts, transport.WithHTTPHeaders(map[string]string{
+				"Authorization": "Bearer " + p.mcpToken,
+			}))
+		}
+		c, err := mcpclient.NewStreamableHttpClient(p.mcpURL, opts...)
 		if err != nil {
 			p.mcpInitErr = fmt.Errorf("failed to create MCP client: %w", err)
 			return
