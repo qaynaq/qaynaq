@@ -134,7 +134,8 @@ func InitializeCoordinatorCommand(ctx *cli.Context) *intcli.CoordinatorCLI {
 	coordinatorAPI := coordinator.NewCoordinatorAPI(eventRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, flowBufferRepository, flowProcessorRepository, workerRepository, workerFlowRepository, secretRepository, cacheRepository, bufferRepository, rateLimitRepository, fileRepository, settingRepository, apiTokenRepository, oauthClientRepository, oauthRefreshTokenRepository, oauthConsentRepository, rateLimiterEngine, aesgcm, analyticsProvider, connManager, flowWorkerMap, mcpServerRepository, authConfig.Type, mcpOAuthEnabled)
 	coordinatorExecutor := executor.NewCoordinatorExecutor(workerRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, workerFlowRepository, fileRepository, flowWorkerMap)
 	oauthHandler := connection.NewOAuthHandler(connManager)
-	mcpHandler := mcppkg.NewMCPHandler(flowRepository, mcpServerRepository, coordinatorExecutor, aesgcm, connManager, Version)
+	mcpHandler := mcppkg.NewMCPHandler(flowRepository, mcpServerRepository, secretRepository, coordinatorExecutor, aesgcm, connManager, Version)
+	coordinatorAPI.SetMCPHandler(mcpHandler)
 
 	var mcpOAuthServer *mcpoauth.Server
 	if mcpOAuthEnabled {
