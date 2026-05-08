@@ -456,7 +456,7 @@ func (c *CoordinatorAPI) CreateMCPServer(_ context.Context, req *pb.CreateMCPSer
 		server.AuthType = "none"
 		server.CatalogID = req.CatalogId
 		server.Command = entry.Command
-		if req.Env != nil && c.mcpHandler != nil && c.mcpHandler.StdioSupervisor() != nil {
+		if req.Env != nil {
 			resolver := mcp.NewEnvResolver(c.secretRepo, c.aesgcm)
 			blob, err := mcp.EncodeEnvBlob(req.Env, resolver)
 			if err != nil {
@@ -518,9 +518,7 @@ func (c *CoordinatorAPI) UpdateMCPServer(_ context.Context, req *pb.UpdateMCPSer
 			server.EncryptedEnv = blob
 			stdioEnvChanged = true
 			// Edits force a fresh process so the new env takes effect.
-			if c.mcpHandler != nil && c.mcpHandler.StdioSupervisor() != nil {
-				c.mcpHandler.StdioSupervisor().Stop(server.ID)
-			}
+			c.mcpHandler.StdioSupervisor().Stop(server.ID)
 		}
 	default:
 		if req.Url != "" {
@@ -553,7 +551,7 @@ func (c *CoordinatorAPI) UpdateMCPServer(_ context.Context, req *pb.UpdateMCPSer
 
 	// Kick a fresh spawn after env edits so the new env applies without waiting
 	// for the next 30s sync tick.
-	if stdioEnvChanged && c.mcpHandler != nil && c.mcpHandler.StdioSupervisor() != nil {
+	if stdioEnvChanged {
 		_, _ = c.mcpHandler.StdioSupervisor().Get(context.Background(), server)
 	}
 
@@ -581,9 +579,7 @@ func (c *CoordinatorAPI) DeleteMCPServer(_ context.Context, req *pb.DeleteMCPSer
 
 	// Stop the supervised process before dropping the row so we don't leak a
 	// child process whose DB row is gone.
-	if c.mcpHandler != nil && c.mcpHandler.StdioSupervisor() != nil {
-		c.mcpHandler.StdioSupervisor().Remove(req.Id)
-	}
+	c.mcpHandler.StdioSupervisor().Remove(req.Id)
 
 	if err := c.mcpServerRepo.Delete(req.Id); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete MCP server: %v", err)
@@ -602,9 +598,6 @@ func (c *CoordinatorAPI) RestartMCPServer(_ context.Context, req *pb.RestartMCPS
 	}
 	if server.Transport != persistence.MCPTransportStdio {
 		return nil, status.Error(codes.FailedPrecondition, "restart is only supported for stdio servers")
-	}
-	if c.mcpHandler == nil || c.mcpHandler.StdioSupervisor() == nil {
-		return nil, status.Error(codes.Unavailable, "stdio supervisor not configured")
 	}
 
 	sup := c.mcpHandler.StdioSupervisor()
@@ -632,14 +625,13 @@ func (c *CoordinatorAPI) GetMCPServerLogs(_ context.Context, req *pb.GetMCPServe
 		LastError:    server.LastError,
 		ProcessState: server.ProcessState,
 	}
-	if c.mcpHandler != nil && c.mcpHandler.StdioSupervisor() != nil {
-		live, stderr := c.mcpHandler.StdioSupervisor().LastError(server.ID)
-		if live != "" {
-			resp.LastError = live
-		}
-		resp.Stderr = stderr
-		resp.ProcessState = c.mcpHandler.StdioSupervisor().State(server.ID)
+	sup := c.mcpHandler.StdioSupervisor()
+	live, stderr := sup.LastError(server.ID)
+	if live != "" {
+		resp.LastError = live
 	}
+	resp.Stderr = stderr
+	resp.ProcessState = sup.State(server.ID)
 	return resp, nil
 }
 

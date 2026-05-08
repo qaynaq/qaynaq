@@ -67,13 +67,6 @@ type CoordinatorAPI struct {
 	tokenUsage        tokenUsageTracker
 }
 
-// SetMCPHandler is called from deps.go after the MCP handler is constructed
-// (the API and the MCP handler have a circular dependency that we break by
-// setting the pointer post-construction).
-func (c *CoordinatorAPI) SetMCPHandler(h *mcp.MCPHandler) {
-	c.mcpHandler = h
-}
-
 func NewCoordinatorAPI(
 	eventRepo persistence.EventRepository,
 	flowRepo persistence.FlowRepository,
@@ -99,6 +92,7 @@ func NewCoordinatorAPI(
 	connManager *connection.Manager,
 	flowWorkerMap FlowWorkerMap,
 	mcpServerRepo persistence.MCPServerRepository,
+	mcpHandler *mcp.MCPHandler,
 	authType config.AuthType,
 	mcpOAuthEnabled bool,
 ) *CoordinatorAPI {
@@ -127,6 +121,7 @@ func NewCoordinatorAPI(
 		connManager:       connManager,
 		flowWorkerMap:     flowWorkerMap,
 		mcpServerRepo:     mcpServerRepo,
+		mcpHandler:        mcpHandler,
 		authType:          authType,
 		mcpOAuthEnabled:   mcpOAuthEnabled,
 		tokenUsage:        tokenUsageTracker{pending: make(map[int64]time.Time)},
