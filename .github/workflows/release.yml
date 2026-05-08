@@ -104,9 +104,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
-          cache-from: |
-            type=gha,scope=buildkit-qaynaq
-            type=registry,ref=ghcr.io/${{ github.repository_owner }}/qaynaq:buildcache
+          cache-from: type=gha,scope=buildkit-qaynaq
           cache-to: type=gha,mode=max,scope=buildkit-qaynaq
           provenance: false
           sbom: false
