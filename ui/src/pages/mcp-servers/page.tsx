@@ -316,7 +316,7 @@ export default function MCPServersPage() {
       addToast({
         id: "server-restarted",
         title: "Restart Scheduled",
-        description: `Server "${server.name}" will restart on the next sync.`,
+        description: `Server "${server.name}" is being reconnected.`,
         variant: "success",
       });
       await loadAll();
@@ -738,27 +738,25 @@ export default function MCPServersPage() {
                       </div>
                     </div>
                     {isStdio && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleViewLogs(server)}
-                          className="text-muted-foreground hover:text-foreground"
-                          title="View logs"
-                        >
-                          <Terminal className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRestart(server)}
-                          className="text-muted-foreground hover:text-foreground"
-                          title="Restart"
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </Button>
-                      </>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleViewLogs(server)}
+                        className="text-muted-foreground hover:text-foreground"
+                        title="View logs"
+                      >
+                        <Terminal className="h-4 w-4" />
+                      </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRestart(server)}
+                      className="text-muted-foreground hover:text-foreground"
+                      title="Restart"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"

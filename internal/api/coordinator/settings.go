@@ -596,18 +596,26 @@ func (c *CoordinatorAPI) RestartMCPServer(_ context.Context, req *pb.RestartMCPS
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "MCP server not found: %v", err)
 	}
-	if server.Transport != persistence.MCPTransportStdio {
-		return nil, status.Error(codes.FailedPrecondition, "restart is only supported for stdio servers")
-	}
 
-	sup := c.mcpHandler.StdioSupervisor()
-	sup.Stop(server.ID)
-	sup.Restart(server.ID)
 	_ = c.mcpServerRepo.UpdateStatus(server.ID, "active")
 	_ = c.mcpServerRepo.UpdateSyncStatus(server.ID, server.ToolCount, "")
-	// Kick a spawn now so the user does not wait for the next 30s sync tick.
-	// Get returns ErrStarting and does its work in the background.
-	_, _ = sup.Get(context.Background(), server)
+
+	if server.Transport == persistence.MCPTransportStdio {
+		sup := c.mcpHandler.StdioSupervisor()
+		sup.Stop(server.ID)
+		sup.Restart(server.ID)
+		_, _ = sup.Get(context.Background(), server)
+	} else {
+		c.mcpHandler.ResetUpstreamServer(server.Name)
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error().Interface("panic", r).Msg("Panic in restart-triggered MCP sync")
+				}
+			}()
+			c.mcpHandler.SyncTools()
+		}()
+	}
 
 	return &pb.CommonResponse{Message: "Server scheduled for restart"}, nil
 }
