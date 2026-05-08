@@ -67,6 +67,7 @@ type MCPHandler struct {
 	connManager     *connection.Manager
 	stdioSupervisor *StdioSupervisor
 	mu              sync.RWMutex
+	syncMu          sync.Mutex
 	// tool name -> flow ID, used for forwarding via /ingest/{flowID}
 	toolFlowMap   map[string]int64
 	upstreams     map[string]*upstreamServer
@@ -111,6 +112,9 @@ func (h *MCPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MCPHandler) SyncTools() {
+	h.syncMu.Lock()
+	defer h.syncMu.Unlock()
+
 	nativeTools, nativeToolMap := h.syncNativeTools()
 	upstreamTools, reconnected := h.syncUpstreamServers(nativeToolMap)
 	allTools := append(nativeTools, upstreamTools...)
@@ -361,9 +365,6 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 
 	if h.serverRepo != nil {
 		_ = h.serverRepo.UpdateSyncStatus(srv.ID, len(tools), "")
-		// If the server was previously circuit-broken, flip it back to active
-		// now that it's responding again. Without this the UI would keep
-		// showing "error" forever after a recovery.
 		if srv.Status == "error" {
 			_ = h.serverRepo.UpdateStatus(srv.ID, "active")
 		}
@@ -585,14 +586,20 @@ func (h *MCPHandler) createStdioToolHandler(serverID int64, serverName, original
 	}
 }
 
-// ResetUpstreamServer resets the circuit breaker for a server, allowing it to be re-synced.
+// ResetUpstreamServer drops the cached HTTP client and circuit-breaker state.
+// Skips stdio: releaseUpstream would tear down the supervised child process.
 func (h *MCPHandler) ResetUpstreamServer(serverName string) {
 	h.mu.Lock()
-	if us, ok := h.upstreams[serverName]; ok {
-		h.releaseUpstream(us)
+	defer h.mu.Unlock()
+	us, ok := h.upstreams[serverName]
+	if !ok {
+		return
 	}
+	if us.authKey == "stdio" {
+		return
+	}
+	h.releaseUpstream(us)
 	delete(h.upstreams, serverName)
-	h.mu.Unlock()
 }
 
 // closeUpstreamClient closes the upstream MCP client (terminating its

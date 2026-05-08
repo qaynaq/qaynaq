@@ -37,7 +37,6 @@ type MCPServer struct {
 
 type MCPServerRepository interface {
 	List() ([]MCPServer, error)
-	ListByStatus(status string) ([]MCPServer, error)
 	ListMonitored() ([]MCPServer, error)
 	GetByID(id int64) (*MCPServer, error)
 	Create(server *MCPServer) error
@@ -65,19 +64,8 @@ func (r *mcpServerRepository) List() ([]MCPServer, error) {
 	return servers, nil
 }
 
-func (r *mcpServerRepository) ListByStatus(status string) ([]MCPServer, error) {
-	var servers []MCPServer
-	err := r.db.Where("status = ?", status).Order("created_at DESC").Find(&servers).Error
-	if err != nil {
-		return nil, err
-	}
-	return servers, nil
-}
-
-// ListMonitored returns servers the sync loop should keep watching: anything
-// the user hasn't explicitly stopped. Servers in "error" stay in this set so
-// the in-memory circuit breaker can retry them after cooldown - including
-// after a coordinator restart, where the in-memory state was lost.
+// ListMonitored returns servers the sync loop should keep watching, including
+// errored ones so the circuit breaker can retry them.
 func (r *mcpServerRepository) ListMonitored() ([]MCPServer, error) {
 	var servers []MCPServer
 	err := r.db.Where("status IN ?", []string{"active", "error"}).Order("created_at DESC").Find(&servers).Error
