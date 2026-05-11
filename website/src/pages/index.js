@@ -9,7 +9,7 @@ import styles from "./index.module.css";
 function Hero() {
   const { siteConfig } = useDocusaurusContext();
   const [copied, setCopied] = useState(false);
-  const installCmd = 'curl -Lsf https://qaynaq.io/sh/install | bash';
+  const installCmd = "curl -Lsf https://qaynaq.io/sh/install | bash";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(installCmd);
@@ -41,16 +41,28 @@ function Hero() {
             </span>
           </div>
           <h1 className={styles.heroTitle}>
-            The <span className={styles.heroFastest}><span className={styles.heroFastLines}><span className={styles.heroFastLine} /><span className={styles.heroFastLine} /><span className={styles.heroFastLine} /></span>fastest</span> way to connect{' '}
-            <br className={styles.brDesktop} />
-            <span className={styles.heroSkewBox}>your data</span> to <span className={styles.heroSkewBox}>AI</span>
+            The{" "}
+            <span className={styles.heroFastest}>
+              <span className={styles.heroFastLines}>
+                <span className={styles.heroFastLine} />
+                <span className={styles.heroFastLine} />
+                <span className={styles.heroFastLine} />
+              </span>
+              fastest
+            </span>{" "}
+            way to connect <br className={styles.brDesktop} />
+            <span className={styles.heroSkewBox}>your data</span> to{" "}
+            <span className={styles.heroSkewBox}>AI</span>
           </h1>
           <p className={styles.heroSubtitle}>
-            Connect any database, API, or service to AI assistants like Claude and Cursor. Open-source, runs on your machine, no coding required.
+            Connect any database, API, or service to AI assistants like Claude
+            and Cursor. Open-source, runs on your machine, no coding required.
           </p>
           <div className={styles.heroInstall} onClick={handleCopy}>
             <code>$ {installCmd}</code>
-            <span className={styles.heroInstallCopy}>{copied ? 'Copied!' : 'Copy'}</span>
+            <span className={styles.heroInstallCopy}>
+              {copied ? "Copied!" : "Copy"}
+            </span>
           </div>
         </div>
       </div>
@@ -61,19 +73,19 @@ function Hero() {
 /* ──────────────────── Before / After (Animated) ──────────────────── */
 
 const painSteps = [
-  { icon: '{}', text: 'Write custom server code' },
-  { icon: '!', text: 'Handle errors & retries' },
-  { icon: '⇄', text: 'Manage database connections' },
-  { icon: '◈', text: 'Define tool schemas' },
-  { icon: '⚙', text: 'Configure transport layer' },
-  { icon: '▲', text: 'Deploy & maintain server' },
-  { icon: '∞', text: 'Repeat for every new tool' },
+  { icon: "{}", text: "Write custom server code" },
+  { icon: "!", text: "Handle errors & retries" },
+  { icon: "⇄", text: "Manage database connections" },
+  { icon: "◈", text: "Define tool schemas" },
+  { icon: "⚙", text: "Configure transport layer" },
+  { icon: "▲", text: "Deploy & maintain server" },
+  { icon: "∞", text: "Repeat for every new tool" },
 ];
 
 function BeforeAfter() {
   const sectionRef = useRef(null);
   // idle → appearing → striking → done
-  const [phase, setPhase] = useState('idle');
+  const [phase, setPhase] = useState("idle");
   const [visibleSteps, setVisibleSteps] = useState(0);
   const [strikeStep, setStrikeStep] = useState(0);
   const hasTriggered = useRef(false);
@@ -83,46 +95,52 @@ function BeforeAfter() {
       ([entry]) => {
         if (entry.isIntersecting && !hasTriggered.current) {
           hasTriggered.current = true;
-          setPhase('appearing');
+          setPhase("appearing");
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
-    if (phase !== 'appearing') return;
+    if (phase !== "appearing") return;
     if (visibleSteps < painSteps.length) {
-      const timer = setTimeout(() => setVisibleSteps(v => v + 1), 350);
+      const timer = setTimeout(() => setVisibleSteps((v) => v + 1), 350);
       return () => clearTimeout(timer);
     }
-    const timer = setTimeout(() => setPhase('striking'), 800);
+    const timer = setTimeout(() => setPhase("striking"), 800);
     return () => clearTimeout(timer);
   }, [phase, visibleSteps]);
 
   useEffect(() => {
-    if (phase !== 'striking') return;
+    if (phase !== "striking") return;
     if (strikeStep < painSteps.length) {
-      const timer = setTimeout(() => setStrikeStep(v => v + 1), 120);
+      const timer = setTimeout(() => setStrikeStep((v) => v + 1), 120);
       return () => clearTimeout(timer);
     }
-    const timer = setTimeout(() => setPhase('done'), 400);
+    const timer = setTimeout(() => setPhase("done"), 400);
     return () => clearTimeout(timer);
   }, [phase, strikeStep]);
 
-  const isAfterVisible = phase === 'done';
-  const isStriking = phase === 'striking' || phase === 'done';
+  const isAfterVisible = phase === "done";
+  const isStriking = phase === "striking" || phase === "done";
 
   return (
     <section className={styles.beforeAfter} ref={sectionRef}>
       <div className={styles.container}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>What <span className={styles.strikeWord}>Problem</span> Disappears</h2>
+          <h2 className={styles.sectionTitle}>
+            What <span className={styles.strikeWord}>Problem</span> Disappears
+          </h2>
         </div>
-        <div className={`${styles.comparisonGrid} ${isAfterVisible ? styles.comparisonExpanded : ''}`}>
-          <div className={`${styles.comparisonBefore} ${isAfterVisible ? styles.codeDimmed : ''}`}>
+        <div
+          className={`${styles.comparisonGrid} ${isAfterVisible ? styles.comparisonExpanded : ""}`}
+        >
+          <div
+            className={`${styles.comparisonBefore} ${isAfterVisible ? styles.codeDimmed : ""}`}
+          >
             <div className={styles.comparisonLabel}>Without Qaynaq</div>
             <div className={styles.painList}>
               {painSteps.map((step, idx) => {
@@ -131,7 +149,7 @@ function BeforeAfter() {
                 return (
                   <div
                     key={idx}
-                    className={`${styles.painStep} ${isVisible ? styles.painStepVisible : ''} ${isStruck ? styles.painStepStruck : ''}`}
+                    className={`${styles.painStep} ${isVisible ? styles.painStepVisible : ""} ${isStruck ? styles.painStepStruck : ""}`}
                   >
                     <span className={styles.painIcon}>{step.icon}</span>
                     <span className={styles.painText}>{step.text}</span>
@@ -141,17 +159,40 @@ function BeforeAfter() {
             </div>
           </div>
 
-          <div className={`${styles.comparisonArrow} ${isAfterVisible ? styles.arrowVisible : ''}`}>
+          <div
+            className={`${styles.comparisonArrow} ${isAfterVisible ? styles.arrowVisible : ""}`}
+          >
             <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <path d="M10 24H38M30 16L38 24L30 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M10 24H38M30 16L38 24L30 32"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
 
-          <div className={`${styles.comparisonAfter} ${isAfterVisible ? styles.afterVisible : ''}`}>
+          <div
+            className={`${styles.comparisonAfter} ${isAfterVisible ? styles.afterVisible : ""}`}
+          >
             <div className={styles.comparisonLabel}>With Qaynaq</div>
             <div className={styles.flowCard}>
               <div className={styles.flowCardHeader}>
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <svg
+                  width="18"
+                  height="18"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
                 <span>MCP Tool</span>
                 <span className={styles.flowCardBadge}>Ready</span>
               </div>
@@ -160,7 +201,20 @@ function BeforeAfter() {
                   {/* Connect node */}
                   <div className={styles.flowNode}>
                     <div className={styles.flowNodeIcon}>
-                      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
+                      <svg
+                        width="28"
+                        height="28"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+                        />
+                      </svg>
                     </div>
                     <span className={styles.flowNodeLabel}>Connect</span>
                   </div>
@@ -168,14 +222,39 @@ function BeforeAfter() {
                   {/* Arrow */}
                   <div className={styles.flowArrow}>
                     <svg width="32" height="16" viewBox="0 0 32 16" fill="none">
-                      <path d="M0 8H28M22 2L28 8L22 14" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M0 8H28M22 2L28 8L22 14"
+                        stroke="#22c55e"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </div>
 
                   {/* Transform node */}
                   <div className={styles.flowNode}>
                     <div className={styles.flowNodeIcon}>
-                      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      <svg
+                        width="28"
+                        height="28"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
                     </div>
                     <span className={styles.flowNodeLabel}>Transform</span>
                   </div>
@@ -183,21 +262,53 @@ function BeforeAfter() {
                   {/* Arrow */}
                   <div className={styles.flowArrow}>
                     <svg width="32" height="16" viewBox="0 0 32 16" fill="none">
-                      <path d="M0 8H28M22 2L28 8L22 14" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M0 8H28M22 2L28 8L22 14"
+                        stroke="#22c55e"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </div>
 
                   {/* AI-Ready node */}
                   <div className={styles.flowNode}>
                     <div className={styles.flowNodeIcon}>
-                      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                      <svg
+                        width="28"
+                        height="28"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                        />
+                      </svg>
                     </div>
                     <span className={styles.flowNodeLabel}>AI-Ready</span>
                   </div>
                 </div>
               </div>
               <div className={styles.flowCardFooter}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
                 <span>Configure visually. Deploy instantly.</span>
               </div>
             </div>
@@ -222,27 +333,56 @@ function HowItWorks() {
             <div className={styles.stepNumber}>1</div>
             <h3 className={styles.stepTitle}>Connect</h3>
             <p className={styles.stepDesc}>
-              Pick from 66+ connectors - databases, APIs, Shopify, Google Sheets, and more.
+              Pick from 66+ connectors - databases, APIs, Shopify, Google
+              Sheets, and more.
             </p>
           </div>
           <div className={styles.stepDivider}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </div>
           <div className={styles.stepCard}>
             <div className={styles.stepNumber}>2</div>
             <h3 className={styles.stepTitle}>Define Tool</h3>
             <p className={styles.stepDesc}>
-              Set a tool name, description, and parameters. Qaynaq generates the AI tool automatically.
+              Set a tool name, description, and parameters. Qaynaq generates the
+              AI tool automatically.
             </p>
           </div>
           <div className={styles.stepDivider}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </div>
           <div className={styles.stepCard}>
             <div className={styles.stepNumber}>3</div>
             <h3 className={styles.stepTitle}>Ask AI Anything</h3>
             <p className={styles.stepDesc}>
-              Your data is instantly accessible to Claude, Cursor, and any AI assistant.
+              Your data is instantly accessible to Claude, Cursor, and any AI
+              assistant.
             </p>
           </div>
         </div>
@@ -259,31 +399,34 @@ const examples = [
     source: "Shopify store",
     userMessage: "Show me all orders from this week that haven't shipped yet.",
     toolCall: 'get_orders(status="unfulfilled", since="7d")',
-    agentReply: "You have 12 unfulfilled orders this week, totaling $3,840. 3 are high-priority (ordered 5+ days ago): Order #1847 from Sarah M. ($420), #1839 from James K. ($380), #1835 from Lisa R. ($290). Want me to flag these for same-day shipping?",
+    agentReply:
+      "You have 12 unfulfilled orders this week, totaling $3,840. 3 are high-priority (ordered 5+ days ago): Order #1847 from Sarah M. ($420), #1839 from James K. ($380), #1835 from Lisa R. ($290). Want me to flag these for same-day shipping?",
   },
   {
     title: "Find Overdue Invoices",
     source: "Accounting database",
     userMessage: "Which invoices are overdue? Anything I should worry about?",
     toolCall: 'get_invoices(status="overdue")',
-    agentReply: "4 overdue invoices totaling $6,200. The biggest: $3,500 from TechStart Inc, 15 days late (they usually pay on time, might be an oversight). The other 3 are under $1,000 each. Recommend sending a friendly reminder to TechStart today.",
+    agentReply:
+      "4 overdue invoices totaling $6,200. The biggest: $3,500 from TechStart Inc, 15 days late (they usually pay on time, might be an oversight). The other 3 are under $1,000 each. Recommend sending a friendly reminder to TechStart today.",
   },
   {
     title: "Summarize Customer Messages",
     source: "Support inbox",
     userMessage: "What are customers complaining about this week?",
     toolCall: 'get_messages(type="complaint", since="7d")',
-    agentReply: "14 complaints this week. Top issue: shipping delays (8 messages, mostly West Coast). 3 about the new pricing page being confusing. 2 about login issues after the update. 1 product defect report. Shipping delays are up 60% from last week.",
+    agentReply:
+      "14 complaints this week. Top issue: shipping delays (8 messages, mostly West Coast). 3 about the new pricing page being confusing. 2 about login issues after the update. 1 product defect report. Shipping delays are up 60% from last week.",
   },
 ];
 
 function Typewriter({ text, speed = 20, onDone, onUpdate }) {
-  const [displayed, setDisplayed] = useState('');
+  const [displayed, setDisplayed] = useState("");
   const idx = useRef(0);
 
   useEffect(() => {
     idx.current = 0;
-    setDisplayed('');
+    setDisplayed("");
     const timer = setInterval(() => {
       idx.current++;
       const val = text.slice(0, idx.current);
@@ -306,7 +449,11 @@ function Examples() {
   //        4=typing dots, 5=tool call, 6=typing reply, 7=done, 8=cursor to sidebar
   const [step, setStep] = useState(0);
   // mode: 'text' (blinking line), 'pointer' (hand), 'idle' (arrow, no blink)
-  const [cursorPos, setCursorPos] = useState({ x: '60%', y: '90%', mode: 'arrow' });
+  const [cursorPos, setCursorPos] = useState({
+    x: "60%",
+    y: "90%",
+    mode: "arrow",
+  });
   const autoplayTimer = useRef(null);
   const sidebarRefs = useRef([]);
   const inputBarRef = useRef(null);
@@ -319,26 +466,33 @@ function Examples() {
     if (!el || !win) return null;
     const wr = win.getBoundingClientRect();
     const er = el.getBoundingClientRect();
-    return { wx: wr.left, wy: wr.top, ex: er.left, ey: er.top, ew: er.width, eh: er.height };
+    return {
+      wx: wr.left,
+      wy: wr.top,
+      ex: er.left,
+      ey: er.top,
+      ew: er.width,
+      eh: er.height,
+    };
   };
 
   const getCursorPosForSidebar = (idx) => {
     const r = getRelPos(sidebarRefs.current[idx]);
-    if (!r) return { x: '10%', y: '50%', mode: 'pointer' };
+    if (!r) return { x: "10%", y: "50%", mode: "pointer" };
     return {
       x: `${r.ex - r.wx + r.ew * 0.6}px`,
       y: `${r.ey - r.wy + r.eh / 2}px`,
-      mode: 'pointer',
+      mode: "pointer",
     };
   };
 
   const getCursorPosForInputStart = () => {
     const r = getRelPos(inputBarRef.current);
-    if (!r) return { x: '60%', y: '90%', mode: 'text' };
+    if (!r) return { x: "60%", y: "90%", mode: "text" };
     return {
       x: `${r.ex - r.wx + 12}px`,
       y: `${r.ey - r.wy + r.eh / 2}px`,
-      mode: 'text',
+      mode: "text",
     };
   };
 
@@ -349,7 +503,7 @@ function Examples() {
       if (!span || !win) return;
       const wr = win.getBoundingClientRect();
       const sr = span.getBoundingClientRect();
-      setCursorPos(prev => ({
+      setCursorPos((prev) => ({
         ...prev,
         x: `${sr.left - wr.left + sr.width}px`,
       }));
@@ -368,11 +522,11 @@ function Examples() {
     };
 
     schedule(300, () => {
-      setCursorPos({ ...getCursorPosForInputStart(), mode: 'arrow' });
+      setCursorPos({ ...getCursorPosForInputStart(), mode: "arrow" });
       setStep(1);
     });
     schedule(900, () => {
-      setCursorPos(prev => ({ ...prev, mode: 'text' }));
+      setCursorPos((prev) => ({ ...prev, mode: "text" }));
       setStep(2);
     });
   };
@@ -382,7 +536,7 @@ function Examples() {
   useEffect(() => {
     if (step === 3) {
       // Message sent - switch to arrow, stay near input
-      setCursorPos(prev => ({ ...prev, mode: 'arrow' }));
+      setCursorPos((prev) => ({ ...prev, mode: "arrow" }));
       const t = setTimeout(() => setStep(4), 400);
       return () => clearTimeout(t);
     }
@@ -429,24 +583,37 @@ function Examples() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>See It In Action</h2>
           <p className={styles.sectionSubtitle}>
-            A few examples - and hundreds of other ideas waiting to be built in minutes.
+            A few examples - and hundreds of other ideas waiting to be built in
+            minutes.
           </p>
         </div>
 
         <div className={styles.chatWindow} ref={chatWindowRef}>
           {/* Always-visible cursor */}
           <div
-            className={`${styles.fakeCursor} ${step === 2 ? styles.fakeCursorSnap : ''}`}
+            className={`${styles.fakeCursor} ${step === 2 ? styles.fakeCursorSnap : ""}`}
             style={{ left: cursorPos.x, top: cursorPos.y }}
           >
-            {cursorPos.mode === 'text' ? (
+            {cursorPos.mode === "text" ? (
               <div className={styles.textCursor} />
-            ) : cursorPos.mode === 'pointer' ? (
+            ) : cursorPos.mode === "pointer" ? (
               <svg width="20" height="24" viewBox="0 0 20 24">
-                <path d="M8 0C6.9 0 6 .9 6 2v9.5l-.7-.7C4.5 10 3.3 10 2.5 10.8c-.8.8-.8 2 0 2.8L7.2 18c1 1 2.3 1.5 3.7 1.5H13c3.3 0 6-2.7 6-6v-3.5c0-1.1-.9-2-2-2s-2 .9-2 2v-.5c0-1.1-.9-2-2-2s-2 .9-2 2V2c0-1.1-.9-2-2-2z" fill="white" stroke="black" strokeWidth="1.2" />
+                <path
+                  d="M8 0C6.9 0 6 .9 6 2v9.5l-.7-.7C4.5 10 3.3 10 2.5 10.8c-.8.8-.8 2 0 2.8L7.2 18c1 1 2.3 1.5 3.7 1.5H13c3.3 0 6-2.7 6-6v-3.5c0-1.1-.9-2-2-2s-2 .9-2 2v-.5c0-1.1-.9-2-2-2s-2 .9-2 2V2c0-1.1-.9-2-2-2z"
+                  fill="white"
+                  stroke="black"
+                  strokeWidth="1.2"
+                />
               </svg>
             ) : (
-              <svg width="18" height="22" viewBox="0 0 16 20" fill="white" stroke="black" strokeWidth="1">
+              <svg
+                width="18"
+                height="22"
+                viewBox="0 0 16 20"
+                fill="white"
+                stroke="black"
+                strokeWidth="1"
+              >
                 <path d="M1 1L1 14L4.5 10.5L7.5 17L10 16L7 9.5L11.5 9.5L1 1Z" />
               </svg>
             )}
@@ -455,18 +622,41 @@ function Examples() {
           {/* Sidebar */}
           <div className={styles.chatSidebar}>
             <div className={styles.chatSidebarHeader}>
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
               <span>New chat</span>
             </div>
             <div className={styles.chatSidebarList}>
               {examples.map((e, idx) => (
                 <button
                   key={idx}
-                  ref={el => sidebarRefs.current[idx] = el}
-                  className={`${styles.chatSidebarItem} ${idx === active ? styles.chatSidebarItemActive : ''}`}
+                  ref={(el) => (sidebarRefs.current[idx] = el)}
+                  className={`${styles.chatSidebarItem} ${idx === active ? styles.chatSidebarItemActive : ""}`}
                   onClick={() => handleManualClick(idx)}
                 >
-                  <svg className={styles.chatSidebarIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
+                  <svg
+                    className={styles.chatSidebarIcon}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                  </svg>
                   <span>{e.title}</span>
                 </button>
               ))}
@@ -476,17 +666,34 @@ function Examples() {
           {/* Chat content */}
           <div className={styles.chatContent}>
             <div className={styles.chatContentHeader}>
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
               <span>Connected to: {ex.source}</span>
             </div>
             <div className={styles.chatMessages}>
               {step >= 3 && (
-                <div className={`${styles.chatMessage} ${styles.chatUser} ${styles.rowVisible}`}>
+                <div
+                  className={`${styles.chatMessage} ${styles.chatUser} ${styles.rowVisible}`}
+                >
                   {ex.userMessage}
                 </div>
               )}
               {step === 4 && (
-                <div className={`${styles.chatMessage} ${styles.chatAgent} ${styles.rowVisible}`}>
+                <div
+                  className={`${styles.chatMessage} ${styles.chatAgent} ${styles.rowVisible}`}
+                >
                   <span className={styles.chatTyping}>
                     <span className={styles.chatTypingDot} />
                     <span className={styles.chatTypingDot} />
@@ -495,20 +702,213 @@ function Examples() {
                 </div>
               )}
               {step >= 5 && (
-                <div className={`${styles.chatMessage} ${styles.chatAgent} ${styles.rowVisible}`}>
+                <div
+                  className={`${styles.chatMessage} ${styles.chatAgent} ${styles.rowVisible}`}
+                >
                   <span className={styles.chatToolCall}>
                     Called {ex.toolCall}
                   </span>
-                  {step === 6
-                    ? <Typewriter text={ex.agentReply} speed={25} onDone={advanceAfterReply} />
-                    : step >= 7 ? ex.agentReply : null}
+                  {step === 6 ? (
+                    <Typewriter
+                      text={ex.agentReply}
+                      speed={25}
+                      onDone={advanceAfterReply}
+                    />
+                  ) : step >= 7 ? (
+                    ex.agentReply
+                  ) : null}
                 </div>
               )}
             </div>
             <div className={styles.chatInputBar} ref={inputBarRef}>
-              {step === 2
-                ? <span className={styles.chatInputTyping} ref={inputTextRef}><Typewriter text={ex.userMessage} speed={45} onDone={advanceAfterInputType} onUpdate={updateCursorToTextEnd} /></span>
-                : <span className={styles.chatInputPlaceholder}>Ask anything...</span>}
+              {step === 2 ? (
+                <span className={styles.chatInputTyping} ref={inputTextRef}>
+                  <Typewriter
+                    text={ex.userMessage}
+                    speed={45}
+                    onDone={advanceAfterInputType}
+                    onUpdate={updateCursorToTextEnd}
+                  />
+                </span>
+              ) : (
+                <span className={styles.chatInputPlaceholder}>
+                  Ask anything...
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ──────────────────── Screens ──────────────────── */
+
+const screens = [
+  {
+    key: "dashboard",
+    title: "Dashboard",
+    description:
+      "Watch every AI tool, every connector, every error - in real time.",
+    src: "/img/screens/dashboard.png",
+    path: "/",
+  },
+  {
+    key: "flows",
+    title: "Flows",
+    description:
+      "Your toolbox for AI. Organized, versioned, ready to deploy.",
+    src: "/img/screens/flows.png",
+    path: "/flows",
+  },
+  {
+    key: "flow-builder",
+    title: "Visual Flow Builder",
+    description:
+      "Drag, drop, ship. Build production AI tools without writing a line.",
+    src: "/img/screens/flow-builder.png",
+    path: "/flows/2018/edit",
+  },
+  {
+    key: "new-flow",
+    title: "Create New Flow",
+    description:
+      "One tool, a whole pack, or a full automation - pick your starting point.",
+    src: "/img/screens/new-flow.png",
+    path: "/flows/new",
+  },
+  {
+    key: "mcp-servers",
+    title: "MCP Servers",
+    description:
+      "Plug in any existing MCP server. Qaynaq becomes the one endpoint for AI.",
+    src: "/img/screens/mcp-servers.png",
+    path: "/mcp-servers",
+  },
+];
+
+const SCREEN_DURATION_MS = 5000;
+
+function Screens() {
+  const [active, setActive] = useState(0);
+  const [progressKey, setProgressKey] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [inView, setInView] = useState(false);
+  const sectionRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+        if (!entry.isIntersecting) {
+          setPaused(false);
+          setProgressKey((k) => k + 1);
+        }
+      },
+      { threshold: 0.25 },
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (paused || !inView) return undefined;
+    const timer = setTimeout(() => {
+      setActive((a) => (a + 1) % screens.length);
+      setProgressKey((k) => k + 1);
+    }, SCREEN_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [active, paused, inView, progressKey]);
+
+  const handleTab = (idx) => {
+    if (idx === active) return;
+    setActive(idx);
+    setProgressKey((k) => k + 1);
+  };
+
+  const togglePause = () => setPaused((p) => !p);
+
+  const screen = screens[active];
+  const animationRunning = inView && !paused;
+
+  return (
+    <section className={styles.screens} id="screens" ref={sectionRef}>
+      <div className={styles.container}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>A Studio for AI Tools</h2>
+          <p className={styles.sectionSubtitle}>
+            Build, wire, and ship MCP tools from one workspace.
+          </p>
+        </div>
+
+        <div className={styles.screensTabs}>
+          {screens.map((s, idx) => (
+            <button
+              key={s.key}
+              className={`${styles.screensTab} ${idx === active ? styles.screensTabActive : ""}`}
+              onClick={() => handleTab(idx)}
+            >
+              {s.title}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.screensStage}>
+          <div className={styles.screensGlowA} />
+          <div className={styles.screensGlowB} />
+          <div className={styles.screensFrame}>
+            <div className={styles.screensFrameBar}>
+              <span className={styles.screensFrameDot} />
+              <span className={styles.screensFrameDot} />
+              <span className={styles.screensFrameDot} />
+              <span className={styles.screensFrameUrl}>
+                http://localhost:8080{screen.path}
+              </span>
+              <button
+                type="button"
+                onClick={togglePause}
+                className={styles.screensPlayBtn}
+                aria-label={paused ? "Resume" : "Pause"}
+                title={paused ? "Resume" : "Pause"}
+              >
+                {paused ? (
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                    <path d="M3 1.5v9l7-4.5z" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                    <rect x="3" y="2" width="2" height="8" rx="0.5" />
+                    <rect x="7" y="2" width="2" height="8" rx="0.5" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <div className={styles.screensProgressTrack}>
+              <span
+                key={`${active}-${progressKey}`}
+                className={`${styles.screensProgressBar} ${!animationRunning ? styles.screensProgressBarPaused : ""}`}
+                style={{ animationDuration: `${SCREEN_DURATION_MS}ms` }}
+              />
+            </div>
+            <div className={styles.screensImageWrap}>
+              <img
+                key={screen.src}
+                src={useBaseUrl(screen.src)}
+                alt={screen.title}
+                className={styles.screensImage}
+              />
+              <div className={styles.screensOverlayScrim} />
+              <div key={`cap-${active}`} className={styles.screensOverlay}>
+                <span className={styles.screensOverlayBadge}>
+                  {String(active + 1).padStart(2, "0")} /{" "}
+                  {String(screens.length).padStart(2, "0")}
+                </span>
+                <h3 className={styles.screensOverlayTitle}>{screen.title}</h3>
+                <p className={styles.screensOverlayDesc}>
+                  {screen.description}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -522,55 +922,133 @@ function Examples() {
 const features = [
   {
     title: "66+ Connectors",
-    description: "Databases, APIs, Shopify, Google Sheets, Kafka, and more. If it has an interface, Qaynaq can connect to it.",
+    description:
+      "Databases, APIs, Shopify, Google Sheets, Kafka, and more. If it has an interface, Qaynaq can connect to it.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3zm0 5h16" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3zm0 5h16"
+        />
       </svg>
     ),
   },
   {
     title: "Instant AI Access",
-    description: "Every tool you build is automatically available to Claude, Cursor, and any AI assistant via MCP.",
+    description:
+      "Every tool you build is automatically available to Claude, Cursor, and any AI assistant via MCP.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M13 10V3L4 14h7v7l9-11h-7z"
+        />
       </svg>
     ),
   },
   {
     title: "Visual Builder",
-    description: "Design your data connections with a drag-and-drop editor. No code needed - just point, click, and connect.",
+    description:
+      "Design your data connections with a drag-and-drop editor. No code needed - just point, click, and connect.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+        />
       </svg>
     ),
   },
   {
     title: "Smart Validation",
-    description: "AI assistants see exactly what your tools accept - types, descriptions, required fields. No guessing.",
+    description:
+      "AI assistants see exactly what your tools accept - types, descriptions, required fields. No guessing.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
   },
   {
     title: "Secure Credentials",
-    description: "API keys and passwords are encrypted and never exposed. Connect safely to any service.",
+    description:
+      "API keys and passwords are encrypted and never exposed. Connect safely to any service.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+        />
       </svg>
     ),
   },
   {
     title: "Automation Built In",
-    description: "Schedule tasks, react to webhooks, and move data between systems automatically.",
+    description:
+      "Schedule tasks, react to webhooks, and move data between systems automatically.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+        />
       </svg>
     ),
   },
@@ -605,70 +1083,75 @@ function Features() {
 const whyReasons = [
   {
     label: "Your data stays private",
-    description: "Runs on your machine or your server. Your data never leaves your network.",
+    description:
+      "Runs on your machine or your server. Your data never leaves your network.",
   },
   {
     label: "No monthly fees",
-    description: "Free and open-source forever. Use it as long as you want, with no limits.",
+    description:
+      "Free and open-source forever. Use it as long as you want, with no limits.",
   },
   {
     label: "Installs in seconds",
-    description: "One file, one command. Runs on Mac, Linux, Windows - no Docker or Java needed.",
+    description:
+      "One file, one command. Runs on Mac, Linux, Windows - no Docker or Java needed.",
   },
   {
     label: "No vendor lock-in",
-    description: "Switch, export, or modify anything. You own the tool and the data completely.",
+    description:
+      "Switch, export, or modify anything. You own the tool and the data completely.",
   },
 ];
 
 function WhyQaynaq() {
   const [current, setCurrent] = useState(0);
   const [next, setNext] = useState(null);
-  const [phase, setPhase] = useState('idle');
+  const [phase, setPhase] = useState("idle");
   const [charCount, setCharCount] = useState(whyReasons[0].label.length);
 
   const currentLabel = whyReasons[current].label;
-  const targetLabel = next !== null ? whyReasons[next].label : '';
-  const displayText = phase === 'typing'
-    ? targetLabel.slice(0, charCount)
-    : currentLabel.slice(0, charCount);
-  const descVisible = phase === 'idle';
+  const targetLabel = next !== null ? whyReasons[next].label : "";
+  const displayText =
+    phase === "typing"
+      ? targetLabel.slice(0, charCount)
+      : currentLabel.slice(0, charCount);
+  const descVisible = phase === "idle";
 
   useEffect(() => {
-    if (phase !== 'idle') return;
+    if (phase !== "idle") return;
     const timer = setTimeout(() => {
       setNext((current + 1) % whyReasons.length);
-      setPhase('deleting');
+      setPhase("deleting");
       setCharCount(currentLabel.length);
     }, 4500);
     return () => clearTimeout(timer);
   }, [phase, current, currentLabel.length]);
 
   useEffect(() => {
-    if (phase !== 'deleting') return;
+    if (phase !== "deleting") return;
     if (charCount > 0) {
-      const timer = setTimeout(() => setCharCount(c => c - 1), 40);
+      const timer = setTimeout(() => setCharCount((c) => c - 1), 40);
       return () => clearTimeout(timer);
     }
     setCurrent(next);
     setCharCount(0);
-    setPhase('typing');
+    setPhase("typing");
   }, [phase, charCount, next]);
 
   useEffect(() => {
-    if (phase !== 'typing') return;
+    if (phase !== "typing") return;
     if (charCount < targetLabel.length) {
-      const timer = setTimeout(() => setCharCount(c => c + 1), 60);
+      const timer = setTimeout(() => setCharCount((c) => c + 1), 60);
       return () => clearTimeout(timer);
     }
     setNext(null);
-    setPhase('idle');
+    setPhase("idle");
   }, [phase, charCount, targetLabel.length]);
 
   const handleDot = (idx) => {
-    if (idx === current || phase !== 'idle') return;
+    if (idx === current || phase !== "idle") return;
     setNext(idx);
-    setPhase('deleting');
+    setPhase("deleting");
     setCharCount(currentLabel.length);
   };
 
@@ -679,17 +1162,20 @@ function WhyQaynaq() {
           <h2 className={styles.builtForTitle}>Why Qaynaq?</h2>
           <div className={styles.builtForAnswer}>
             <span className={styles.builtForRotate}>
-              {displayText}<span className={styles.builtForCursor}>|</span>
+              {displayText}
+              <span className={styles.builtForCursor}>|</span>
             </span>
           </div>
-          <p className={`${styles.builtForDesc} ${descVisible ? styles.builtForDescIn : styles.builtForDescOut}`}>
+          <p
+            className={`${styles.builtForDesc} ${descVisible ? styles.builtForDescIn : styles.builtForDescOut}`}
+          >
             {whyReasons[current].description}
           </p>
           <div className={styles.builtForDots}>
             {whyReasons.map((_, idx) => (
               <button
                 key={idx}
-                className={`${styles.builtForDot} ${idx === current ? styles.builtForDotActive : ''}`}
+                className={`${styles.builtForDot} ${idx === current ? styles.builtForDotActive : ""}`}
                 onClick={() => handleDot(idx)}
                 aria-label={whyReasons[idx].label}
               />
@@ -709,15 +1195,33 @@ function CTA() {
     <section className={styles.cta}>
       <div className={styles.container}>
         <div className={styles.ctaInner}>
-          <h2 className={styles.ctaTitle}>Install in 30 seconds. Build your first AI tool in 5 minutes.</h2>
+          <h2 className={styles.ctaTitle}>
+            Install in 30 seconds. Build your first AI tool in 5 minutes.
+          </h2>
           <p className={styles.ctaSubtitle}>
             Free forever. Open source. Your data stays yours.
           </p>
           <div className={styles.ctaButtons}>
-            <a className={styles.ctaBtnPrimary} href={docsUrl}>Build your first tool</a>
-            <a className={styles.ctaBtnSecondary} href="https://github.com/qaynaq/qaynaq">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style={{ marginRight: 8 }}>
-                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+            <a className={styles.ctaBtnPrimary} href={docsUrl}>
+              Build your first tool
+            </a>
+            <a
+              className={styles.ctaBtnSecondary}
+              href="https://github.com/qaynaq/qaynaq"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                style={{ marginRight: 8 }}
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                  clipRule="evenodd"
+                />
               </svg>
               GitHub
             </a>
@@ -732,8 +1236,11 @@ function CTA() {
 
 export default function Home() {
   useEffect(() => {
-    document.querySelector('.navbar')?.classList.add('navbar--hidden-landing');
-    return () => document.querySelector('.navbar')?.classList.remove('navbar--hidden-landing');
+    document.querySelector(".navbar")?.classList.add("navbar--hidden-landing");
+    return () =>
+      document
+        .querySelector(".navbar")
+        ?.classList.remove("navbar--hidden-landing");
   }, []);
 
   return (
@@ -743,6 +1250,8 @@ export default function Home() {
     >
       <div className={styles.pageWrap}>
         <Hero />
+        <div className={styles.sectionDivider} />
+        <Screens />
         <div className={styles.sectionDivider} />
         <BeforeAfter />
         <div className={styles.sectionDivider} />
