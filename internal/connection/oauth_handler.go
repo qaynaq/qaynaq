@@ -310,9 +310,11 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err := h.manager.StoreConnection(pending.Name, pending.Provider, pending.Config, token)
-	if err != nil {
+	var err error
+	if h.manager.ConnectionExists(pending.Name) {
 		err = h.manager.ReauthorizeConnection(pending.Name, pending.Config, token)
+	} else {
+		err = h.manager.StoreConnection(pending.Name, pending.Provider, pending.Config, token)
 	}
 	if err != nil {
 		log.Error().Err(err).Str("name", pending.Name).Msg("Failed to store connection")

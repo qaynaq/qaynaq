@@ -572,6 +572,11 @@ func (m *Manager) GetConnectionData(name string) (string, error) {
 	return string(result), nil
 }
 
+func (m *Manager) ConnectionExists(name string) bool {
+	_, err := m.connRepo.GetByName(name)
+	return err == nil
+}
+
 func (m *Manager) StoreConnection(name, provider string, cfg Config, token *oauth2.Token) error {
 	configJSON, err := json.Marshal(cfg)
 	if err != nil {
