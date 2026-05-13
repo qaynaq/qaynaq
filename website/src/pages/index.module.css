@@ -1467,7 +1467,7 @@
   will-change: opacity;
 }
 
-.screensImageActive {
+.screensImage.screensImageActive {
   opacity: 1;
 }
 
