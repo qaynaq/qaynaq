@@ -790,6 +790,20 @@ const screens = [
 
 const SCREEN_DURATION_MS = 5000;
 
+function ScreenImg({ src, alt, active }) {
+  const resolved = useBaseUrl(src);
+  return (
+    <img
+      src={resolved}
+      alt={alt}
+      className={`${styles.screensImage} ${active ? styles.screensImageActive : ""}`}
+      loading="eager"
+      decoding="async"
+      draggable={false}
+    />
+  );
+}
+
 function Screens() {
   const [active, setActive] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
@@ -892,12 +906,14 @@ function Screens() {
               />
             </div>
             <div className={styles.screensImageWrap}>
-              <img
-                key={screen.src}
-                src={useBaseUrl(screen.src)}
-                alt={screen.title}
-                className={styles.screensImage}
-              />
+              {screens.map((s, idx) => (
+                <ScreenImg
+                  key={s.key}
+                  src={s.src}
+                  alt={s.title}
+                  active={idx === active}
+                />
+              ))}
               <div className={styles.screensOverlayScrim} />
               <div key={`cap-${active}`} className={styles.screensOverlay}>
                 <span className={styles.screensOverlayBadge}>

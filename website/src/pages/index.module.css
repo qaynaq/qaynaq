@@ -1450,29 +1450,31 @@
   position: relative;
   background: #08081a;
   overflow: hidden;
+  aspect-ratio: 2912 / 1912;
 }
 
 .screensImage {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: auto;
-  animation: screensFadeIn 0.4s ease;
+  height: 100%;
+  object-fit: contain;
+  object-position: top center;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  pointer-events: none;
+  will-change: opacity;
 }
 
-@keyframes screensFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(1.01);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.screensImageActive {
+  opacity: 1;
 }
 
 .screensOverlayScrim {
   position: absolute;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
   background: linear-gradient(
     180deg,
@@ -1487,6 +1489,7 @@
   left: 1.75rem;
   right: 1.75rem;
   bottom: 1.5rem;
+  z-index: 2;
   max-width: 30rem;
   padding: 1.1rem 1.25rem 1.15rem;
   border-radius: 0.75rem;
