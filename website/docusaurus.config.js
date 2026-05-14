@@ -106,6 +106,12 @@ const config = {
         defaultMode: "light",
         respectPrefersColorScheme: true,
       },
+      algolia: {
+        appId: "19EUAAG8ZG",
+        apiKey: "e8a915481ad2c87da63c5417e4cecf59",
+        indexName: "qaynaq-docs",
+        contextualSearch: true,
+      },
     }),
 };
 
