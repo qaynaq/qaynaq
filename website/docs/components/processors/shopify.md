@@ -39,16 +39,7 @@ This processor uses **Custom App** authentication (Private Apps were deprecated 
 6. Click **Install app**
 7. Copy the **Admin API access token** (starts with `shpat_`)
 
-Store the access token as a secret in **Secrets**, then reference it in the config:
-
-```yaml
-processors:
-  - shopify:
-      shop_name: mystore
-      api_access_token: ${SHOPIFY_ACCESS_TOKEN}
-      action: list_orders
-      limit: "50"
-```
+Store the access token as a secret in **Secrets**, then select it in the **Admin API Access Token** field when configuring the processor.
 
 ## Actions
 
@@ -112,26 +103,6 @@ Get a specific customer by ID.
 | Parameter | Description |
 |-----------|-------------|
 | customer_id | The Shopify customer ID (required) |
-
-## Rate Limiting
-
-Configure rate limiting to respect Shopify API limits:
-
-```yaml
-rate_limit_resources:
-  - label: shopify_api
-    coordinator:
-      count: 2
-      interval: "1s"
-      burst: 5
-
-processors:
-  - shopify:
-      shop_name: mystore
-      api_access_token: ${SHOPIFY_ACCESS_TOKEN}
-      action: list_orders
-      rate_limit: shopify_api
-```
 
 ## Dynamic Fields
 

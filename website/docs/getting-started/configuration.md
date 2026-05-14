@@ -4,6 +4,12 @@ sidebar_position: 3
 
 # Configuration
 
+:::info Minimum configuration
+At a minimum, Qaynaq needs a [`SECRET_KEY`](#secret-key) (32-byte encryption key for stored credentials) and a [`DATABASE_URI`](#database) (where flows and connections are persisted). Without these, the coordinator will not start. Everything else has a sensible default.
+
+Workers must be started with the **exact same `SECRET_KEY`** as the coordinator. Otherwise they cannot decrypt stored credentials and flows will fail at runtime.
+:::
+
 Qaynaq supports three configuration methods. When the same setting is specified in multiple places, the precedence is:
 
 1. **CLI flags** (highest priority)

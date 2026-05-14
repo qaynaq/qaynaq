@@ -1,5 +1,4 @@
 ---
-slug: mcp-weather-tool
 description: Build a weather tool that AI assistants can call via Model Context Protocol.
 ---
 
@@ -39,4 +38,4 @@ Click **Save** and then **Start** the flow.
 
 Once the flow is running, the `get_weather` tool appears automatically on the `/mcp` endpoint. You can verify it by asking your AI assistant something like "What's the weather in London?" and it will call the tool.
 
-See [MCP Server - Verify with curl](/docs/guides/mcp-server#verify-with-curl) for testing via the command line.
+See [MCP Server - Verifying](/docs/guides/mcp-server#verifying) for testing via the command line.

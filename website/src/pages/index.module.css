@@ -517,7 +517,7 @@
 }
 
 .heroInstall:hover {
-  border-color: #22c55e;
+  border-color: #ff8c42;
 }
 
 .heroInstall code {
@@ -528,9 +528,41 @@
 
 .heroInstallCopy {
   font-size: 0.8rem;
-  color: #22c55e;
+  color: #ff8c42;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.heroDocsLinkWrap {
+  margin-top: 1rem;
+}
+
+.heroDocsLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  background: transparent;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: color 0.2s ease;
+}
+
+.heroDocsLink span {
+  display: inline-block;
+  margin-left: 6px;
+  transition: transform 0.2s ease;
+}
+
+.heroDocsLink:hover {
+  color: #ff8c42;
+  text-decoration: none;
+}
+
+.heroDocsLink:hover span {
+  transform: translateX(3px);
 }
 
 .heroSupporting {

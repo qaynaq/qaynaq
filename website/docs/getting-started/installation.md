@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # Installation
@@ -47,7 +47,7 @@ docker run -d --name qaynaq-worker \
   -e SECRET_KEY="this_is_a_32_byte_key_for_AES!!!" \
   -v qaynaq-data:/data \
   ghcr.io/qaynaq/qaynaq -role worker -grpc-port 50001 \
-  -coordinator-address qaynaq-coordinator:50000
+  -discovery-uri qaynaq-coordinator:50000
 ```
 
 The coordinator will be available at `http://localhost:8080`.
