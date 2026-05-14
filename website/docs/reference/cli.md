@@ -17,7 +17,7 @@ Qaynaq is configured and launched via command-line flags. All flags can also be 
 | Flag | Short | Type | Default | Env Variable | Description |
 |------|-------|------|---------|-------------|-------------|
 | `--role` | `-r` | string | `coordinator` | `ROLE` | Node role: `coordinator` or `worker` |
-| `--grpc-port` | `-gp` | uint | — | `GRPC_PORT` | gRPC port (required) |
+| `--grpc-port` | `-gp` | uint | `50000` | `GRPC_PORT` | gRPC port for coordinator-worker communication |
 | `--http-port` | `-hp` | uint | `8080` | `HTTP_PORT` | HTTP port for UI and REST API |
 | `--discovery-uri` | `-du` | string | `localhost:50000` | `DISCOVERY_URI` | Coordinator address for worker discovery |
 | `--config` | `-c` | string | — | — | Path to YAML configuration file |

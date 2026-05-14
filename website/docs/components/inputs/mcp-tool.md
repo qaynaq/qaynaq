@@ -18,7 +18,7 @@ The output **must** be [Sync Response](/docs/components/outputs/sync-response) -
 
 By default, successful tool executions return with a 200 status code. To signal errors or different HTTP status codes (like 404 for "not found" or 400 for "bad request"), set the `meta status_code` field in your flow:
 
-```yaml
+```
 meta status_code = 404
 ```
 

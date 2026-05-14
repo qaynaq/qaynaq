@@ -6,8 +6,8 @@ const sidebars = {
       type: "category",
       label: "Getting Started",
       items: [
-        "getting-started/installation",
         "getting-started/quickstart",
+        "getting-started/installation",
         "getting-started/configuration",
         "getting-started/authentication",
       ],

@@ -64,6 +64,14 @@ function Hero() {
               {copied ? "Copied!" : "Copy"}
             </span>
           </div>
+          <div className={styles.heroDocsLinkWrap}>
+            <a
+              className={styles.heroDocsLink}
+              href={useBaseUrl("/docs")}
+            >
+              Read the docs <span aria-hidden="true">→</span>
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -1206,7 +1214,7 @@ function WhyQaynaq() {
 /* ──────────────────── CTA ──────────────────── */
 
 function CTA() {
-  const docsUrl = useBaseUrl("/docs/getting-started/installation");
+  const docsUrl = useBaseUrl("/docs/getting-started/quickstart");
   return (
     <section className={styles.cta}>
       <div className={styles.container}>

@@ -5,9 +5,9 @@ sidebar_position: 6
 # Connections (OAuth Providers)
 
 Qaynaq Connections store OAuth credentials for third-party services. Once a connection
-is authorized, you can attach it to MCP server entries, Bento processors, or any
-component that needs an access token. The coordinator handles refresh centrally so
-your workers never see refresh tokens.
+is authorized, you can attach it to MCP server entries or any component that needs an
+access token. The coordinator handles refresh centrally so your workers never see
+refresh tokens.
 
 ## Supported providers
 
@@ -189,7 +189,7 @@ Client Secret, and scopes during re-auth.
 
 ## Adding a provider Qaynaq doesn't support yet
 
-The 12 providers above cover the most common remote MCP services as of May 2026. If
+The 13 providers above cover the most common remote MCP services as of May 2026. If
 you need a provider not on the list (Keycloak, GitLab, custom OIDC, etc.), open an
 issue with the provider's auth/token URLs and any quirks (scope mode, special URL
 parameters, refresh behavior). Most standard OAuth 2.0/2.1 providers can be added
