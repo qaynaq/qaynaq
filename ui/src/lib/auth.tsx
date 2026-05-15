@@ -11,7 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   authType: string;
   token: string | null;
-  login: (token: string) => void;
+  login: (token: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -81,11 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = (newToken: string) => {
+  const login = async (newToken: string) => {
     localStorage.setItem("qaynaq_token", newToken);
     setToken(newToken);
     setIsAuthenticated(true);
-    void exchangeSessionCookie(newToken);
+    await exchangeSessionCookie(newToken);
   };
 
   const logout = async () => {

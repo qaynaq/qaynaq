@@ -13,6 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
+// Mirrors safeReturnTo in internal/auth/oauth2.go: accept only same-origin
+// paths to prevent open-redirect attacks. Protocol-relative URLs ("//evil")
+// and absolute URLs are rejected.
+function safeReturnTo(raw: string | null): string {
+  if (!raw) return "";
+  if (!raw.startsWith("/")) return "";
+  if (raw.startsWith("//")) return "";
+  return raw;
+}
+
 export default function LoginPage() {
   const { authType, login } = useAuth();
   const navigate = useNavigate();
@@ -21,6 +31,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const returnTo = safeReturnTo(searchParams.get("return_to"));
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -62,8 +73,12 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.token) {
-          login(data.token);
-          navigate("/", { replace: true });
+          await login(data.token);
+          if (returnTo) {
+            window.location.replace(returnTo);
+          } else {
+            navigate("/", { replace: true });
+          }
         } else {
           setError("Invalid response from server");
         }
@@ -78,7 +93,10 @@ export default function LoginPage() {
   };
 
   const handleOAuth2Login = () => {
-    window.location.href = "/auth/login";
+    const dest = returnTo
+      ? `/auth/login?return_to=${encodeURIComponent(returnTo)}`
+      : "/auth/login";
+    window.location.href = dest;
   };
 
   return (
