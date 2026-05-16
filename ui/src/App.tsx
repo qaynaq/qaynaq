@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import {
   Routes,
   Route,
@@ -16,33 +16,43 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Layout from "./components/Layout";
 
-import LoginPage from "./pages/login/page.tsx";
-import HomePage from "./pages/HomePage.tsx";
-import FlowsPage from "./pages/flows/page.tsx";
-import WorkersPage from "./pages/workers/page.tsx";
-import BuffersPage from "./pages/buffers/page.tsx";
-import BufferNewPage from "./pages/buffers/new/page.tsx";
-import BufferEditPage from "./pages/buffers/[id]/edit/page.tsx";
-import CachesPage from "./pages/caches/page.tsx";
-import SecretsPage from "./pages/secrets/page.tsx";
-import ConnectionsPage from "./pages/connections/page.tsx";
-import CacheNewPage from "./pages/caches/new/page.tsx";
-import CacheEditPage from "./pages/caches/[id]/edit/page.tsx";
-import RateLimitsPage from "./pages/rate-limits/page.tsx";
-import RateLimitNewPage from "./pages/rate-limits/new/page.tsx";
-import RateLimitEditPage from "./pages/rate-limits/[id]/edit/page.tsx";
-import FlowEditPage from "./pages/flows/[id]/edit/page.tsx";
-import FlowEventsPage from "./pages/flows/[id]/events/page.tsx";
-import FlowNewPage from "./pages/flows/new/page.tsx";
-import FilesPage from "./pages/files/page.tsx";
-import SettingsLayout from "./pages/settings/layout.tsx";
-import AuthenticationSettings from "./pages/settings/authentication.tsx";
-import TokensSettings from "./pages/settings/tokens.tsx";
-import SessionsSettings from "./pages/settings/sessions.tsx";
-import ClientsSettings from "./pages/settings/clients.tsx";
-import MCPServersPage from "./pages/mcp-servers/page.tsx";
-import OAuthConsentPage from "./pages/oauth/consent.tsx";
-import OAuthErrorPage from "./pages/oauth/error.tsx";
+const LoginPage = lazy(() => import("./pages/login/page.tsx"));
+const HomePage = lazy(() => import("./pages/HomePage.tsx"));
+const FlowsPage = lazy(() => import("./pages/flows/page.tsx"));
+const WorkersPage = lazy(() => import("./pages/workers/page.tsx"));
+const BuffersPage = lazy(() => import("./pages/buffers/page.tsx"));
+const BufferNewPage = lazy(() => import("./pages/buffers/new/page.tsx"));
+const BufferEditPage = lazy(() => import("./pages/buffers/[id]/edit/page.tsx"));
+const CachesPage = lazy(() => import("./pages/caches/page.tsx"));
+const SecretsPage = lazy(() => import("./pages/secrets/page.tsx"));
+const ConnectionsPage = lazy(() => import("./pages/connections/page.tsx"));
+const CacheNewPage = lazy(() => import("./pages/caches/new/page.tsx"));
+const CacheEditPage = lazy(() => import("./pages/caches/[id]/edit/page.tsx"));
+const RateLimitsPage = lazy(() => import("./pages/rate-limits/page.tsx"));
+const RateLimitNewPage = lazy(() => import("./pages/rate-limits/new/page.tsx"));
+const RateLimitEditPage = lazy(
+  () => import("./pages/rate-limits/[id]/edit/page.tsx"),
+);
+const FlowEditPage = lazy(() => import("./pages/flows/[id]/edit/page.tsx"));
+const FlowEventsPage = lazy(() => import("./pages/flows/[id]/events/page.tsx"));
+const FlowNewPage = lazy(() => import("./pages/flows/new/page.tsx"));
+const FilesPage = lazy(() => import("./pages/files/page.tsx"));
+const SettingsLayout = lazy(() => import("./pages/settings/layout.tsx"));
+const AuthenticationSettings = lazy(
+  () => import("./pages/settings/authentication.tsx"),
+);
+const TokensSettings = lazy(() => import("./pages/settings/tokens.tsx"));
+const SessionsSettings = lazy(() => import("./pages/settings/sessions.tsx"));
+const ClientsSettings = lazy(() => import("./pages/settings/clients.tsx"));
+const MCPServersPage = lazy(() => import("./pages/mcp-servers/page.tsx"));
+const OAuthConsentPage = lazy(() => import("./pages/oauth/consent.tsx"));
+const OAuthErrorPage = lazy(() => import("./pages/oauth/error.tsx"));
+
+const RouteFallback: React.FC = () => (
+  <div className="flex h-full min-h-[200px] items-center justify-center p-8 text-sm text-muted-foreground">
+    Loading...
+  </div>
+);
 
 const AppLayout: React.FC = () => {
   return (
@@ -56,7 +66,9 @@ const AppLayout: React.FC = () => {
           />
         </Helmet>
         <Layout>
-          <Outlet />
+          <Suspense fallback={<RouteFallback />}>
+            <Outlet />
+          </Suspense>
         </Layout>
       </ToastProvider>
     </TooltipProvider>
@@ -89,59 +101,64 @@ function App() {
     >
       <AuthProvider>
         <TokenHandler />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/oauth/error" element={<OAuthErrorPage />} />
-          <Route
-            path="/oauth/consent"
-            element={
-              <ProtectedRoute>
-                <OAuthConsentPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<HomePage />} />
-            <Route path="flows" element={<FlowsPage />} />
-            <Route path="flows/new" element={<FlowNewPage />} />
-            <Route path="flows/:id/edit" element={<FlowEditPage />} />
-            <Route path="flows/:id/events" element={<FlowEventsPage />} />
-            <Route path="workers" element={<WorkersPage />} />
-            <Route path="secrets" element={<SecretsPage />} />
-            <Route path="connections" element={<ConnectionsPage />} />
-            <Route path="buffers" element={<BuffersPage />} />
-            <Route path="buffers/new" element={<BufferNewPage />} />
-            <Route path="buffers/:id/edit" element={<BufferEditPage />} />
-            <Route path="caches" element={<CachesPage />} />
-            <Route path="caches/new" element={<CacheNewPage />} />
-            <Route path="caches/:id/edit" element={<CacheEditPage />} />
-            <Route path="rate-limits" element={<RateLimitsPage />} />
-            <Route path="rate-limits/new" element={<RateLimitNewPage />} />
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/oauth/error" element={<OAuthErrorPage />} />
             <Route
-              path="rate-limits/:id/edit"
-              element={<RateLimitEditPage />}
+              path="/oauth/consent"
+              element={
+                <ProtectedRoute>
+                  <OAuthConsentPage />
+                </ProtectedRoute>
+              }
             />
-            <Route path="files" element={<FilesPage />} />
-            <Route path="settings" element={<SettingsLayout />}>
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<HomePage />} />
+              <Route path="flows" element={<FlowsPage />} />
+              <Route path="flows/new" element={<FlowNewPage />} />
+              <Route path="flows/:id/edit" element={<FlowEditPage />} />
+              <Route path="flows/:id/events" element={<FlowEventsPage />} />
+              <Route path="workers" element={<WorkersPage />} />
+              <Route path="secrets" element={<SecretsPage />} />
+              <Route path="connections" element={<ConnectionsPage />} />
+              <Route path="buffers" element={<BuffersPage />} />
+              <Route path="buffers/new" element={<BufferNewPage />} />
+              <Route path="buffers/:id/edit" element={<BufferEditPage />} />
+              <Route path="caches" element={<CachesPage />} />
+              <Route path="caches/new" element={<CacheNewPage />} />
+              <Route path="caches/:id/edit" element={<CacheEditPage />} />
+              <Route path="rate-limits" element={<RateLimitsPage />} />
+              <Route path="rate-limits/new" element={<RateLimitNewPage />} />
               <Route
-                index
-                element={<Navigate to="/settings/authentication" replace />}
+                path="rate-limits/:id/edit"
+                element={<RateLimitEditPage />}
               />
-              <Route path="authentication" element={<AuthenticationSettings />} />
-              <Route path="tokens" element={<TokensSettings />} />
-              <Route path="sessions" element={<SessionsSettings />} />
-              <Route path="clients" element={<ClientsSettings />} />
+              <Route path="files" element={<FilesPage />} />
+              <Route path="settings" element={<SettingsLayout />}>
+                <Route
+                  index
+                  element={<Navigate to="/settings/authentication" replace />}
+                />
+                <Route
+                  path="authentication"
+                  element={<AuthenticationSettings />}
+                />
+                <Route path="tokens" element={<TokensSettings />} />
+                <Route path="sessions" element={<SessionsSettings />} />
+                <Route path="clients" element={<ClientsSettings />} />
+              </Route>
+              <Route path="mcp-servers" element={<MCPServersPage />} />
             </Route>
-            <Route path="mcp-servers" element={<MCPServersPage />} />
-          </Route>
-        </Routes>
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </ThemeProvider>
   );

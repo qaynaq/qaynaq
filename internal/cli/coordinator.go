@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
-	"path"
-	"strings"
 	"time"
 
 	"github.com/qaynaq/qaynaq/internal/api/coordinator"
@@ -17,10 +14,9 @@ import (
 	mcppkg "github.com/qaynaq/qaynaq/internal/mcp"
 	mcpoauth "github.com/qaynaq/qaynaq/internal/mcp/oauth"
 	pb "github.com/qaynaq/qaynaq/internal/protogen"
-	_ "github.com/qaynaq/qaynaq/internal/statik"
+	"github.com/qaynaq/qaynaq/internal/web"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
@@ -213,10 +209,7 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 		MaxAge:           12 * 60 * 60,
 	})
 
-	statikFS, err := fs.New()
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to create statik FS")
-	}
+	uiFS := web.AssetsFS()
 	mainMux := http.NewServeMux()
 
 	c.authManager.SetupAuthRoutes(mainMux)
@@ -255,7 +248,7 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 	mcpWithAuth := mcppkg.AuthMiddleware(c.api, mcpOAuthValidator, c.mcpHandler)
 	mainMux.Handle("/mcp", mcpWithAuth)
 	mainMux.Handle("/mcp/", mcpWithAuth)
-	mainMux.HandleFunc("/", serveSpa(statikFS, "/index.html"))
+	mainMux.HandleFunc("/", web.ServeSPA(uiFS, "index.html"))
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("0.0.0.0:%d", c.httpPort),
@@ -303,64 +296,5 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 		log.Error().Err(err).Msg("Coordinator encountered an error")
 	} else {
 		log.Info().Msg("Coordinator shutdown complete.")
-	}
-}
-
-// serveSpa serves a Single Page Application (SPA).
-// If the requested file exists in the filesystem, it serves that file.
-// Otherwise, it serves the specified index file (e.g., "index.html").
-func serveSpa(fs http.FileSystem, indexFile string) http.HandlerFunc {
-	fileServer := http.FileServer(fs)
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Clean the path to prevent directory traversal issues
-		reqPath := path.Clean(r.URL.Path)
-		// StatikFS expects paths without a leading slash
-		if reqPath == "/" || reqPath == "." {
-			reqPath = indexFile // Serve index directly for root
-		}
-
-		// Check if the file exists in the embedded filesystem
-		f, err := fs.Open(reqPath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				// Missing asset requests must not fall back to index.html - the
-				// browser would receive HTML with text/html and reject the module.
-				// Returning 404 surfaces stale-hash references cleanly.
-				if strings.HasPrefix(reqPath, "/assets/") {
-					http.NotFound(w, r)
-					return
-				}
-				// File does not exist, serve index.html for SPA routes
-				index, err := fs.Open(indexFile)
-				if err != nil {
-					log.Error().Err(err).Str("file", indexFile).Msg("Failed to open index file from statikFS")
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
-				}
-				defer func() { _ = index.Close() }()
-
-				fi, err := index.Stat()
-				if err != nil {
-					log.Error().Err(err).Str("file", indexFile).Msg("Failed to stat index file from statikFS")
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
-				}
-
-				// Force revalidation so browsers don't serve a stale index.html
-				// that points at asset hashes from a previous build.
-				w.Header().Set("Cache-Control", "no-cache")
-				http.ServeContent(w, r, indexFile, fi.ModTime(), index)
-				return
-			}
-			// Other error opening the file
-			log.Error().Err(err).Str("path", reqPath).Msg("Error opening file from statikFS")
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		// File exists, close the handle used for checking
-		_ = f.Close()
-
-		// Let the default file server handle serving the existing file
-		fileServer.ServeHTTP(w, r)
 	}
 }

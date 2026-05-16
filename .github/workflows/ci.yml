@@ -40,6 +40,21 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+
+      - name: Build UI
+        run: make ui-build
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:

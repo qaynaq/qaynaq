@@ -5,7 +5,7 @@ UI_DIR   := ui
 WEB_DIR  := website
 PROTO_DIR := proto
 PROTO_OUT := internal/protogen
-STATIK_OUT := internal/
+WEB_DIST := internal/web/dist
 
 LOAD_ENV := set -a && . ./.env && set +a
 
@@ -13,7 +13,7 @@ help:
 	@echo "Targets:"
 	@echo "  proto           Generate Go code from .proto files"
 	@echo "  ui-deps         Install UI dependencies"
-	@echo "  ui-build        Build UI and embed into the binary via statik"
+	@echo "  ui-build        Build UI and stage assets for embedding"
 	@echo "  build           Build the Go binary"
 	@echo "  bundle          Build UI + embed + Go binary"
 	@echo "  coordinator     Run coordinator from ./.env"
@@ -37,9 +37,11 @@ proto:
 ui-deps:
 	pnpm --prefix $(UI_DIR) install
 
-ui-build:
+ui-build: ui-deps
 	pnpm --prefix $(UI_DIR) build
-	statik -src=$(UI_DIR)/dist -dest=$(STATIK_OUT) -f -m
+	rm -rf $(WEB_DIST)
+	mkdir -p $(WEB_DIST)
+	cp -r $(UI_DIR)/dist/. $(WEB_DIST)/
 
 build:
 	go build -o $(BINARY) ./cmd/qaynaq
@@ -67,4 +69,4 @@ lint:
 	golangci-lint run ./...
 
 clean:
-	rm -rf dist $(UI_DIR)/dist
+	rm -rf dist $(UI_DIR)/dist $(WEB_DIST)

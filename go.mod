@@ -321,7 +321,6 @@ require (
 	github.com/go-mysql-org/go-mysql v1.13.0
 	github.com/mark3labs/mcp-go v0.44.0
 	github.com/openai/openai-go/v3 v3.22.0
-	github.com/rakyll/statik v0.1.7
 	github.com/rs/cors v1.11.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0

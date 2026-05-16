@@ -1,5 +1,21 @@
 # syntax=docker/dockerfile:1
 
+# --- UI build stage -----------------------------------------------------------
+FROM node:20-slim AS ui
+
+WORKDIR /app
+
+RUN --mount=type=cache,target=/root/.npm \
+    npm install -g pnpm@8.15.4
+
+COPY ui/package.json ui/pnpm-lock.yaml ./ui/
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm --prefix ui install --frozen-lockfile
+
+COPY ui ./ui
+RUN pnpm --prefix ui build
+
+# --- Go build stage -----------------------------------------------------------
 FROM golang:1.25 AS build
 
 ENV CGO_ENABLED=1
@@ -19,6 +35,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
 COPY . .
+COPY --from=ui /app/ui/dist ./internal/web/dist
 
 RUN mkdir build
 
@@ -27,6 +44,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     BUILD_DATE="${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}" && \
     go build -ldflags="-s -w -X main.Version=${VERSION} -X main.DateBuilt=${BUILD_DATE}" -o build ./cmd/...
 
+# --- Runtime stage ------------------------------------------------------------
 FROM debian:bookworm-slim AS runtime
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \

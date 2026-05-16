@@ -1,9 +1,26 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import viteCompression from 'vite-plugin-compression'
 import path from "path"
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        viteCompression({
+            algorithm: 'brotliCompress',
+            ext: '.br',
+            deleteOriginFile: false,
+            threshold: 1024,
+            filter: /\.(js|css|html|svg|json)$/i,
+        }),
+        viteCompression({
+            algorithm: 'gzip',
+            ext: '.gz',
+            deleteOriginFile: false,
+            threshold: 1024,
+            filter: /\.(js|css|html|svg|json)$/i,
+        }),
+    ],
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
@@ -20,36 +37,18 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: (id) => {
-                    if (id.includes('node_modules')) {
-                        if (id.includes('react') || id.includes('react-dom')) {
-                            return 'vendor-react';
-                        }
-                        if (id.includes('@radix-ui')) {
-                            return 'vendor-ui';
-                        }
-                        if (id.includes('js-yaml')) {
-                            return 'vendor-yaml';
-                        }
-                        if (id.includes('lucide-react')) {
-                            return 'vendor-icons';
-                        }
-                        if (id.includes('@xyflow')) {
-                            return 'vendor-xyflow';
-                        }
-                        return 'vendor-misc';
+                    if (!id.includes('node_modules')) {
+                        return;
                     }
-                    if (id.includes('inline-yaml-editor')) {
-                        if (id.includes('components/')) {
-                            return 'yaml-components';
-                        }
-                        if (id.includes('utils/')) {
-                            return 'yaml-utils';
-                        }
-                        return 'yaml-editor';
+                    if (id.includes('/lucide-react/')) {
+                        return 'vendor-icons';
                     }
-                }
-            }
+                    if (id.includes('/js-yaml/')) {
+                        return 'vendor-yaml';
+                    }
+                },
+            },
         },
-        chunkSizeWarningLimit: 400
-    }
-}) 
+        chunkSizeWarningLimit: 600,
+    },
+})
