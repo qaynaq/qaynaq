@@ -15,7 +15,8 @@ export interface FieldSchema {
     | "input_list"
     | "processor_cases"
     | "file"
-    | "property_list";
+    | "property_list"
+    | "mcp_annotations";
   title: string;
   description?: string;
   required?: boolean;

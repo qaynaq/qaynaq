@@ -11,8 +11,25 @@ For connecting AI clients, authentication setup, and testing, see the [MCP Serve
 | Name | string | Tool name that AI clients see (required) |
 | Description | string | Human-readable description of what the tool does (required) |
 | Input Parameters | property list | Parameters the tool accepts - each with a name, type, description, and required flag (required) |
+| Annotations | object | Optional behavioral hints (see below) |
 
 The output **must** be [Sync Response](/docs/components/outputs/sync-response) - this is enforced automatically in the UI. The processed message is returned as the tool result to the AI client.
+
+## Annotations
+
+Annotations are advisory hints clients use to decide how to handle a call - typically whether to auto-approve it or prompt the user first. They are **not** a security boundary: clients should never trust them from untrusted servers. Defaults follow the [MCP specification](https://modelcontextprotocol.io/) so leaving them at their default values is a safe, conservative starting point.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| Display Title | string | (empty) | Human-readable title shown by clients in place of the tool name |
+| Read-Only | boolean | false | Tool does not modify its environment. Clients may auto-approve calls |
+| Destructive | boolean | true | Tool may perform destructive updates. Only meaningful when Read-Only is false. Clients typically prompt before destructive calls |
+| Idempotent | boolean | false | Repeated calls with the same arguments have no additional effect. Only meaningful when Read-Only is false |
+| Open World | boolean | true | Tool interacts with external entities outside the server's control (e.g. web search). Disable for closed-domain tools like memory or local file access |
+
+:::tip Publishing to a marketplace?
+If you plan to list your server in a public marketplace like the Claude marketplace, set safety annotations on every tool: `Read-Only` for read operations, and `Destructive` for create/update/delete operations. Missing tool annotations are the single most common reason for marketplace rejection (~30% of submissions).
+:::
 
 ## Error Handling
 

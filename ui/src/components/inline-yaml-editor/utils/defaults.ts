@@ -32,7 +32,9 @@ export function getDefaultValue(fieldSchema: FieldSchema): any {
       return [];
     case "processor_cases":
       return [];
+    case "mcp_annotations":
+      return undefined;
     default:
       return "";
   }
-} 
+}

@@ -1,12 +1,31 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Loader2, BrainCircuit, ArrowRight, ArrowLeft, Plus, Trash2, Workflow, Package, Check, CircleAlert } from "lucide-react";
+import {
+  Loader2,
+  BrainCircuit,
+  ArrowRight,
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Workflow,
+  Package,
+  Check,
+  CircleAlert,
+} from "lucide-react";
 import { useToast } from "@/components/toast";
 import { FlowBuilder } from "@/components/flow-builder/flow-builder";
-import { createFlow, deleteFlow, validateFlow, tryFlow, fetchSecrets, fetchConnections, fetchFlows } from "@/lib/api";
+import {
+  createFlow,
+  deleteFlow,
+  validateFlow,
+  tryFlow,
+  fetchSecrets,
+  fetchConnections,
+  fetchFlows,
+} from "@/lib/api";
 import {
   componentSchemas as rawComponentSchemas,
-  componentLists
+  componentLists,
 } from "@/lib/component-schemas";
 import type { AllComponentSchemas } from "@/components/flow-builder/node-config-panel";
 import { Button } from "@/components/ui/button";
@@ -22,7 +41,12 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import * as yaml from "js-yaml";
-import { templatePacks, type TemplatePack, type McpToolTemplate, type SharedConfigField } from "@/lib/mcp-tool-templates";
+import {
+  templatePacks,
+  type TemplatePack,
+  type McpToolTemplate,
+  type SharedConfigField,
+} from "@/lib/mcp-tool-templates";
 import { buildFlowFromTemplate } from "@/lib/flow-builder-utils";
 
 export interface StreamNodeData {
@@ -43,6 +67,22 @@ interface McpParameter {
   description: string;
 }
 
+interface McpAnnotations {
+  title: string;
+  read_only_hint: boolean;
+  destructive_hint: boolean;
+  idempotent_hint: boolean;
+  open_world_hint: boolean;
+}
+
+const DEFAULT_MCP_ANNOTATIONS: McpAnnotations = {
+  title: "",
+  read_only_hint: false,
+  destructive_hint: false,
+  idempotent_hint: false,
+  open_world_hint: true,
+};
+
 const PARAMETER_TYPES = ["string", "number", "boolean", "array", "object"];
 
 const transformComponentSchemas = (): AllComponentSchemas => {
@@ -54,15 +94,21 @@ const transformComponentSchemas = (): AllComponentSchemas => {
 
   for (const typeKey of ["input", "pipeline", "output"] as const) {
     const list = componentLists[typeKey] || [];
-    const targetTypeForApp = typeKey === 'pipeline' ? 'processor' : typeKey;
+    const targetTypeForApp = typeKey === "pipeline" ? "processor" : typeKey;
 
-    let schemaCategory: typeof rawComponentSchemas.input | typeof rawComponentSchemas.pipeline | typeof rawComponentSchemas.output | undefined;
-    if (typeKey === 'input') schemaCategory = rawComponentSchemas.input;
-    else if (typeKey === 'pipeline') schemaCategory = rawComponentSchemas.pipeline;
-    else if (typeKey === 'output') schemaCategory = rawComponentSchemas.output;
+    let schemaCategory:
+      | typeof rawComponentSchemas.input
+      | typeof rawComponentSchemas.pipeline
+      | typeof rawComponentSchemas.output
+      | undefined;
+    if (typeKey === "input") schemaCategory = rawComponentSchemas.input;
+    else if (typeKey === "pipeline")
+      schemaCategory = rawComponentSchemas.pipeline;
+    else if (typeKey === "output") schemaCategory = rawComponentSchemas.output;
 
     list.forEach((componentName: string) => {
-      const rawSchema = schemaCategory?.[componentName as keyof typeof schemaCategory];
+      const rawSchema =
+        schemaCategory?.[componentName as keyof typeof schemaCategory];
       if (rawSchema) {
         allSchemas[targetTypeForApp].push({
           id: componentName,
@@ -77,7 +123,11 @@ const transformComponentSchemas = (): AllComponentSchemas => {
   return allSchemas;
 };
 
-function FlowTypeSelector({ onSelect }: { onSelect: (type: FlowType) => void }) {
+function FlowTypeSelector({
+  onSelect,
+}: {
+  onSelect: (type: FlowType) => void;
+}) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
       <div className="mb-8 text-center">
@@ -96,7 +146,9 @@ function FlowTypeSelector({ onSelect }: { onSelect: (type: FlowType) => void }) 
           </div>
           <h2 className="text-lg font-semibold mb-2">MCP Tool</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Build a tool for AI assistants. Define parameters and connect to any API, database, or service - instantly callable by Claude, Cursor, and AI agents.
+            Build a tool for AI assistants. Define parameters and connect to any
+            API, database, or service - instantly callable by Claude, Cursor,
+            and AI agents.
           </p>
           <ArrowRight className="absolute top-8 right-6 h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
         </button>
@@ -110,7 +162,9 @@ function FlowTypeSelector({ onSelect }: { onSelect: (type: FlowType) => void }) 
           </div>
           <h2 className="text-lg font-semibold mb-2">MCP Tool Pack</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Deploy a pre-built set of MCP tools for a service. Configure once and create multiple tools at once - Google Calendar, and more coming soon.
+            Deploy a pre-built set of MCP tools for a service. Configure once
+            and create multiple tools at once - Google Calendar, and more coming
+            soon.
           </p>
           <ArrowRight className="absolute top-8 right-6 h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
         </button>
@@ -124,7 +178,9 @@ function FlowTypeSelector({ onSelect }: { onSelect: (type: FlowType) => void }) 
           </div>
           <h2 className="text-lg font-semibold mb-2">Automation</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Move, transform, and route data between systems or orchestrate AI workflows that call your MCP tools. Connect 66+ sources and destinations with any trigger.
+            Move, transform, and route data between systems or orchestrate AI
+            workflows that call your MCP tools. Connect 66+ sources and
+            destinations with any trigger.
           </p>
           <ArrowRight className="absolute top-8 right-6 h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
         </button>
@@ -133,20 +189,52 @@ function FlowTypeSelector({ onSelect }: { onSelect: (type: FlowType) => void }) 
   );
 }
 
-function McpToolForm({ onBack, onContinue }: {
+function McpToolForm({
+  onBack,
+  onContinue,
+}: {
   onBack: () => void;
-  onContinue: (data: { name: string; description: string; parameters: McpParameter[] }) => void;
+  onContinue: (data: {
+    name: string;
+    description: string;
+    parameters: McpParameter[];
+    annotations: McpAnnotations;
+  }) => void;
 }) {
   const [toolName, setToolName] = useState("");
   const [description, setDescription] = useState("");
   const [parameters, setParameters] = useState<McpParameter[]>([]);
+  const [annotations, setAnnotations] = useState<McpAnnotations>(
+    DEFAULT_MCP_ANNOTATIONS,
+  );
   const [nameError, setNameError] = useState("");
 
-  const addParameter = () => {
-    setParameters([...parameters, { name: "", type: "string", required: false, description: "" }]);
+  const updateAnnotation = <K extends keyof McpAnnotations>(
+    key: K,
+    value: McpAnnotations[K],
+  ) => {
+    setAnnotations((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "read_only_hint") {
+        next.destructive_hint = false;
+        next.idempotent_hint = false;
+      }
+      return next;
+    });
   };
 
-  const updateParameter = (index: number, field: keyof McpParameter, value: any) => {
+  const addParameter = () => {
+    setParameters([
+      ...parameters,
+      { name: "", type: "string", required: false, description: "" },
+    ]);
+  };
+
+  const updateParameter = (
+    index: number,
+    field: keyof McpParameter,
+    value: any,
+  ) => {
     const updated = [...parameters];
     updated[index] = { ...updated[index], [field]: value };
     setParameters(updated);
@@ -164,7 +252,8 @@ function McpToolForm({ onBack, onContinue }: {
     }
   };
 
-  const canContinue = toolName.trim() !== "" && description.trim() !== "" && !nameError;
+  const canContinue =
+    toolName.trim() !== "" && description.trim() !== "" && !nameError;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -197,7 +286,9 @@ function McpToolForm({ onBack, onContinue }: {
               placeholder="e.g. query_customers, check_inventory"
               className={nameError ? "border-destructive" : ""}
             />
-            {nameError && <p className="text-xs text-destructive">{nameError}</p>}
+            {nameError && (
+              <p className="text-xs text-destructive">{nameError}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               The identifier AI assistants use to call this tool
             </p>
@@ -233,7 +324,8 @@ function McpToolForm({ onBack, onContinue }: {
 
             {parameters.length === 0 && (
               <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
-                No parameters defined yet. Add parameters that AI assistants will pass when calling this tool.
+                No parameters defined yet. Add parameters that AI assistants
+                will pass when calling this tool.
               </p>
             )}
 
@@ -246,37 +338,49 @@ function McpToolForm({ onBack, onContinue }: {
                   <div className="grid grid-cols-[1fr_120px] gap-2">
                     <Input
                       value={param.name}
-                      onChange={(e) => updateParameter(index, "name", e.target.value)}
+                      onChange={(e) =>
+                        updateParameter(index, "name", e.target.value)
+                      }
                       placeholder="Parameter name"
                       className="h-8 text-sm"
                     />
                     <Select
                       value={param.type}
-                      onValueChange={(val) => updateParameter(index, "type", val)}
+                      onValueChange={(val) =>
+                        updateParameter(index, "type", val)
+                      }
                     >
                       <SelectTrigger className="h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {PARAMETER_TYPES.map((t) => (
-                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <Input
                     value={param.description}
-                    onChange={(e) => updateParameter(index, "description", e.target.value)}
+                    onChange={(e) =>
+                      updateParameter(index, "description", e.target.value)
+                    }
                     placeholder="Description"
                     className="h-8 text-sm"
                   />
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={param.required}
-                      onCheckedChange={(checked) => updateParameter(index, "required", !!checked)}
+                      onCheckedChange={(checked) =>
+                        updateParameter(index, "required", !!checked)
+                      }
                       className="h-3.5 w-3.5"
                     />
-                    <span className="text-xs text-muted-foreground">Required</span>
+                    <span className="text-xs text-muted-foreground">
+                      Required
+                    </span>
                   </div>
                 </div>
                 <Button
@@ -291,8 +395,121 @@ function McpToolForm({ onBack, onContinue }: {
             ))}
           </div>
 
+          <div className="space-y-3 pt-2 border-t">
+            <div>
+              <Label>
+                Annotations{" "}
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Behavioral hints that help AI clients decide whether to
+                auto-approve calls. Advisory only - never used as security
+                boundaries.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="tool-display-title"
+                className="text-xs font-normal text-muted-foreground"
+              >
+                Display Title
+              </Label>
+              <Input
+                id="tool-display-title"
+                value={annotations.title}
+                onChange={(e) => updateAnnotation("title", e.target.value)}
+                placeholder="Human-readable title (e.g. Customer Lookup)"
+                className="h-8 text-sm"
+              />
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={annotations.read_only_hint}
+                  onCheckedChange={(checked) =>
+                    updateAnnotation("read_only_hint", !!checked)
+                  }
+                  className="mt-0.5 h-3.5 w-3.5"
+                />
+                <span>
+                  <span className="font-medium">Read-only</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Tool does not modify its environment
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={annotations.destructive_hint}
+                  onCheckedChange={(checked) =>
+                    updateAnnotation("destructive_hint", !!checked)
+                  }
+                  className="mt-0.5 h-3.5 w-3.5"
+                  disabled={annotations.read_only_hint}
+                />
+                <span>
+                  <span className="font-medium">Destructive</span>
+                  <span className="block text-xs text-muted-foreground">
+                    May perform destructive updates (only meaningful when not
+                    read-only)
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={annotations.idempotent_hint}
+                  onCheckedChange={(checked) =>
+                    updateAnnotation("idempotent_hint", !!checked)
+                  }
+                  className="mt-0.5 h-3.5 w-3.5"
+                  disabled={annotations.read_only_hint}
+                />
+                <span>
+                  <span className="font-medium">Idempotent</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Repeated calls with the same arguments have no additional
+                    effect
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={annotations.open_world_hint}
+                  onCheckedChange={(checked) =>
+                    updateAnnotation("open_world_hint", !!checked)
+                  }
+                  className="mt-0.5 h-3.5 w-3.5"
+                />
+                <span>
+                  <span className="font-medium">Open world</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Interacts with external entities (e.g. web search). Disable
+                    for closed-domain tools
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
+
           <Button
-            onClick={() => onContinue({ name: toolName.trim(), description: description.trim(), parameters })}
+            onClick={() =>
+              onContinue({
+                name: toolName.trim(),
+                description: description.trim(),
+                parameters,
+                annotations: {
+                  ...annotations,
+                  title: annotations.title.trim(),
+                },
+              })
+            }
             disabled={!canContinue}
             className="w-full"
             size="lg"
@@ -306,7 +523,13 @@ function McpToolForm({ onBack, onContinue }: {
   );
 }
 
-function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; initialPackId?: string }) {
+function TemplatePackWizard({
+  onBack,
+  initialPackId,
+}: {
+  onBack: () => void;
+  initialPackId?: string;
+}) {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [selectedPack, setSelectedPack] = useState<TemplatePack | null>(null);
@@ -316,8 +539,14 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
   const [connections, setConnections] = useState<string[]>([]);
   const [secretsLoading, setSecretsLoading] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
-  const [deployResults, setDeployResults] = useState<Array<{ name: string; success: boolean; error?: string }> | null>(null);
-  const [existingManagedFlows, setExistingManagedFlows] = useState<Map<string, Map<string, string>>>(new Map());
+  const [deployResults, setDeployResults] = useState<Array<{
+    name: string;
+    success: boolean;
+    error?: string;
+  }> | null>(null);
+  const [existingManagedFlows, setExistingManagedFlows] = useState<
+    Map<string, Map<string, string>>
+  >(new Map());
   const [overrideMode, setOverrideMode] = useState(false);
 
   useEffect(() => {
@@ -369,11 +598,15 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
 
   const isAlreadyDeployed = (template: McpToolTemplate) => {
     if (!selectedPack) return false;
-    return existingManagedFlows.get(selectedPack.id)?.has(template.name) ?? false;
+    return (
+      existingManagedFlows.get(selectedPack.id)?.has(template.name) ?? false
+    );
   };
 
   const deployableTemplates = selectedPack
-    ? selectedPack.templates.filter((t) => overrideMode || !isAlreadyDeployed(t))
+    ? selectedPack.templates.filter(
+        (t) => overrideMode || !isAlreadyDeployed(t),
+      )
     : [];
 
   const toggleTool = (id: string) => {
@@ -408,9 +641,12 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
   const handleDeploy = async () => {
     if (!selectedPack) return;
     setIsDeploying(true);
-    const results: Array<{ name: string; success: boolean; error?: string }> = [];
+    const results: Array<{ name: string; success: boolean; error?: string }> =
+      [];
 
-    const templates = selectedPack.templates.filter((t) => selectedTools.has(t.id));
+    const templates = selectedPack.templates.filter((t) =>
+      selectedTools.has(t.id),
+    );
 
     const packFlowMap = existingManagedFlows.get(selectedPack.id);
 
@@ -423,7 +659,12 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
         if (existingFlowId && overrideMode) {
           await deleteFlow(existingFlowId);
         }
-        const flowData = buildFlowFromTemplate(template, sharedConfig, selectedPack.sharedConfig, selectedPack.id);
+        const flowData = buildFlowFromTemplate(
+          template,
+          sharedConfig,
+          selectedPack.sharedConfig,
+          selectedPack.id,
+        );
         await createFlow(flowData);
         results.push({ name: template.name, success: true });
       } catch (error) {
@@ -478,8 +719,14 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="w-full max-w-xl px-6">
           <div className="mb-8 text-center">
-            <div className={`flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-4 ${failCount === 0 ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}>
-              {failCount === 0 ? <Check className="h-8 w-8" /> : <CircleAlert className="h-8 w-8" />}
+            <div
+              className={`flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-4 ${failCount === 0 ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}
+            >
+              {failCount === 0 ? (
+                <Check className="h-8 w-8" />
+              ) : (
+                <CircleAlert className="h-8 w-8" />
+              )}
             </div>
             <h1 className="text-2xl font-bold">
               {failCount === 0 ? "All Tools Deployed" : "Deployment Complete"}
@@ -500,7 +747,9 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
                 {result.success ? (
                   <Check className="h-4 w-4 text-green-500" />
                 ) : (
-                  <span className="text-xs text-destructive">{result.error}</span>
+                  <span className="text-xs text-destructive">
+                    {result.error}
+                  </span>
                 )}
               </div>
             ))}
@@ -595,7 +844,9 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
         </button>
 
         <div className="mb-8">
-          <h1 className="text-2xl font-bold">Deploy {selectedPack.name} Tools</h1>
+          <h1 className="text-2xl font-bold">
+            Deploy {selectedPack.name} Tools
+          </h1>
           <p className="text-muted-foreground mt-1">
             Configure shared settings and select which tools to create
           </p>
@@ -610,20 +861,39 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
               <div key={field.key} className="space-y-2">
                 <Label>
                   {field.title}
-                  {field.required && <span className="text-destructive ml-1">*</span>}
+                  {field.required && (
+                    <span className="text-destructive ml-1">*</span>
+                  )}
                 </Label>
-                {field.type === "dynamic_select" && field.dataSource === "secrets" ? (
+                {field.type === "dynamic_select" &&
+                field.dataSource === "secrets" ? (
                   secretsLoading ? (
-                    <div className="text-sm text-muted-foreground">Loading secrets...</div>
+                    <div className="text-sm text-muted-foreground">
+                      Loading secrets...
+                    </div>
                   ) : (
                     <Select
-                      value={sharedConfig[field.key]?.replace(/^\$\{(.+)\}$/, "$1") || ""}
+                      value={
+                        sharedConfig[field.key]?.replace(
+                          /^\$\{(.+)\}$/,
+                          "$1",
+                        ) || ""
+                      }
                       onValueChange={(val) =>
-                        setSharedConfig((prev) => ({ ...prev, [field.key]: `\${${val}}` }))
+                        setSharedConfig((prev) => ({
+                          ...prev,
+                          [field.key]: `\${${val}}`,
+                        }))
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={secrets.length === 0 ? "No secrets available" : "Select a secret..."} />
+                        <SelectValue
+                          placeholder={
+                            secrets.length === 0
+                              ? "No secrets available"
+                              : "Select a secret..."
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {secrets.map((secret) => (
@@ -634,18 +904,35 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
                       </SelectContent>
                     </Select>
                   )
-                ) : field.type === "dynamic_select" && field.dataSource === "connections" ? (
+                ) : field.type === "dynamic_select" &&
+                  field.dataSource === "connections" ? (
                   secretsLoading ? (
-                    <div className="text-sm text-muted-foreground">Loading connections...</div>
+                    <div className="text-sm text-muted-foreground">
+                      Loading connections...
+                    </div>
                   ) : (
                     <Select
-                      value={sharedConfig[field.key]?.replace(/^\$\{QAYNAQ_CONN_(.+)\}$/, "$1") || ""}
+                      value={
+                        sharedConfig[field.key]?.replace(
+                          /^\$\{QAYNAQ_CONN_(.+)\}$/,
+                          "$1",
+                        ) || ""
+                      }
                       onValueChange={(val) =>
-                        setSharedConfig((prev) => ({ ...prev, [field.key]: `\${QAYNAQ_CONN_${val}}` }))
+                        setSharedConfig((prev) => ({
+                          ...prev,
+                          [field.key]: `\${QAYNAQ_CONN_${val}}`,
+                        }))
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={connections.length === 0 ? "No connections available" : "Select a connection..."} />
+                        <SelectValue
+                          placeholder={
+                            connections.length === 0
+                              ? "No connections available"
+                              : "Select a connection..."
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {connections.map((conn) => (
@@ -660,12 +947,17 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
                   <Input
                     value={sharedConfig[field.key] || ""}
                     onChange={(e) =>
-                      setSharedConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
+                      setSharedConfig((prev) => ({
+                        ...prev,
+                        [field.key]: e.target.value,
+                      }))
                     }
                     placeholder={field.description}
                   />
                 )}
-                <p className="text-xs text-muted-foreground">{field.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {field.description}
+                </p>
               </div>
             ))}
           </div>
@@ -673,7 +965,8 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Tools ({selectedTools.size} of {deployableTemplates.length} available)
+                Tools ({selectedTools.size} of {deployableTemplates.length}{" "}
+                available)
               </h2>
               <div className="flex items-center gap-3">
                 {(existingManagedFlows.get(selectedPack.id)?.size ?? 0) > 0 && (
@@ -693,11 +986,20 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
                         }
                       }}
                     />
-                    <span className="text-xs text-muted-foreground">Override existing</span>
+                    <span className="text-xs text-muted-foreground">
+                      Override existing
+                    </span>
                   </label>
                 )}
-                <Button variant="ghost" size="sm" onClick={toggleAll} className="h-7 text-xs">
-                  {selectedTools.size === deployableTemplates.length ? "Deselect All" : "Select All"}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleAll}
+                  className="h-7 text-xs"
+                >
+                  {selectedTools.size === deployableTemplates.length
+                    ? "Deselect All"
+                    : "Select All"}
                 </Button>
               </div>
             </div>
@@ -706,16 +1008,20 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
               <div className="flex items-start gap-2 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5 text-sm">
                 <CircleAlert className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
                 <span className="text-yellow-700 dark:text-yellow-400">
-                  Override mode will delete existing tools and recreate them with the current configuration. Any manual edits to those tools will be lost.
+                  Override mode will delete existing tools and recreate them
+                  with the current configuration. Any manual edits to those
+                  tools will be lost.
                 </span>
               </div>
             )}
 
-            {deployableTemplates.length === 0 && selectedPack.templates.length > 0 && (
-              <div className="text-sm text-muted-foreground py-6 text-center border border-dashed rounded-lg">
-                All tools from this pack are already deployed. Enable "Override existing" to redeploy them.
-              </div>
-            )}
+            {deployableTemplates.length === 0 &&
+              selectedPack.templates.length > 0 && (
+                <div className="text-sm text-muted-foreground py-6 text-center border border-dashed rounded-lg">
+                  All tools from this pack are already deployed. Enable
+                  "Override existing" to redeploy them.
+                </div>
+              )}
 
             <div className="space-y-2">
               {selectedPack.templates.map((template) => {
@@ -734,20 +1040,28 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
                   >
                     <Checkbox
                       checked={selectedTools.has(template.id)}
-                      onCheckedChange={() => selectable && toggleTool(template.id)}
+                      onCheckedChange={() =>
+                        selectable && toggleTool(template.id)
+                      }
                       disabled={!selectable}
                       className="mt-0.5"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono font-medium">{template.name}</span>
+                        <span className="text-sm font-mono font-medium">
+                          {template.name}
+                        </span>
                         {deployed && (
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            overrideMode && selectedTools.has(template.id)
-                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-                              : "bg-muted text-muted-foreground"
-                          }`}>
-                            {overrideMode && selectedTools.has(template.id) ? "Will override" : "Already deployed"}
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                              overrideMode && selectedTools.has(template.id)
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {overrideMode && selectedTools.has(template.id)
+                              ? "Will override"
+                              : "Already deployed"}
                           </span>
                         )}
                       </div>
@@ -756,17 +1070,25 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
                       </div>
                       {selectable && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
-                          {template.parameters.filter((p) => p.required).map((p) => (
-                            <span
-                              key={p.name}
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted text-muted-foreground"
-                            >
-                              {p.name}
-                            </span>
-                          ))}
-                          {template.parameters.filter((p) => !p.required).length > 0 && (
+                          {template.parameters
+                            .filter((p) => p.required)
+                            .map((p) => (
+                              <span
+                                key={p.name}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted text-muted-foreground"
+                              >
+                                {p.name}
+                              </span>
+                            ))}
+                          {template.parameters.filter((p) => !p.required)
+                            .length > 0 && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-muted-foreground/60">
-                              +{template.parameters.filter((p) => !p.required).length} optional
+                              +
+                              {
+                                template.parameters.filter((p) => !p.required)
+                                  .length
+                              }{" "}
+                              optional
                             </span>
                           )}
                         </div>
@@ -784,7 +1106,8 @@ function TemplatePackWizard({ onBack, initialPackId }: { onBack: () => void; ini
             className="w-full"
             size="lg"
           >
-            Deploy {selectedTools.size} Tool{selectedTools.size !== 1 ? "s" : ""}
+            Deploy {selectedTools.size} Tool
+            {selectedTools.size !== 1 ? "s" : ""}
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
@@ -799,8 +1122,11 @@ export default function NewStreamPage() {
   const packParam = searchParams.get("pack");
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [transformedSchemas, setTransformedSchemas] = useState<AllComponentSchemas | null>(null);
-  const [flowType, setFlowType] = useState<FlowType>(packParam ? "template_pack" : null);
+  const [transformedSchemas, setTransformedSchemas] =
+    useState<AllComponentSchemas | null>(null);
+  const [flowType, setFlowType] = useState<FlowType>(
+    packParam ? "template_pack" : null,
+  );
   const [mcpInitialData, setMcpInitialData] = useState<{
     name: string;
     status: string;
@@ -811,7 +1137,12 @@ export default function NewStreamPage() {
     setTransformedSchemas(transformComponentSchemas());
   }, []);
 
-  const handleMcpContinue = (data: { name: string; description: string; parameters: McpParameter[] }) => {
+  const handleMcpContinue = (data: {
+    name: string;
+    description: string;
+    parameters: McpParameter[];
+    annotations: McpAnnotations;
+  }) => {
     const inputSchema = data.parameters.map((p) => ({
       name: p.name,
       type: p.type,
@@ -826,6 +1157,17 @@ export default function NewStreamPage() {
     if (inputSchema.length > 0) {
       configObj.input_schema = inputSchema;
     }
+
+    const isReadOnly = data.annotations.read_only_hint;
+    const ann: Record<string, any> = {
+      read_only_hint: isReadOnly,
+      destructive_hint: isReadOnly ? false : data.annotations.destructive_hint,
+      idempotent_hint: isReadOnly ? false : data.annotations.idempotent_hint,
+      open_world_hint: data.annotations.open_world_hint,
+    };
+    if (data.annotations.title) ann.title = data.annotations.title;
+    configObj.annotations = ann;
+
     const configYaml = yaml.dump(configObj, { lineWidth: -1, noRefs: true });
 
     setMcpInitialData({
@@ -850,17 +1192,39 @@ export default function NewStreamPage() {
     });
   };
 
-  const handleValidateStream = async (data: { name: string; status: string; bufferId?: number; nodes: StreamNodeData[] }) => {
+  const handleValidateStream = async (data: {
+    name: string;
+    status: string;
+    bufferId?: number;
+    nodes: StreamNodeData[];
+  }) => {
     const inputNode = data.nodes.find((node) => node.type === "input");
-    const processorNodes = data.nodes.filter((node) => node.type === "processor");
+    const processorNodes = data.nodes.filter(
+      (node) => node.type === "processor",
+    );
     const outputNode = data.nodes.find((node) => node.type === "output");
-    if (!inputNode || !outputNode || !inputNode.componentId || !outputNode.componentId) {
-      return { valid: false, error: "Stream must have an input and output with components selected." };
+    if (
+      !inputNode ||
+      !outputNode ||
+      !inputNode.componentId ||
+      !outputNode.componentId
+    ) {
+      return {
+        valid: false,
+        error: "Stream must have an input and output with components selected.",
+      };
     }
-    const inputComponent = transformedSchemas?.input.find(c => c.id === inputNode.componentId);
-    const outputComponent = transformedSchemas?.output.find(c => c.id === outputNode.componentId);
+    const inputComponent = transformedSchemas?.input.find(
+      (c) => c.id === inputNode.componentId,
+    );
+    const outputComponent = transformedSchemas?.output.find(
+      (c) => c.id === outputNode.componentId,
+    );
     if (!inputComponent || !outputComponent) {
-      return { valid: false, error: "Selected components not found in available schemas." };
+      return {
+        valid: false,
+        error: "Selected components not found in available schemas.",
+      };
     }
     return validateFlow({
       input_component: inputComponent.component,
@@ -869,22 +1233,40 @@ export default function NewStreamPage() {
       output_component: outputComponent.component,
       output_label: outputNode.label,
       output_config: outputNode.configYaml || "",
-      processors: processorNodes.map(node => {
-        const comp = transformedSchemas?.processor.find(c => c.id === node.componentId);
-        return { label: node.label, component: comp?.component || node.componentId || "", config: node.configYaml || "" };
+      processors: processorNodes.map((node) => {
+        const comp = transformedSchemas?.processor.find(
+          (c) => c.id === node.componentId,
+        );
+        return {
+          label: node.label,
+          component: comp?.component || node.componentId || "",
+          config: node.configYaml || "",
+        };
       }),
     });
   };
 
-  const handleTryStream = async (data: { processors: Array<{ label: string; component: string; config: string }>; messages: Array<{ content: string }> }) => {
+  const handleTryStream = async (data: {
+    processors: Array<{ label: string; component: string; config: string }>;
+    messages: Array<{ content: string }>;
+  }) => {
     return tryFlow(data);
   };
 
-  const handleSaveStream = async (data: { name: string; status: string; bufferId?: number; nodes: StreamNodeData[]; builderState: string; isReady: boolean }) => {
+  const handleSaveStream = async (data: {
+    name: string;
+    status: string;
+    bufferId?: number;
+    nodes: StreamNodeData[];
+    builderState: string;
+    isReady: boolean;
+  }) => {
     setIsSubmitting(true);
     try {
       const inputNode = data.nodes.find((node) => node.type === "input");
-      const processorNodes = data.nodes.filter((node) => node.type === "processor");
+      const processorNodes = data.nodes.filter(
+        (node) => node.type === "processor",
+      );
       const outputNode = data.nodes.find((node) => node.type === "output");
 
       if (!inputNode || !outputNode) {
@@ -895,8 +1277,12 @@ export default function NewStreamPage() {
         throw new Error("Input and output nodes must have components selected");
       }
 
-      const inputComponent = transformedSchemas?.input.find(c => c.id === inputNode.componentId);
-      const outputComponent = transformedSchemas?.output.find(c => c.id === outputNode.componentId);
+      const inputComponent = transformedSchemas?.input.find(
+        (c) => c.id === inputNode.componentId,
+      );
+      const outputComponent = transformedSchemas?.output.find(
+        (c) => c.id === outputNode.componentId,
+      );
 
       if (!inputComponent || !outputComponent) {
         throw new Error("Selected components not found in available schemas");
@@ -904,18 +1290,24 @@ export default function NewStreamPage() {
 
       const processors = processorNodes.map((node) => {
         if (!node.componentId) {
-          throw new Error(`Processor node "${node.label}" must have a component selected`);
+          throw new Error(
+            `Processor node "${node.label}" must have a component selected`,
+          );
         }
 
-        const processorComponent = transformedSchemas?.processor.find(c => c.id === node.componentId);
+        const processorComponent = transformedSchemas?.processor.find(
+          (c) => c.id === node.componentId,
+        );
         if (!processorComponent) {
-          throw new Error(`Processor component not found for node "${node.label}"`);
+          throw new Error(
+            `Processor component not found for node "${node.label}"`,
+          );
         }
 
         return {
           label: node.label,
           component: processorComponent.component,
-          config: node.configYaml || ""
+          config: node.configYaml || "",
         };
       });
 
@@ -931,7 +1323,7 @@ export default function NewStreamPage() {
         buffer_id: data.bufferId,
         is_ready: data.isReady,
         builder_state: data.builderState,
-        processors: processors
+        processors: processors,
       };
 
       await createFlow(streamData);
@@ -947,7 +1339,8 @@ export default function NewStreamPage() {
       addToast({
         id: "stream-creation-error",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create stream.",
+        description:
+          error instanceof Error ? error.message : "Failed to create stream.",
         variant: "error",
       });
     } finally {
@@ -968,7 +1361,12 @@ export default function NewStreamPage() {
   }
 
   if (flowType === "template_pack") {
-    return <TemplatePackWizard onBack={() => setFlowType(null)} initialPackId={packParam || undefined} />;
+    return (
+      <TemplatePackWizard
+        onBack={() => setFlowType(null)}
+        initialPackId={packParam || undefined}
+      />
+    );
   }
 
   if (flowType === "mcp_tool" && !mcpInitialData) {
