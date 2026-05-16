@@ -37,7 +37,7 @@ proto:
 ui-deps:
 	pnpm --prefix $(UI_DIR) install
 
-ui-build:
+ui-build: ui-deps
 	pnpm --prefix $(UI_DIR) build
 	rm -rf $(WEB_DIST)
 	mkdir -p $(WEB_DIST)
