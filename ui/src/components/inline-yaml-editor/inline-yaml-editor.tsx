@@ -38,6 +38,7 @@ import {
   OutputListEditor,
   InputListEditor,
 } from "./components";
+import { McpAnnotationsEditor } from "./components/mcp-annotations-editor";
 import {
   LazyOutputCasesEditor,
   LazyProcessorCasesEditor,
@@ -297,7 +298,7 @@ export function InlineYamlEditor({
       }
 
       initialStates[fieldKey] = {
-        enabled: isRequired || hasExistingValue,
+        enabled: isRequired || hasExistingValue || fieldSchema.type === "mcp_annotations",
         value: initialValue,
       };
     });
@@ -580,6 +581,15 @@ export function InlineYamlEditor({
           </Suspense>
         );
 
+      case "mcp_annotations":
+        return (
+          <McpAnnotationsEditor
+            value={state.value}
+            updateValue={handleValueChange}
+            previewMode={previewMode}
+          />
+        );
+
       case "processor_list":
         return (
           <Suspense
@@ -678,6 +688,22 @@ export function InlineYamlEditor({
     const handleValueChange = (newValue: any) => {
       updateFieldState(fieldKey, { value: newValue });
     };
+
+    if (fieldSchema.type === "mcp_annotations") {
+      return (
+        <div key={fieldKey} className="space-y-1.5">
+          <Label className="text-sm text-foreground">
+            {fieldSchema.title || fieldKey}
+          </Label>
+          {fieldSchema.description && (
+            <p className="text-xs text-muted-foreground">
+              {fieldSchema.description}
+            </p>
+          )}
+          {renderValueInput(fieldSchema, state, handleValueChange)}
+        </div>
+      );
+    }
 
     return (
       <div key={fieldKey} className="space-y-1.5">

@@ -32,6 +32,15 @@ type toolConfig struct {
 	Name        string          `yaml:"name"`
 	Description string          `yaml:"description"`
 	InputSchema json.RawMessage `yaml:"input_schema"`
+	Annotations toolAnnotations `yaml:"annotations"`
+}
+
+type toolAnnotations struct {
+	Title           string `yaml:"title"`
+	ReadOnlyHint    *bool  `yaml:"read_only_hint"`
+	DestructiveHint *bool  `yaml:"destructive_hint"`
+	IdempotentHint  *bool  `yaml:"idempotent_hint"`
+	OpenWorldHint   *bool  `yaml:"open_world_hint"`
 }
 
 type upstreamServer struct {
@@ -180,6 +189,13 @@ func (h *MCPHandler) syncNativeTools() ([]server.ServerTool, map[string]int64) {
 		newToolMap[cfg.Name] = flowID
 
 		tool := mcp.NewToolWithRawSchema(cfg.Name, cfg.Description, cfg.InputSchema)
+		tool.Annotations = mcp.ToolAnnotation{
+			Title:           cfg.Annotations.Title,
+			ReadOnlyHint:    cfg.Annotations.ReadOnlyHint,
+			DestructiveHint: cfg.Annotations.DestructiveHint,
+			IdempotentHint:  cfg.Annotations.IdempotentHint,
+			OpenWorldHint:   cfg.Annotations.OpenWorldHint,
+		}
 		newTools = append(newTools, server.ServerTool{
 			Tool:    tool,
 			Handler: h.createNativeToolHandler(flowID),
@@ -700,7 +716,25 @@ func parseToolConfig(inputConfig []byte) (*toolConfig, error) {
 		cfg.InputSchema = json.RawMessage(`{"type":"object","properties":{}}`)
 	}
 
+	if ann, ok := raw["annotations"].(map[string]any); ok {
+		if v, ok := ann["title"].(string); ok {
+			cfg.Annotations.Title = v
+		}
+		cfg.Annotations.ReadOnlyHint = boolPtr(ann["read_only_hint"])
+		cfg.Annotations.DestructiveHint = boolPtr(ann["destructive_hint"])
+		cfg.Annotations.IdempotentHint = boolPtr(ann["idempotent_hint"])
+		cfg.Annotations.OpenWorldHint = boolPtr(ann["open_world_hint"])
+	}
+
 	return cfg, nil
+}
+
+func boolPtr(v any) *bool {
+	b, ok := v.(bool)
+	if !ok {
+		return nil
+	}
+	return &b
 }
 
 func propertyListToJSONSchema(schema any) (json.RawMessage, error) {

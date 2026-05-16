@@ -545,6 +545,12 @@ export const componentSchemas = {
           description:
             "Define the parameters that AI assistants will pass when calling this tool.",
         },
+        annotations: {
+          type: "mcp_annotations",
+          title: "Annotations",
+          description:
+            "Optional behavioral hints. Per the MCP spec these are advisory only - never used as security boundaries - but they help clients decide whether to auto-approve calls or surface confirmation prompts.",
+        },
       },
     },
     broker: {
