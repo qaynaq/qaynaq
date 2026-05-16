@@ -8,6 +8,9 @@ build
 *__debug*
 *.back
 dist
+!/internal/web/dist
+internal/web/dist/*
+!/internal/web/dist/.gitkeep
 target
 *.sqlite*
 .test

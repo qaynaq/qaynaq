@@ -28,15 +28,6 @@ linters:
           - staticcheck
           - unconvert
           - unused
-      - path: internal/statik/
-        linters:
-          - errcheck
-          - gosec
-          - govet
-          - revive
-          - staticcheck
-          - unconvert
-          - unused
       - path: _test\.go$
         linters:
           - errcheck
@@ -88,4 +79,3 @@ formatters:
     generated: lax
     paths:
       - internal/protogen
-      - internal/statik
