@@ -8,4 +8,6 @@ export { SwitchField } from "./switch-field";
 export { SelectField } from "./select-field";
 export type { SelectOption } from "./select-field";
 export { KeyValueField } from "./key-value-field";
+export { ArrayField } from "./array-field";
+export { CodeField } from "./code-field";
 export { EmptyEditor } from "./empty-editor";
