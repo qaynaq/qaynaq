@@ -10,4 +10,6 @@ export type { SelectOption } from "./select-field";
 export { KeyValueField } from "./key-value-field";
 export { ArrayField } from "./array-field";
 export { CodeField } from "./code-field";
+export { ConnectionPickerField } from "./connection-picker-field";
+export type { PickerSource } from "./connection-picker-field";
 export { EmptyEditor } from "./empty-editor";
