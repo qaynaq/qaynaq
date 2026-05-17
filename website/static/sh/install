@@ -129,7 +129,7 @@ install_qaynaq()
 	trap 'rm -rf -- "$qaynaq_tmp_dir"' EXIT
 	dl="$qaynaq_tmp_dir/$qaynaq_file"
 
-	curl -fsSL "$qaynaq_url" -o "$dl"
+	curl -fL --progress-bar "$qaynaq_url" -o "$dl"
 
 	echo "Extracting..."
 	case "$qaynaq_file" in
