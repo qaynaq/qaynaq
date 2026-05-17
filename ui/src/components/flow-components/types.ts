@@ -31,5 +31,13 @@ export interface FlowComponent<TConfig> {
   parse(yamlStr: string): TConfig;
   serialize(config: TConfig): string;
 
+  // Optional hooks for components that appear inside processor_list,
+  // output_list, input_list or output_cases slots. Default behaviour places
+  // the parsed config object directly under the component id key. Override
+  // these for components whose nested-list shape differs from their
+  // standalone shape - e.g. a flat string-valued component like `mapping`.
+  toListItem?(config: TConfig): unknown;
+  fromListItem?(raw: unknown): TConfig;
+
   Editor: ComponentType<EditorProps<TConfig>>;
 }

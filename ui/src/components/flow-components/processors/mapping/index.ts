@@ -17,6 +17,8 @@ const component: FlowComponent<Config> = {
   defaultConfig,
   parse: (s) => ({ mapping: s ?? "" }),
   serialize: (c) => c.mapping ?? "",
+  toListItem: (c) => c.mapping ?? "",
+  fromListItem: (raw) => ({ mapping: typeof raw === "string" ? raw : "" }),
   Editor: lazy(() => import("./editor")),
 };
 
