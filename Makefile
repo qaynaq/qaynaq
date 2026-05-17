@@ -1,4 +1,4 @@
-.PHONY: help all proto ui-deps ui-build build bundle coordinator worker ui website test lint clean
+.PHONY: help all proto ui-deps ui-build go-build build coordinator worker ui website test ui-test go-test lint clean
 
 BINARY   := dist/qaynaq
 UI_DIR   := ui
@@ -14,13 +14,15 @@ help:
 	@echo "  proto           Generate Go code from .proto files"
 	@echo "  ui-deps         Install UI dependencies"
 	@echo "  ui-build        Build UI and stage assets for embedding"
-	@echo "  build           Build the Go binary"
-	@echo "  bundle          Build UI + embed + Go binary"
+	@echo "  go-build        Build the Go binary"
+	@echo "  build           Build UI + embed + Go binary"
 	@echo "  coordinator     Run coordinator from ./.env"
 	@echo "  worker          Run worker from ./.env"
 	@echo "  ui              Start UI dev server"
 	@echo "  website         Start website dev server"
-	@echo "  test            Run Go tests"
+	@echo "  test            Run Go and UI tests"
+	@echo "  go-test         Run Go tests only"
+	@echo "  ui-test         Run UI tests only"
 	@echo "  lint            Run golangci-lint"
 	@echo "  clean           Remove build artifacts"
 
@@ -43,10 +45,10 @@ ui-build: ui-deps
 	mkdir -p $(WEB_DIST)
 	cp -r $(UI_DIR)/dist/. $(WEB_DIST)/
 
-build:
+go-build:
 	go build -o $(BINARY) ./cmd/qaynaq
 
-bundle: ui-build build
+build: ui-build go-build
 
 coordinator:
 	@test -f .env || { echo "Error: .env not found. Run: cp .env.example .env"; exit 1; }
@@ -62,8 +64,13 @@ ui:
 website:
 	pnpm --prefix $(WEB_DIR) start
 
-test:
+test: go-test ui-test
+
+go-test:
 	go test ./...
+
+ui-test: ui-deps
+	pnpm --prefix $(UI_DIR) test
 
 lint:
 	golangci-lint run ./...

@@ -24,10 +24,14 @@ import {
   fetchFlows,
 } from "@/lib/api";
 import {
-  componentSchemas as rawComponentSchemas,
-  componentLists,
-} from "@/lib/component-schemas";
-import type { AllComponentSchemas } from "@/components/flow-builder/node-config-panel";
+  getComponent,
+  getFlowCatalog,
+  type FlowCatalog,
+} from "@/components/flow-components/registry";
+import {
+  ConnectionPickerField,
+  TextField,
+} from "@/components/form-primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +44,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import * as yaml from "js-yaml";
 import {
   templatePacks,
   type TemplatePack,
@@ -84,44 +87,6 @@ const DEFAULT_MCP_ANNOTATIONS: McpAnnotations = {
 };
 
 const PARAMETER_TYPES = ["string", "number", "boolean", "array", "object"];
-
-const transformComponentSchemas = (): AllComponentSchemas => {
-  const allSchemas: AllComponentSchemas = {
-    input: [],
-    processor: [],
-    output: [],
-  };
-
-  for (const typeKey of ["input", "pipeline", "output"] as const) {
-    const list = componentLists[typeKey] || [];
-    const targetTypeForApp = typeKey === "pipeline" ? "processor" : typeKey;
-
-    let schemaCategory:
-      | typeof rawComponentSchemas.input
-      | typeof rawComponentSchemas.pipeline
-      | typeof rawComponentSchemas.output
-      | undefined;
-    if (typeKey === "input") schemaCategory = rawComponentSchemas.input;
-    else if (typeKey === "pipeline")
-      schemaCategory = rawComponentSchemas.pipeline;
-    else if (typeKey === "output") schemaCategory = rawComponentSchemas.output;
-
-    list.forEach((componentName: string) => {
-      const rawSchema =
-        schemaCategory?.[componentName as keyof typeof schemaCategory];
-      if (rawSchema) {
-        allSchemas[targetTypeForApp].push({
-          id: componentName,
-          name: (rawSchema as any).title || componentName,
-          component: componentName,
-          type: targetTypeForApp,
-          schema: rawSchema,
-        });
-      }
-    });
-  }
-  return allSchemas;
-};
 
 function FlowTypeSelector({
   onSelect,
@@ -857,109 +822,47 @@ function TemplatePackWizard({
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Configuration
             </h2>
-            {selectedPack.sharedConfig.map((field) => (
-              <div key={field.key} className="space-y-2">
-                <Label>
-                  {field.title}
-                  {field.required && (
-                    <span className="text-destructive ml-1">*</span>
-                  )}
-                </Label>
-                {field.type === "dynamic_select" &&
-                field.dataSource === "secrets" ? (
-                  secretsLoading ? (
-                    <div className="text-sm text-muted-foreground">
-                      Loading secrets...
-                    </div>
-                  ) : (
-                    <Select
-                      value={
-                        sharedConfig[field.key]?.replace(
-                          /^\$\{(.+)\}$/,
-                          "$1",
-                        ) || ""
-                      }
-                      onValueChange={(val) =>
-                        setSharedConfig((prev) => ({
-                          ...prev,
-                          [field.key]: `\${${val}}`,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            secrets.length === 0
-                              ? "No secrets available"
-                              : "Select a secret..."
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {secrets.map((secret) => (
-                          <SelectItem key={secret} value={secret}>
-                            {secret}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )
-                ) : field.type === "dynamic_select" &&
-                  field.dataSource === "connections" ? (
-                  secretsLoading ? (
-                    <div className="text-sm text-muted-foreground">
-                      Loading connections...
-                    </div>
-                  ) : (
-                    <Select
-                      value={
-                        sharedConfig[field.key]?.replace(
-                          /^\$\{QAYNAQ_CONN_(.+)\}$/,
-                          "$1",
-                        ) || ""
-                      }
-                      onValueChange={(val) =>
-                        setSharedConfig((prev) => ({
-                          ...prev,
-                          [field.key]: `\${QAYNAQ_CONN_${val}}`,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            connections.length === 0
-                              ? "No connections available"
-                              : "Select a connection..."
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {connections.map((conn) => (
-                          <SelectItem key={conn} value={conn}>
-                            {conn}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )
-                ) : (
-                  <Input
+            {selectedPack.sharedConfig.map((field) => {
+              const setValue = (val: string) =>
+                setSharedConfig((prev) => ({ ...prev, [field.key]: val }));
+              if (field.type === "dynamic_select" && field.dataSource === "secrets") {
+                return (
+                  <ConnectionPickerField
+                    key={field.key}
+                    label={field.title}
+                    description={field.description}
+                    required={field.required}
+                    source="secrets"
                     value={sharedConfig[field.key] || ""}
-                    onChange={(e) =>
-                      setSharedConfig((prev) => ({
-                        ...prev,
-                        [field.key]: e.target.value,
-                      }))
-                    }
-                    placeholder={field.description}
+                    onChange={setValue}
                   />
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {field.description}
-                </p>
-              </div>
-            ))}
+                );
+              }
+              if (field.type === "dynamic_select" && field.dataSource === "connections") {
+                return (
+                  <ConnectionPickerField
+                    key={field.key}
+                    label={field.title}
+                    description={field.description}
+                    required={field.required}
+                    source="connections"
+                    value={sharedConfig[field.key] || ""}
+                    onChange={setValue}
+                  />
+                );
+              }
+              return (
+                <TextField
+                  key={field.key}
+                  label={field.title}
+                  description={field.description}
+                  required={field.required}
+                  value={sharedConfig[field.key] || ""}
+                  onChange={setValue}
+                  placeholder={field.description}
+                />
+              );
+            })}
           </div>
 
           <div className="space-y-4">
@@ -1122,8 +1025,8 @@ export default function NewStreamPage() {
   const packParam = searchParams.get("pack");
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [transformedSchemas, setTransformedSchemas] =
-    useState<AllComponentSchemas | null>(null);
+  const [catalog, setCatalog] =
+    useState<FlowCatalog | null>(null);
   const [flowType, setFlowType] = useState<FlowType>(
     packParam ? "template_pack" : null,
   );
@@ -1134,7 +1037,7 @@ export default function NewStreamPage() {
   } | null>(null);
 
   useEffect(() => {
-    setTransformedSchemas(transformComponentSchemas());
+    setCatalog(getFlowCatalog());
   }, []);
 
   const handleMcpContinue = (data: {
@@ -1143,32 +1046,27 @@ export default function NewStreamPage() {
     parameters: McpParameter[];
     annotations: McpAnnotations;
   }) => {
-    const inputSchema = data.parameters.map((p) => ({
-      name: p.name,
-      type: p.type,
-      required: p.required,
-      description: p.description,
-    }));
-
-    const configObj: Record<string, any> = {
-      name: data.name,
-      description: data.description,
-    };
-    if (inputSchema.length > 0) {
-      configObj.input_schema = inputSchema;
+    const mcpTool = getComponent("input", "mcp_tool");
+    if (!mcpTool) {
+      console.error("mcp_tool component not found in registry");
+      return;
     }
 
     const isReadOnly = data.annotations.read_only_hint;
-    const ann: Record<string, any> = {
-      read_only_hint: isReadOnly,
-      destructive_hint: isReadOnly ? false : data.annotations.destructive_hint,
-      idempotent_hint: isReadOnly ? false : data.annotations.idempotent_hint,
-      open_world_hint: data.annotations.open_world_hint,
+    const config = {
+      name: data.name,
+      description: data.description,
+      input_schema: data.parameters,
+      annotations: {
+        ...(data.annotations.title ? { title: data.annotations.title } : {}),
+        read_only_hint: isReadOnly,
+        destructive_hint: isReadOnly ? false : data.annotations.destructive_hint,
+        idempotent_hint: isReadOnly ? false : data.annotations.idempotent_hint,
+        open_world_hint: data.annotations.open_world_hint,
+      },
     };
-    if (data.annotations.title) ann.title = data.annotations.title;
-    configObj.annotations = ann;
 
-    const configYaml = yaml.dump(configObj, { lineWidth: -1, noRefs: true });
+    const configYaml = mcpTool.serialize(config as never);
 
     setMcpInitialData({
       name: data.name,
@@ -1214,10 +1112,10 @@ export default function NewStreamPage() {
         error: "Stream must have an input and output with components selected.",
       };
     }
-    const inputComponent = transformedSchemas?.input.find(
+    const inputComponent = catalog?.input.find(
       (c) => c.id === inputNode.componentId,
     );
-    const outputComponent = transformedSchemas?.output.find(
+    const outputComponent = catalog?.output.find(
       (c) => c.id === outputNode.componentId,
     );
     if (!inputComponent || !outputComponent) {
@@ -1234,7 +1132,7 @@ export default function NewStreamPage() {
       output_label: outputNode.label,
       output_config: outputNode.configYaml || "",
       processors: processorNodes.map((node) => {
-        const comp = transformedSchemas?.processor.find(
+        const comp = catalog?.processor.find(
           (c) => c.id === node.componentId,
         );
         return {
@@ -1277,10 +1175,10 @@ export default function NewStreamPage() {
         throw new Error("Input and output nodes must have components selected");
       }
 
-      const inputComponent = transformedSchemas?.input.find(
+      const inputComponent = catalog?.input.find(
         (c) => c.id === inputNode.componentId,
       );
-      const outputComponent = transformedSchemas?.output.find(
+      const outputComponent = catalog?.output.find(
         (c) => c.id === outputNode.componentId,
       );
 
@@ -1295,7 +1193,7 @@ export default function NewStreamPage() {
           );
         }
 
-        const processorComponent = transformedSchemas?.processor.find(
+        const processorComponent = catalog?.processor.find(
           (c) => c.id === node.componentId,
         );
         if (!processorComponent) {
@@ -1348,7 +1246,7 @@ export default function NewStreamPage() {
     }
   };
 
-  if (!transformedSchemas) {
+  if (!catalog) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -1400,7 +1298,7 @@ export default function NewStreamPage() {
       </div>
 
       <FlowBuilder
-        allComponentSchemas={transformedSchemas}
+        catalog={catalog}
         initialData={mcpInitialData || undefined}
         onSave={handleSaveStream}
         onValidate={handleValidateStream}

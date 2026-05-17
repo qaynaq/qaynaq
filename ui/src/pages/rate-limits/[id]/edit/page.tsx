@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/toast";
-import { RateLimitForm } from "@/components/rate-limit-form/rate-limit-form";
+import {
+  ResourceForm,
+  type ResourceFormSubmit,
+} from "@/components/resource-form/resource-form";
 import { fetchRateLimit, updateRateLimit } from "@/lib/api";
 import { RateLimit } from "@/lib/entities";
-import * as yaml from "js-yaml";
 
 export default function EditRateLimitPage() {
   const navigate = useNavigate();
@@ -23,7 +25,6 @@ export default function EditRateLimitPage() {
         setIsLoading(false);
         return;
       }
-
       try {
         setIsLoading(true);
         const data = await fetchRateLimit(id);
@@ -43,28 +44,20 @@ export default function EditRateLimitPage() {
         setIsLoading(false);
       }
     };
-
     loadRateLimit();
   }, [id, addToast]);
 
-  const handleSaveRateLimit = async (data: {
-    label: string;
-    component: string;
-    config: any;
-  }) => {
+  const handleSave = async (data: ResourceFormSubmit) => {
     if (!id) return;
-
     setIsSubmitting(true);
     try {
       await updateRateLimit(id, data);
-
       addToast({
         id: "rate-limit-updated",
         title: "Rate Limit Updated",
         description: `Rate limit "${data.label}" has been updated successfully.`,
         variant: "success",
       });
-
       navigate("/rate-limits");
     } catch (error) {
       console.error("Error updating rate limit:", error);
@@ -80,10 +73,6 @@ export default function EditRateLimitPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    navigate("/rate-limits");
   };
 
   if (isLoading) {
@@ -123,14 +112,16 @@ export default function EditRateLimitPage() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <RateLimitForm
+        <ResourceForm
+          category="rate_limit"
+          resourceLabel="Rate Limit"
           initialData={{
             label: rateLimit.label,
             component: rateLimit.component,
-            config: rateLimit.config ? yaml.load(rateLimit.config) : {},
+            configYaml: rateLimit.config ?? "",
           }}
-          onSubmit={handleSaveRateLimit}
-          onCancel={handleCancel}
+          onSubmit={handleSave}
+          onCancel={() => navigate("/rate-limits")}
         />
       )}
     </div>

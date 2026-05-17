@@ -19,11 +19,17 @@ git clone https://github.com/qaynaq/qaynaq.git
 cd qaynaq
 cp .env.example .env          # edit .env and set ROLE, SECRET_KEY
 make ui-deps                  # install UI dependencies
-make bundle                   # build UI + Go binary
+make build                    # build UI + Go binary
 make coordinator              # run locally
 ```
 
 See the [README](./README.md) for more details.
+
+## Adding a flow component
+
+Inputs, processors, outputs, caches, buffers, and rate limits all live in `ui/src/components/flow-components/`. Each component is a folder with an `index.ts` (metadata + Zod schema + YAML round-trip) and an `editor.tsx` (lazy-loaded React form). The registry auto-discovers everything, no wiring needed.
+
+Read [ui/src/components/flow-components/README.md](./ui/src/components/flow-components/README.md) for the full walkthrough, the contract, the available form primitives, and the shared config helpers.
 
 ## Proposing changes
 

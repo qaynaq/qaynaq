@@ -1,9 +1,7 @@
 import { Flow } from "@/lib/entities";
 import { Badge } from "@/components/ui/badge";
 import { useRelativeTime } from "@/lib/utils";
-import {
-  componentSchemas as rawComponentSchemas,
-} from "@/lib/component-schemas";
+import { getComponent } from "@/components/flow-components/registry";
 import {
   Tooltip,
   TooltipContent,
@@ -12,29 +10,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/components/toast";
 
-// Helper function to get component display name
 const getComponentDisplayName = (
   componentId: string,
   type: "input" | "processor" | "output",
 ): string => {
-  const typeKey = type === "processor" ? "pipeline" : type;
-  let schemaCategory:
-    | typeof rawComponentSchemas.input
-    | typeof rawComponentSchemas.pipeline
-    | typeof rawComponentSchemas.output
-    | undefined;
-
-  if (typeKey === "input") schemaCategory = rawComponentSchemas.input;
-  else if (typeKey === "pipeline")
-    schemaCategory = rawComponentSchemas.pipeline;
-  else if (typeKey === "output") schemaCategory = rawComponentSchemas.output;
-
-  const rawSchema =
-    schemaCategory?.[componentId as keyof typeof schemaCategory];
-  if (rawSchema) {
-    return (rawSchema as any).title || componentId;
-  }
-  return componentId;
+  const component = getComponent(type, componentId);
+  return component ? component.name : componentId;
 };
 
 export const columns = () => [

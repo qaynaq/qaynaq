@@ -55,6 +55,9 @@ jobs:
       - name: Build UI
         run: make ui-build
 
+      - name: Run UI tests
+        run: make ui-test
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:

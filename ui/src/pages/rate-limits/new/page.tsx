@@ -2,7 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/toast";
-import { RateLimitForm } from "@/components/rate-limit-form/rate-limit-form";
+import {
+  ResourceForm,
+  type ResourceFormSubmit,
+} from "@/components/resource-form/resource-form";
 import { createRateLimit } from "@/lib/api";
 
 export default function NewRateLimitPage() {
@@ -10,22 +13,16 @@ export default function NewRateLimitPage() {
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSaveRateLimit = async (data: {
-    label: string;
-    component: string;
-    config: any;
-  }) => {
+  const handleSave = async (data: ResourceFormSubmit) => {
     setIsSubmitting(true);
     try {
       await createRateLimit(data);
-
       addToast({
         id: "rate-limit-created",
         title: "Rate Limit Created",
         description: `Rate limit "${data.label}" has been created successfully.`,
         variant: "success",
       });
-
       navigate("/rate-limits");
     } catch (error) {
       console.error("Error creating rate limit:", error);
@@ -43,10 +40,6 @@ export default function NewRateLimitPage() {
     }
   };
 
-  const handleCancel = () => {
-    navigate("/rate-limits");
-  };
-
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -61,7 +54,12 @@ export default function NewRateLimitPage() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <RateLimitForm onSubmit={handleSaveRateLimit} onCancel={handleCancel} />
+        <ResourceForm
+          category="rate_limit"
+          resourceLabel="Rate Limit"
+          onSubmit={handleSave}
+          onCancel={() => navigate("/rate-limits")}
+        />
       )}
     </div>
   );

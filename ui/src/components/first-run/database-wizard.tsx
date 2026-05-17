@@ -388,16 +388,12 @@ export function DatabaseWizard({
 
     const argsMapping = `[${paramOrder.map((n) => `this.${n}`).join(", ")}]`;
 
-    const inputSchema: Record<string, any> = {
-      type: "object",
-      required: parameters.map((p) => p.name),
-      properties: Object.fromEntries(
-        parameters.map((p) => [
-          p.name,
-          { type: p.type, description: p.description },
-        ]),
-      ),
-    };
+    const inputSchema = parameters.map((p) => ({
+      name: p.name,
+      type: p.type,
+      required: true,
+      description: p.description,
+    }));
 
     const flow = {
       name: toolName,

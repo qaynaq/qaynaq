@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/toast";
-import { BufferForm } from "@/components/buffer-form/buffer-form";
+import {
+  ResourceForm,
+  type ResourceFormSubmit,
+} from "@/components/resource-form/resource-form";
 import { fetchBuffer, updateBuffer } from "@/lib/api";
 import { Buffer } from "@/lib/entities";
-import * as yaml from "js-yaml";
 
 export default function EditBufferPage() {
   const navigate = useNavigate();
@@ -23,7 +25,6 @@ export default function EditBufferPage() {
         setIsLoading(false);
         return;
       }
-
       try {
         setIsLoading(true);
         const data = await fetchBuffer(id);
@@ -43,28 +44,20 @@ export default function EditBufferPage() {
         setIsLoading(false);
       }
     };
-
     loadBuffer();
   }, [id, addToast]);
 
-  const handleSaveBuffer = async (data: {
-    label: string;
-    component: string;
-    config: any;
-  }) => {
+  const handleSave = async (data: ResourceFormSubmit) => {
     if (!id) return;
-
     setIsSubmitting(true);
     try {
       await updateBuffer(id, data);
-
       addToast({
         id: "buffer-updated",
         title: "Buffer Updated",
         description: `Buffer "${data.label}" has been updated successfully.`,
         variant: "success",
       });
-
       navigate("/buffers");
     } catch (error) {
       console.error("Error updating buffer:", error);
@@ -72,18 +65,12 @@ export default function EditBufferPage() {
         id: "buffer-update-error",
         title: "Error",
         description:
-          error instanceof Error
-            ? error.message
-            : "Failed to update buffer.",
+          error instanceof Error ? error.message : "Failed to update buffer.",
         variant: "error",
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    navigate("/buffers");
   };
 
   if (isLoading) {
@@ -123,14 +110,16 @@ export default function EditBufferPage() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <BufferForm
+        <ResourceForm
+          category="buffer"
+          resourceLabel="Buffer"
           initialData={{
             label: buffer.label,
             component: buffer.component,
-            config: buffer.config ? yaml.load(buffer.config) : {},
+            configYaml: buffer.config ?? "",
           }}
-          onSubmit={handleSaveBuffer}
-          onCancel={handleCancel}
+          onSubmit={handleSave}
+          onCancel={() => navigate("/buffers")}
         />
       )}
     </div>
