@@ -25,7 +25,7 @@ const configSchema = z.object({
   annotations: annotationsSchema,
 });
 
-type Config = z.infer<typeof configSchema>;
+export type Config = z.infer<typeof configSchema>;
 
 const defaultConfig: Config = {
   name: "",

@@ -5,28 +5,9 @@ import {
 } from "@/components/form-primitives";
 import { ParameterListField } from "./parameter-list";
 import type { EditorProps } from "../../types";
+import type { Config } from ".";
 
-interface Param {
-  name: string;
-  type: string;
-  required: boolean;
-  description: string;
-}
-
-interface Annotations {
-  title?: string;
-  read_only_hint: boolean;
-  destructive_hint: boolean;
-  idempotent_hint: boolean;
-  open_world_hint: boolean;
-}
-
-interface Config {
-  name: string;
-  description: string;
-  input_schema: Param[];
-  annotations: Annotations;
-}
+type Annotations = Config["annotations"];
 
 // Schema: https://modelcontextprotocol.io/specification/2025-11-25/schema#toolannotations
 export default function McpToolEditor({
