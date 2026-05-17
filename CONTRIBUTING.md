@@ -19,7 +19,7 @@ git clone https://github.com/qaynaq/qaynaq.git
 cd qaynaq
 cp .env.example .env          # edit .env and set ROLE, SECRET_KEY
 make ui-deps                  # install UI dependencies
-make bundle                   # build UI + Go binary
+make build                    # build UI + Go binary
 make coordinator              # run locally
 ```
 
