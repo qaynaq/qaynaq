@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/toast";
-import { CacheForm } from "@/components/cache-form/cache-form";
+import {
+  ResourceForm,
+  type ResourceFormSubmit,
+} from "@/components/resource-form/resource-form";
 import { fetchCache, updateCache } from "@/lib/api";
-import * as yaml from "js-yaml";
 
 export default function EditCachePage() {
   const navigate = useNavigate();
@@ -15,7 +17,7 @@ export default function EditCachePage() {
   const [cacheData, setCacheData] = useState<{
     label: string;
     component: string;
-    config: any;
+    configYaml: string;
   } | null>(null);
 
   useEffect(() => {
@@ -23,18 +25,10 @@ export default function EditCachePage() {
       try {
         setIsLoading(true);
         const cache = await fetchCache(id || "");
-
-        let parsedConfig = {};
-        try {
-          parsedConfig = yaml.load(cache.config) || {};
-        } catch (error) {
-          console.error("Failed to parse cache config YAML:", error);
-        }
-
         setCacheData({
           label: cache.label,
           component: cache.component,
-          config: parsedConfig,
+          configYaml: cache.config ?? "",
         });
       } catch (error) {
         console.error("Error loading cache:", error);
@@ -50,26 +44,19 @@ export default function EditCachePage() {
         setIsLoading(false);
       }
     }
-
     loadCache();
   }, [id, navigate, addToast]);
 
-  const handleSaveCache = async (data: {
-    label: string;
-    component: string;
-    config: any;
-  }) => {
+  const handleSave = async (data: ResourceFormSubmit) => {
     setIsSubmitting(true);
     try {
       await updateCache(id || "", data);
-
       addToast({
         id: "cache-updated",
         title: "Cache Updated",
         description: `Cache "${data.label}" has been updated successfully.`,
         variant: "success",
       });
-
       navigate("/caches");
     } catch (error) {
       console.error("Error updating cache:", error);
@@ -83,10 +70,6 @@ export default function EditCachePage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    navigate("/caches");
   };
 
   if (isLoading) {
@@ -112,10 +95,12 @@ export default function EditCachePage() {
         </div>
       ) : (
         cacheData && (
-          <CacheForm
+          <ResourceForm
+            category="cache"
+            resourceLabel="Cache"
             initialData={cacheData}
-            onSubmit={handleSaveCache}
-            onCancel={handleCancel}
+            onSubmit={handleSave}
+            onCancel={() => navigate("/caches")}
           />
         )
       )}

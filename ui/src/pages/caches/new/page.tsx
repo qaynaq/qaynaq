@@ -2,7 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/toast";
-import { CacheForm } from "@/components/cache-form/cache-form";
+import {
+  ResourceForm,
+  type ResourceFormSubmit,
+} from "@/components/resource-form/resource-form";
 import { createCache } from "@/lib/api";
 
 export default function NewCachePage() {
@@ -10,23 +13,16 @@ export default function NewCachePage() {
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSaveCache = async (data: {
-    label: string;
-    component: string;
-    config: any;
-  }) => {
+  const handleSave = async (data: ResourceFormSubmit) => {
     setIsSubmitting(true);
     try {
       await createCache(data);
-
       addToast({
         id: "cache-created",
         title: "Cache Created",
         description: `Cache "${data.label}" has been created successfully.`,
         variant: "success",
       });
-
-      // Navigate back to caches list
       navigate("/caches");
     } catch (error) {
       console.error("Error creating cache:", error);
@@ -40,10 +36,6 @@ export default function NewCachePage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    navigate("/caches");
   };
 
   return (
@@ -60,7 +52,12 @@ export default function NewCachePage() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <CacheForm onSubmit={handleSaveCache} onCancel={handleCancel} />
+        <ResourceForm
+          category="cache"
+          resourceLabel="Cache"
+          onSubmit={handleSave}
+          onCancel={() => navigate("/caches")}
+        />
       )}
     </div>
   );

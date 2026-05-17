@@ -2,7 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/toast";
-import { BufferForm } from "@/components/buffer-form/buffer-form";
+import {
+  ResourceForm,
+  type ResourceFormSubmit,
+} from "@/components/resource-form/resource-form";
 import { createBuffer } from "@/lib/api";
 
 export default function NewBufferPage() {
@@ -10,22 +13,16 @@ export default function NewBufferPage() {
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSaveBuffer = async (data: {
-    label: string;
-    component: string;
-    config: any;
-  }) => {
+  const handleSave = async (data: ResourceFormSubmit) => {
     setIsSubmitting(true);
     try {
       await createBuffer(data);
-
       addToast({
         id: "buffer-created",
         title: "Buffer Created",
         description: `Buffer "${data.label}" has been created successfully.`,
         variant: "success",
       });
-
       navigate("/buffers");
     } catch (error) {
       console.error("Error creating buffer:", error);
@@ -33,18 +30,12 @@ export default function NewBufferPage() {
         id: "buffer-creation-error",
         title: "Error",
         description:
-          error instanceof Error
-            ? error.message
-            : "Failed to create buffer.",
+          error instanceof Error ? error.message : "Failed to create buffer.",
         variant: "error",
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    navigate("/buffers");
   };
 
   return (
@@ -61,7 +52,12 @@ export default function NewBufferPage() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <BufferForm onSubmit={handleSaveBuffer} onCancel={handleCancel} />
+        <ResourceForm
+          category="buffer"
+          resourceLabel="Buffer"
+          onSubmit={handleSave}
+          onCancel={() => navigate("/buffers")}
+        />
       )}
     </div>
   );
