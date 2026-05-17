@@ -15,7 +15,6 @@ export interface StreamNodeData {
   status?: string;
 }
 
-
 export default function EditStreamPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -30,7 +29,7 @@ export default function EditStreamPage() {
     nodes: StreamNodeData[];
     builderState?: string;
   } | null>(null);
-  const [transformedSchemas, setTransformedSchemas] = useState<FlowCatalog | null>(null);
+  const [catalog, setCatalog] = useState<FlowCatalog | null>(null);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -42,50 +41,45 @@ export default function EditStreamPage() {
         setIsLoading(true);
         
         const schemas = getFlowCatalog();
-        setTransformedSchemas(schemas);
+        setCatalog(schemas);
         
         const streamResponse = await fetchStream(id || "");
         
-        const getDisplayName = (componentId: string, type: "input" | "processor" | "output"): string => {
-          const component = schemas[type].find((c) => c.id === componentId);
-          return component ? `${component.name} (${component.component})` : componentId;
-        };
-        
+        const nameOf = (componentId: string, type: "input" | "processor" | "output"): string =>
+          schemas[type].find((c) => c.id === componentId)?.name ?? componentId;
+
         const nodes: StreamNodeData[] = [];
 
-        const inputNode: StreamNodeData = {
+        nodes.push({
           label: streamResponse.input_label || "Input",
           type: "input",
-          component: getDisplayName(streamResponse.input_component, "input"),
+          component: nameOf(streamResponse.input_component, "input"),
           componentId: streamResponse.input_component,
           configYaml: streamResponse.input_config || "",
           status: streamResponse.status,
-        };
-        nodes.push(inputNode);
+        });
 
-        if (streamResponse.processors && streamResponse.processors.length > 0) {
-          streamResponse.processors.forEach((processor: any) => {
-            const processorNode: StreamNodeData = {
+        if (streamResponse.processors?.length) {
+          for (const processor of streamResponse.processors as any[]) {
+            nodes.push({
               label: processor.label || "Processor",
               type: "processor",
-              component: getDisplayName(processor.component, "processor"),
+              component: nameOf(processor.component, "processor"),
               componentId: processor.component,
               configYaml: processor.config || "",
               status: streamResponse.status,
-            };
-            nodes.push(processorNode);
-          });
+            });
+          }
         }
 
-        const outputNode: StreamNodeData = {
+        nodes.push({
           label: streamResponse.output_label || "Output",
           type: "output",
-          component: getDisplayName(streamResponse.output_component, "output"),
+          component: nameOf(streamResponse.output_component, "output"),
           componentId: streamResponse.output_component,
           configYaml: streamResponse.output_config || "",
           status: streamResponse.status,
-        };
-        nodes.push(outputNode);
+        });
 
         setStreamData({
           name: streamResponse.name,
@@ -121,8 +115,8 @@ export default function EditStreamPage() {
     if (!inputNode || !outputNode || !inputNode.componentId || !outputNode.componentId) {
       return { valid: false, error: "Stream must have an input and output with components selected." };
     }
-    const inputComponent = transformedSchemas?.input.find(c => c.id === inputNode.componentId);
-    const outputComponent = transformedSchemas?.output.find(c => c.id === outputNode.componentId);
+    const inputComponent = catalog?.input.find(c => c.id === inputNode.componentId);
+    const outputComponent = catalog?.output.find(c => c.id === outputNode.componentId);
     if (!inputComponent || !outputComponent) {
       return { valid: false, error: "Selected components not found in available schemas." };
     }
@@ -134,7 +128,7 @@ export default function EditStreamPage() {
       output_label: outputNode.label,
       output_config: outputNode.configYaml || "",
       processors: processorNodes.map(node => {
-        const comp = transformedSchemas?.processor.find(c => c.id === node.componentId);
+        const comp = catalog?.processor.find(c => c.id === node.componentId);
         return { label: node.label, component: comp?.component || node.componentId || "", config: node.configYaml || "" };
       }),
     });
@@ -160,8 +154,8 @@ export default function EditStreamPage() {
         throw new Error("Input and output nodes must have components selected");
       }
 
-      const inputComponent = transformedSchemas?.input.find(c => c.id === inputNode.componentId);
-      const outputComponent = transformedSchemas?.output.find(c => c.id === outputNode.componentId);
+      const inputComponent = catalog?.input.find(c => c.id === inputNode.componentId);
+      const outputComponent = catalog?.output.find(c => c.id === outputNode.componentId);
 
       if (!inputComponent || !outputComponent) {
         throw new Error("Selected components not found in available schemas");
@@ -172,7 +166,7 @@ export default function EditStreamPage() {
           throw new Error(`Processor node "${node.label}" must have a component selected`);
         }
 
-        const processorComponent = transformedSchemas?.processor.find(c => c.id === node.componentId);
+        const processorComponent = catalog?.processor.find(c => c.id === node.componentId);
         if (!processorComponent) {
           throw new Error(`Processor component not found for node "${node.label}"`);
         }
@@ -221,7 +215,7 @@ export default function EditStreamPage() {
     }
   };
 
-  if (isLoading || !transformedSchemas) {
+  if (isLoading || !catalog) {
     return (
       <div className="p-6 flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -244,7 +238,7 @@ export default function EditStreamPage() {
         </div>
       ) : (
         <FlowBuilder
-          allComponentSchemas={transformedSchemas}
+          catalog={catalog}
           initialData={streamData!}
           onSave={handleSaveStream}
           onValidate={handleValidateStream}

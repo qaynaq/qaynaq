@@ -141,7 +141,7 @@ type TryFlowResult = {
 };
 
 interface FlowBuilderProps {
-  allComponentSchemas: FlowCatalog;
+  catalog: FlowCatalog;
   initialData?: {
     name: string;
     status: string;
@@ -537,7 +537,7 @@ function resolveFlowNodeType(
 }
 
 function FlowBuilderContent({
-  allComponentSchemas,
+  catalog,
   initialData,
   onSave,
   onValidate,
@@ -667,7 +667,7 @@ function FlowBuilderContent({
           const componentName = Object.keys(inputObj).find((k) => k !== "label") || Object.keys(inputObj)[0];
           const config = inputObj[componentName];
           const childLabel = inputObj.label as string | undefined;
-          const schema = allComponentSchemas.input.find(
+          const schema = catalog.input.find(
             (o) => o.component === componentName || o.id === componentName
           );
           const childId = uuidv4();
@@ -731,7 +731,7 @@ function FlowBuilderContent({
           const componentName = Object.keys(procObj).find((k) => k !== "label") || Object.keys(procObj)[0];
           const config = procObj[componentName];
           const childLabel = procObj.label as string | undefined;
-          const schema = allComponentSchemas.processor.find(
+          const schema = catalog.processor.find(
             (p) => p.component === componentName || p.id === componentName
           );
           const childId = uuidv4();
@@ -795,7 +795,7 @@ function FlowBuilderContent({
           const componentName = Object.keys(procObj).find((k) => k !== "label") || Object.keys(procObj)[0];
           const config = procObj[componentName];
           const childLabel = procObj.label as string | undefined;
-          const schema = allComponentSchemas.processor.find(
+          const schema = catalog.processor.find(
             (p) => p.component === componentName || p.id === componentName
           );
           const childId = uuidv4();
@@ -900,7 +900,7 @@ function FlowBuilderContent({
             const componentName = Object.keys(procObj).find((k) => k !== "label") || Object.keys(procObj)[0] || "";
             const config = procObj[componentName];
             const procLabel = procObj.label as string | undefined;
-            const schema = allComponentSchemas.processor.find(
+            const schema = catalog.processor.find(
               (p) => p.component === componentName || p.id === componentName
             );
             const procId = uuidv4();
@@ -987,7 +987,7 @@ function FlowBuilderContent({
           const componentName = Object.keys(outputObj).find((k) => k !== "label") || Object.keys(outputObj)[0];
           const config = outputObj[componentName];
           const childLabel = outputObj.label as string | undefined;
-          const schema = allComponentSchemas.output.find(
+          const schema = catalog.output.find(
             (o) => o.component === componentName || o.id === componentName
           );
           const childId = uuidv4();
@@ -1057,7 +1057,7 @@ function FlowBuilderContent({
           const outputConfig = caseObj.output || {};
           const componentName = Object.keys(outputConfig)[0] || "";
           const config = outputConfig[componentName];
-          const schema = allComponentSchemas.output.find(
+          const schema = catalog.output.find(
             (o) => o.component === componentName || o.id === componentName
           );
           const childId = uuidv4();
@@ -1200,8 +1200,8 @@ function FlowBuilderContent({
       // Determine available components: switch case chain processors get filtered list
       const isCaseChain = sourceNode.type === "switchCaseStartNode" || !!(sourceNode.data as any).switchCaseId;
       const available = isCaseChain
-        ? allComponentSchemas.processor.filter((p) => p.id !== "switch" && p.id !== "catch")
-        : allComponentSchemas.processor;
+        ? catalog.processor.filter((p) => p.id !== "switch" && p.id !== "catch")
+        : catalog.processor;
       const count = nodes.filter((n) => (n.data as StreamFlowNodeData).type === "processor").length + 1;
       setPendingNode({
         kind: "addAndConnect",
@@ -1212,7 +1212,7 @@ function FlowBuilderContent({
         availableComponents: available,
       });
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const handleAddBefore = useCallback(
@@ -1224,10 +1224,10 @@ function FlowBuilderContent({
         label: `new_processor_${count}`,
         componentId: "",
         component: "",
-        availableComponents: allComponentSchemas.processor,
+        availableComponents: catalog.processor,
       });
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const handleAddChildProcessor = useCallback(
@@ -1235,7 +1235,7 @@ function FlowBuilderContent({
       const groupNode = nodes.find((n) => n.id === groupId);
       const isBranch = groupNode?.type === "branchGroupNode";
       const existingChildren = nodes.filter((n) => n.parentId === groupId);
-      const available = allComponentSchemas.processor.filter((p) => p.id !== "catch" && p.id !== "branch");
+      const available = catalog.processor.filter((p) => p.id !== "catch" && p.id !== "branch");
       const prefix = isBranch ? "branch_proc" : "catch_proc";
       setPendingNode({
         kind: "childProcessor",
@@ -1246,13 +1246,13 @@ function FlowBuilderContent({
         availableComponents: available,
       });
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const handleAddChildOutput = useCallback(
     (groupId: string) => {
       const existingChildren = nodes.filter((n) => n.parentId === groupId);
-      const available = allComponentSchemas.output.filter((o) => o.id !== "broker" && o.id !== "switch");
+      const available = catalog.output.filter((o) => o.id !== "broker" && o.id !== "switch");
       setPendingNode({
         kind: "childOutput",
         groupId,
@@ -1262,13 +1262,13 @@ function FlowBuilderContent({
         availableComponents: available,
       });
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const handleAddChildInput = useCallback(
     (groupId: string) => {
       const existingChildren = nodes.filter((n) => n.parentId === groupId);
-      const available = allComponentSchemas.input.filter((i) => i.id !== "broker");
+      const available = catalog.input.filter((i) => i.id !== "broker");
       setPendingNode({
         kind: "childInput",
         groupId,
@@ -1278,7 +1278,7 @@ function FlowBuilderContent({
         availableComponents: available,
       });
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const handleAddChildCase = useCallback(
@@ -1294,7 +1294,7 @@ function FlowBuilderContent({
 
       // Output switch cases need a component picker for output components
       const availableComponents = !isProcessorSwitch
-        ? allComponentSchemas.output
+        ? catalog.output
             .filter((o) => o.id !== "switch" && o.id !== "broker")
             .map((o) => ({ id: o.id, name: o.id, component: o.component }))
         : [];
@@ -1313,7 +1313,7 @@ function FlowBuilderContent({
         availableComponents,
       });
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   // --- Unified confirm handler that dispatches to actual creation logic ---
@@ -2030,7 +2030,7 @@ function FlowBuilderContent({
       const label = type === "processor"
         ? `new_processor_${existingOfType.length + 1}`
         : `new_${type}`;
-      const available = allComponentSchemas[type === "processor" ? "processor" : type === "input" ? "input" : "output"];
+      const available = catalog[type === "processor" ? "processor" : type === "input" ? "input" : "output"];
 
       setPendingNode({
         kind: "topLevel",
@@ -2041,7 +2041,7 @@ function FlowBuilderContent({
         availableComponents: available,
       });
     },
-    [nodes, addToast, allComponentSchemas]
+    [nodes, addToast, catalog]
   );
 
   const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -2129,44 +2129,44 @@ function FlowBuilderContent({
     // Switch case chain processors: restrict to non-switch, non-catch
     if (editingNode?.isSwitchCaseProc) {
       return {
-        ...allComponentSchemas,
-        processor: allComponentSchemas.processor.filter((p) => p.id !== "switch" && p.id !== "catch"),
+        ...catalog,
+        processor: catalog.processor.filter((p) => p.id !== "switch" && p.id !== "catch"),
       };
     }
     // Output switch case starts: restrict output components (no switch, no broker)
     if (editingNode?.isOutputCaseStart) {
       return {
-        ...allComponentSchemas,
-        output: allComponentSchemas.output.filter((o) => o.id !== "switch" && o.id !== "broker"),
+        ...catalog,
+        output: catalog.output.filter((o) => o.id !== "switch" && o.id !== "broker"),
       };
     }
-    if (!editingNode?.isGroupChild) return allComponentSchemas;
+    if (!editingNode?.isGroupChild) return catalog;
     const parentNode = nodes.find((n) => n.id === nodes.find((cn) => cn.id === editingNode.id)?.parentId);
     const parentComponentId = parentNode && (parentNode.data as StreamFlowNodeData).componentId;
     if (parentComponentId === "broker") {
       const parentType = (parentNode!.data as StreamFlowNodeData).type;
       if (parentType === "input") {
         return {
-          ...allComponentSchemas,
-          input: allComponentSchemas.input.filter((o) => o.id !== "broker"),
+          ...catalog,
+          input: catalog.input.filter((o) => o.id !== "broker"),
         };
       }
       return {
-        ...allComponentSchemas,
-        output: allComponentSchemas.output.filter((o) => o.id !== "broker" && o.id !== "switch"),
+        ...catalog,
+        output: catalog.output.filter((o) => o.id !== "broker" && o.id !== "switch"),
       };
     }
     if (parentComponentId === "switch") {
       return {
-        ...allComponentSchemas,
-        output: allComponentSchemas.output.filter((o) => o.id !== "switch" && o.id !== "broker"),
+        ...catalog,
+        output: catalog.output.filter((o) => o.id !== "switch" && o.id !== "broker"),
       };
     }
     return {
-      ...allComponentSchemas,
-      processor: allComponentSchemas.processor.filter((p) => p.id !== "catch"),
+      ...catalog,
+      processor: catalog.processor.filter((p) => p.id !== "catch"),
     };
-  }, [allComponentSchemas, editingNode?.isGroupChild, editingNode?.isSwitchCaseProc, editingNode?.isOutputCaseStart, editingNode?.id, nodes]);
+  }, [catalog, editingNode?.isGroupChild, editingNode?.isSwitchCaseProc, editingNode?.isOutputCaseStart, editingNode?.id, nodes]);
 
   const isMcpServer = useMemo(
     () => nodes.some((n) => (n.data as StreamFlowNodeData).type === "input" && (n.data as StreamFlowNodeData).componentId === "mcp_tool"),
@@ -2675,7 +2675,7 @@ function FlowBuilderContent({
         : "";
       return { label: d.label, type: "processor", componentId: "catch", component: "catch", configYaml: catchYaml };
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const serializeBranchGroup = useCallback(
@@ -2706,7 +2706,7 @@ function FlowBuilderContent({
       const branchYaml = yaml.dump(branchObj, { lineWidth: -1, noRefs: true, quotingType: '"', forceQuotes: false });
       return { label: d.label, type: "processor", componentId: "branch", component: "branch", configYaml: branchYaml };
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const serializeBrokerGroup = useCallback(
@@ -2745,7 +2745,7 @@ function FlowBuilderContent({
       const brokerYaml = yaml.dump(brokerConfig, { lineWidth: -1, noRefs: true, quotingType: '"', forceQuotes: false });
       return { label: d.label, type: "output", componentId: "broker", component: "broker", configYaml: brokerYaml };
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const serializeBrokerInputGroup = useCallback(
@@ -2780,7 +2780,7 @@ function FlowBuilderContent({
       const brokerYaml = yaml.dump(brokerConfig, { lineWidth: -1, noRefs: true, quotingType: '"', forceQuotes: false });
       return { label: d.label, type: "input", componentId: "broker", component: "broker", configYaml: brokerYaml };
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const serializeSwitchGroup = useCallback(
@@ -2820,7 +2820,7 @@ function FlowBuilderContent({
       const switchYaml = yaml.dump(switchConfig, { lineWidth: -1, noRefs: true, quotingType: '"', forceQuotes: false });
       return { label: d.label, type: "output", componentId: "switch", component: "switch", configYaml: switchYaml };
     },
-    [nodes, allComponentSchemas]
+    [nodes, catalog]
   );
 
   const serializeProcessorSwitchGroup = useCallback(
@@ -2860,7 +2860,7 @@ function FlowBuilderContent({
       const switchYaml = yaml.dump(casesList, { lineWidth: -1, noRefs: true, quotingType: '"', forceQuotes: false });
       return { label: d.label, type: "processor", componentId: "switch", component: "switch", configYaml: switchYaml };
     },
-    [nodes, edges, allComponentSchemas]
+    [nodes, edges, catalog]
   );
 
   const handleValidate = useCallback(async () => {
@@ -2942,7 +2942,7 @@ function FlowBuilderContent({
           const serialized = serializeProcessorSwitchGroup(n);
           return { label: serialized.label, component: "switch", config: serialized.configYaml || "" };
         }
-        const comp = allComponentSchemas.processor.find((c) => c.id === d.componentId);
+        const comp = catalog.processor.find((c) => c.id === d.componentId);
         return { label: d.label, component: comp?.component || d.componentId || "", config: d.configYaml || "" };
       });
       const result = await onTry({ processors, messages: nonEmpty.map((content) => ({ content })) });
@@ -2952,7 +2952,7 @@ function FlowBuilderContent({
     } finally {
       setIsTrying(false);
     }
-  }, [onTry, tryMessages, nodes, allComponentSchemas, addToast, serializeBranchGroup, serializeCatchGroup, serializeProcessorSwitchGroup]);
+  }, [onTry, tryMessages, nodes, catalog, addToast, serializeBranchGroup, serializeCatchGroup, serializeProcessorSwitchGroup]);
 
   const handleSave = useCallback(() => {
     if (!name.trim()) {

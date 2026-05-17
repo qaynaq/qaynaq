@@ -1025,7 +1025,7 @@ export default function NewStreamPage() {
   const packParam = searchParams.get("pack");
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [transformedSchemas, setTransformedSchemas] =
+  const [catalog, setCatalog] =
     useState<FlowCatalog | null>(null);
   const [flowType, setFlowType] = useState<FlowType>(
     packParam ? "template_pack" : null,
@@ -1037,7 +1037,7 @@ export default function NewStreamPage() {
   } | null>(null);
 
   useEffect(() => {
-    setTransformedSchemas(getFlowCatalog());
+    setCatalog(getFlowCatalog());
   }, []);
 
   const handleMcpContinue = (data: {
@@ -1112,10 +1112,10 @@ export default function NewStreamPage() {
         error: "Stream must have an input and output with components selected.",
       };
     }
-    const inputComponent = transformedSchemas?.input.find(
+    const inputComponent = catalog?.input.find(
       (c) => c.id === inputNode.componentId,
     );
-    const outputComponent = transformedSchemas?.output.find(
+    const outputComponent = catalog?.output.find(
       (c) => c.id === outputNode.componentId,
     );
     if (!inputComponent || !outputComponent) {
@@ -1132,7 +1132,7 @@ export default function NewStreamPage() {
       output_label: outputNode.label,
       output_config: outputNode.configYaml || "",
       processors: processorNodes.map((node) => {
-        const comp = transformedSchemas?.processor.find(
+        const comp = catalog?.processor.find(
           (c) => c.id === node.componentId,
         );
         return {
@@ -1175,10 +1175,10 @@ export default function NewStreamPage() {
         throw new Error("Input and output nodes must have components selected");
       }
 
-      const inputComponent = transformedSchemas?.input.find(
+      const inputComponent = catalog?.input.find(
         (c) => c.id === inputNode.componentId,
       );
-      const outputComponent = transformedSchemas?.output.find(
+      const outputComponent = catalog?.output.find(
         (c) => c.id === outputNode.componentId,
       );
 
@@ -1193,7 +1193,7 @@ export default function NewStreamPage() {
           );
         }
 
-        const processorComponent = transformedSchemas?.processor.find(
+        const processorComponent = catalog?.processor.find(
           (c) => c.id === node.componentId,
         );
         if (!processorComponent) {
@@ -1246,7 +1246,7 @@ export default function NewStreamPage() {
     }
   };
 
-  if (!transformedSchemas) {
+  if (!catalog) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -1298,7 +1298,7 @@ export default function NewStreamPage() {
       </div>
 
       <FlowBuilder
-        allComponentSchemas={transformedSchemas}
+        catalog={catalog}
         initialData={mcpInitialData || undefined}
         onSave={handleSaveStream}
         onValidate={handleValidateStream}
