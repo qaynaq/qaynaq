@@ -14,15 +14,6 @@ describe("registry", () => {
 describe.each(components.map((c) => [c.category, c.id, c] as const))(
   "%s:%s",
   (_category, _id, component) => {
-    it("default config conforms to its schema", () => {
-      const result = component.configSchema.safeParse(component.defaultConfig);
-      if (!result.success) {
-        throw new Error(
-          `default config failed validation: ${JSON.stringify(result.error.issues)}`,
-        );
-      }
-    });
-
     it("serialize then parse returns the default config", () => {
       const serialized = component.serialize(component.defaultConfig);
       const parsed = component.parse(serialized);

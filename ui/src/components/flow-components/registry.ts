@@ -1,27 +1,27 @@
 import type { ComponentCategory, FlowComponent } from "./types";
 
 const inputs = import.meta.glob<{ default: FlowComponent<unknown> }>(
-  "./inputs/*.component.ts",
+  "./inputs/*/index.ts",
   { eager: true },
 );
 const processors = import.meta.glob<{ default: FlowComponent<unknown> }>(
-  "./processors/*.component.ts",
+  "./processors/*/index.ts",
   { eager: true },
 );
 const outputs = import.meta.glob<{ default: FlowComponent<unknown> }>(
-  "./outputs/*.component.ts",
+  "./outputs/*/index.ts",
   { eager: true },
 );
 const caches = import.meta.glob<{ default: FlowComponent<unknown> }>(
-  "./caches/*.component.ts",
+  "./caches/*/index.ts",
   { eager: true },
 );
 const buffers = import.meta.glob<{ default: FlowComponent<unknown> }>(
-  "./buffers/*.component.ts",
+  "./buffers/*/index.ts",
   { eager: true },
 );
 const rateLimits = import.meta.glob<{ default: FlowComponent<unknown> }>(
-  "./rate-limits/*.component.ts",
+  "./rate-limits/*/index.ts",
   { eager: true },
 );
 
