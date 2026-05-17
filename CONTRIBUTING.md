@@ -25,6 +25,12 @@ make coordinator              # run locally
 
 See the [README](./README.md) for more details.
 
+## Adding a flow component
+
+Inputs, processors, outputs, caches, buffers, and rate limits all live in `ui/src/components/flow-components/`. Each component is a folder with an `index.ts` (metadata + Zod schema + YAML round-trip) and an `editor.tsx` (lazy-loaded React form). The registry auto-discovers everything, no wiring needed.
+
+Read [ui/src/components/flow-components/README.md](./ui/src/components/flow-components/README.md) for the full walkthrough, the contract, the available form primitives, and the shared config helpers.
+
 ## Proposing changes
 
 1. **Open an issue first** for anything non-trivial (new feature, architectural change, behavior change). A quick discussion saves everyone time.
