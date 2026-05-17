@@ -24,10 +24,9 @@ import {
   fetchFlows,
 } from "@/lib/api";
 import {
-  componentSchemas as rawComponentSchemas,
-  componentLists,
-} from "@/lib/component-schemas";
-import type { AllComponentSchemas } from "@/components/flow-builder/node-config-panel";
+  getFlowCatalog,
+  type FlowCatalog,
+} from "@/components/flow-components/registry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -84,44 +83,6 @@ const DEFAULT_MCP_ANNOTATIONS: McpAnnotations = {
 };
 
 const PARAMETER_TYPES = ["string", "number", "boolean", "array", "object"];
-
-const transformComponentSchemas = (): AllComponentSchemas => {
-  const allSchemas: AllComponentSchemas = {
-    input: [],
-    processor: [],
-    output: [],
-  };
-
-  for (const typeKey of ["input", "pipeline", "output"] as const) {
-    const list = componentLists[typeKey] || [];
-    const targetTypeForApp = typeKey === "pipeline" ? "processor" : typeKey;
-
-    let schemaCategory:
-      | typeof rawComponentSchemas.input
-      | typeof rawComponentSchemas.pipeline
-      | typeof rawComponentSchemas.output
-      | undefined;
-    if (typeKey === "input") schemaCategory = rawComponentSchemas.input;
-    else if (typeKey === "pipeline")
-      schemaCategory = rawComponentSchemas.pipeline;
-    else if (typeKey === "output") schemaCategory = rawComponentSchemas.output;
-
-    list.forEach((componentName: string) => {
-      const rawSchema =
-        schemaCategory?.[componentName as keyof typeof schemaCategory];
-      if (rawSchema) {
-        allSchemas[targetTypeForApp].push({
-          id: componentName,
-          name: (rawSchema as any).title || componentName,
-          component: componentName,
-          type: targetTypeForApp,
-          schema: rawSchema,
-        });
-      }
-    });
-  }
-  return allSchemas;
-};
 
 function FlowTypeSelector({
   onSelect,
@@ -1123,7 +1084,7 @@ export default function NewStreamPage() {
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transformedSchemas, setTransformedSchemas] =
-    useState<AllComponentSchemas | null>(null);
+    useState<FlowCatalog | null>(null);
   const [flowType, setFlowType] = useState<FlowType>(
     packParam ? "template_pack" : null,
   );
@@ -1134,7 +1095,7 @@ export default function NewStreamPage() {
   } | null>(null);
 
   useEffect(() => {
-    setTransformedSchemas(transformComponentSchemas());
+    setTransformedSchemas(getFlowCatalog());
   }, []);
 
   const handleMcpContinue = (data: {

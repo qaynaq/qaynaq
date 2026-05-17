@@ -55,3 +55,30 @@ export function listComponents(
 export function listAll(): FlowComponent<unknown>[] {
   return all;
 }
+
+export interface CatalogEntry {
+  id: string;
+  name: string;
+  component: string;
+  type: "input" | "processor" | "output";
+}
+
+export interface FlowCatalog {
+  input: CatalogEntry[];
+  processor: CatalogEntry[];
+  output: CatalogEntry[];
+}
+
+export function getFlowCatalog(): FlowCatalog {
+  const entry = (c: FlowComponent<unknown>): CatalogEntry => ({
+    id: c.id,
+    name: c.name,
+    component: c.id,
+    type: c.category as CatalogEntry["type"],
+  });
+  return {
+    input: listComponents("input").map(entry),
+    processor: listComponents("processor").map(entry),
+    output: listComponents("output").map(entry),
+  };
+}

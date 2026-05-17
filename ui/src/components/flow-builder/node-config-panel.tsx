@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { InlineYamlEditor } from "@/components/inline-yaml-editor";
 import { getComponentIcon } from "@/lib/component-catalog";
+import { getComponent } from "@/components/flow-components/registry";
+import { flattenZodErrors } from "@/components/flow-components/utils/errors";
+import type { ComponentCategory } from "@/components/flow-components/types";
 
-// Define FlowNodeData type locally since the file was deleted
 export interface FlowNodeData {
   label: string;
   type: "input" | "processor" | "output";
@@ -15,24 +16,8 @@ export interface FlowNodeData {
   configYaml?: string;
 }
 
-// Define a basic structure for ComponentSchema, assuming it will be passed from props
-export interface ComponentSchema {
-  id: string;
-  name: string; 
-  component: string; 
-  type: "input" | "processor" | "output";
-  schema?: any; // For YAML validation later
-}
-
-export interface AllComponentSchemas {
-  input: ComponentSchema[];
-  processor: ComponentSchema[];
-  output: ComponentSchema[];
-}
-
 interface NodeConfigPanelProps {
   selectedNode: { id: string; data: FlowNodeData } | null;
-  allComponentSchemas: AllComponentSchemas;
   onUpdateNode: (nodeId: string, data: FlowNodeData) => void;
   onDeleteNode: (nodeId: string) => void;
   lockedComponentId?: string;
@@ -40,7 +25,6 @@ interface NodeConfigPanelProps {
 
 export function NodeConfigPanel({
   selectedNode,
-  allComponentSchemas,
   onUpdateNode,
   onDeleteNode,
   lockedComponentId,
@@ -49,43 +33,28 @@ export function NodeConfigPanel({
 
   useEffect(() => {
     if (selectedNode) {
-      const currentData = selectedNode.data as FlowNodeData;
-      // Only update if the data has actually changed
-      setNodeData(prev => {
-        if (!prev || 
-            prev.label !== currentData.label ||
-            prev.componentId !== currentData.componentId ||
-            prev.configYaml !== currentData.configYaml ||
-            prev.component !== currentData.component) {
-          return { ...currentData };
-        }
-        return prev;
-      });
+      setNodeData(selectedNode.data);
     } else {
       setNodeData(null);
     }
-  }, [selectedNode?.id, selectedNode?.data.label, selectedNode?.data.componentId, selectedNode?.data.configYaml, selectedNode?.data.component]);
+  }, [selectedNode?.id, selectedNode?.data]);
 
-  const handleDebouncedUpdate = useCallback(
-    (field: keyof FlowNodeData, value: any) => {
-      if (selectedNode && nodeData) {
-        const updatedData = {
-            ...nodeData,
-            [field]: value
-        };
-        setNodeData(updatedData);
-        onUpdateNode(selectedNode.id, updatedData);
-      }
+  const update = useCallback(
+    (next: FlowNodeData) => {
+      if (!selectedNode) return;
+      setNodeData(next);
+      onUpdateNode(selectedNode.id, next);
     },
-    [selectedNode, nodeData, onUpdateNode]
+    [selectedNode, onUpdateNode],
   );
 
-  const getComponentSchema = (componentId: string, nodeType: "input" | "processor" | "output") => {
-    const component = allComponentSchemas[nodeType]?.find(c => c.id === componentId);
-    const schema = component?.schema || {};
-    
-    return schema;
-  };
+  const handleConfigChange = useCallback(
+    (yamlValue: string) => {
+      if (!nodeData) return;
+      update({ ...nodeData, configYaml: yamlValue });
+    },
+    [nodeData, update],
+  );
 
   if (!selectedNode || !nodeData) {
     return (
@@ -106,7 +75,8 @@ export function NodeConfigPanel({
         <CardHeader>
           <CardTitle>
             Configure{" "}
-            {(nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1))} Node
+            {nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)}{" "}
+            Node
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 p-4 min-h-0">
@@ -117,7 +87,10 @@ export function NodeConfigPanel({
             </div>
             <div className="space-y-2">
               <Label>Component</Label>
-              <Input value={nodeData.component || nodeData.componentId || ""} disabled />
+              <Input
+                value={nodeData.component || nodeData.componentId || ""}
+                disabled
+              />
             </div>
             <p className="text-xs text-muted-foreground">
               Output is automatically configured for MCP Server input.
@@ -133,7 +106,7 @@ export function NodeConfigPanel({
       <CardHeader>
         <CardTitle>
           Configure{" "}
-          {(nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1))} Node
+          {nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)} Node
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col flex-1 p-4 min-h-0">
@@ -146,11 +119,7 @@ export function NodeConfigPanel({
               onChange={(e) => {
                 const val = e.target.value;
                 if (/^[a-z0-9_-]*$/.test(val)) {
-                  if (selectedNode && nodeData) {
-                      const updatedData = { ...nodeData, label: val };
-                      setNodeData(updatedData);
-                      onUpdateNode(selectedNode.id, updatedData);
-                  }
+                  update({ ...nodeData, label: val });
                 }
               }}
               placeholder="Node label (e.g., my_kafka_input)"
@@ -176,35 +145,15 @@ export function NodeConfigPanel({
           </div>
         </div>
 
-        {nodeData.componentId && Object.keys(getComponentSchema(nodeData.componentId, nodeData.type).properties || {}).length > 0 && (
+        {nodeData.componentId && (
           <div className="flex flex-col flex-1 min-h-0 mt-4">
-            <Label htmlFor="yaml-config" className="mb-2">Component Configuration</Label>
+            <Label className="mb-2">Component Configuration</Label>
             <div className="flex-1 min-h-0 overflow-y-auto">
-              <InlineYamlEditor
-                schema={getComponentSchema(nodeData.componentId, nodeData.type)}
-                value={nodeData.configYaml || ""}
-                onChange={(yamlValue: string) => handleDebouncedUpdate("configYaml", yamlValue)}
-                availableProcessors={allComponentSchemas.processor.map(p => ({
-                  id: p.id,
-                  name: p.name,
-                  component: p.component,
-                  type: p.type,
-                  schema: p.schema
-                }))}
-                availableInputs={allComponentSchemas.input.map(i => ({
-                  id: i.id,
-                  name: i.name,
-                  component: i.component,
-                  type: i.type,
-                  schema: i.schema
-                }))}
-                availableOutputs={allComponentSchemas.output.map(o => ({
-                  id: o.id,
-                  name: o.name,
-                  component: o.component,
-                  type: o.type,
-                  schema: o.schema
-                }))}
+              <ConfigEditor
+                category={nodeData.type as ComponentCategory}
+                componentId={nodeData.componentId}
+                configYaml={nodeData.configYaml ?? ""}
+                onChange={handleConfigChange}
               />
             </div>
           </div>
@@ -219,5 +168,65 @@ export function NodeConfigPanel({
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+interface ConfigEditorProps {
+  category: ComponentCategory;
+  componentId: string;
+  configYaml: string;
+  onChange: (yaml: string) => void;
+}
+
+function ConfigEditor({
+  category,
+  componentId,
+  configYaml,
+  onChange,
+}: ConfigEditorProps) {
+  const component = getComponent(category, componentId);
+
+  const parsed = useMemo(() => {
+    if (!component) return null;
+    try {
+      return component.parse(configYaml);
+    } catch {
+      return component.defaultConfig;
+    }
+  }, [component, configYaml]);
+
+  const errors = useMemo(() => {
+    if (!component || parsed === null) return undefined;
+    const result = component.configSchema.safeParse(parsed);
+    return result.success ? undefined : flattenZodErrors(result.error);
+  }, [component, parsed]);
+
+  if (!component) {
+    return (
+      <p className="text-sm text-destructive">
+        Unknown component: {category}:{componentId}
+      </p>
+    );
+  }
+
+  const Editor = component.Editor;
+
+  const handleChange = (next: unknown) => {
+    const yaml = component.serialize(next as never);
+    onChange(yaml);
+  };
+
+  return (
+    <Suspense
+      fallback={
+        <p className="text-sm text-muted-foreground">Loading editor...</p>
+      }
+    >
+      <Editor
+        value={parsed as never}
+        onChange={handleChange}
+        errors={errors}
+      />
+    </Suspense>
   );
 }

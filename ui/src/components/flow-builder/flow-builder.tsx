@@ -30,10 +30,13 @@ import {
   Workflow,
   Upload,
 } from "lucide-react";
+import { NodeConfigPanel } from "./node-config-panel";
 import {
-  NodeConfigPanel,
-  type AllComponentSchemas,
-} from "./node-config-panel";
+  getComponent as getRegisteredComponent,
+  type FlowCatalog,
+} from "@/components/flow-components/registry";
+import { listItemToRaw } from "@/components/flow-components/utils/list-items";
+import type { ComponentCategory } from "@/components/flow-components/types";
 import { ComponentPicker } from "./component-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -138,7 +141,7 @@ type TryFlowResult = {
 };
 
 interface FlowBuilderProps {
-  allComponentSchemas: AllComponentSchemas;
+  allComponentSchemas: FlowCatalog;
   initialData?: {
     name: string;
     status: string;
@@ -243,6 +246,33 @@ function isBrokerSequential(pattern: string | undefined): boolean {
 
 function makeInternalEdgeData(): Record<string, unknown> {
   return { internal: true };
+}
+
+function childToListEntry(
+  category: ComponentCategory,
+  componentId: string | undefined,
+  configYaml: string | undefined,
+): Record<string, unknown> {
+  const name = componentId || "";
+  if (!name) return {};
+  const component = getRegisteredComponent(category, name);
+  if (component) {
+    try {
+      const parsed = component.parse(configYaml ?? "");
+      return listItemToRaw(category, { componentId: name, config: parsed });
+    } catch {
+      return { [name]: {} };
+    }
+  }
+  if (configYaml?.trim()) {
+    try {
+      const config = yaml.load(configYaml) || {};
+      return { [name]: config };
+    } catch {
+      return { [name]: {} };
+    }
+  }
+  return { [name]: {} };
 }
 
 // Migrate old nested processor switch groups to decision tree layout
@@ -2513,72 +2543,27 @@ function FlowBuilderContent({
         return { isValid: false, missingFields: ["component selection"] };
       }
 
-      const component = allComponentSchemas[nodeData.type]?.find((c) => c.id === nodeData.componentId);
-      const schema = component?.schema || {};
-      const properties = schema.properties || {};
-
-      if (Object.keys(properties).length === 0) {
+      const component = getRegisteredComponent(nodeData.type, nodeData.componentId);
+      if (!component) {
         return { isValid: true, missingFields: [] };
       }
 
-      // flat: true schemas whose properties are all raw code (e.g. Bloblang mappings)
-      // store the field value verbatim, not as YAML. Skip yaml.load to avoid false
-      // "Invalid YAML format" errors when the code contains YAML-significant chars.
-      const isFlatCode =
-        schema.flat === true &&
-        Object.values(properties).every((p: any) => p?.type === "code");
-
-      if (isFlatCode) {
-        const hasContent = !!nodeData.configYaml && nodeData.configYaml.trim().length > 0;
-        if (hasContent) {
-          return { isValid: true, missingFields: [] };
-        }
-        const missingFields: string[] = [];
-        Object.entries(properties).forEach(([fieldKey, fieldSchema]) => {
-          if ((fieldSchema as any).required === true && missingFields.length === 0) {
-            missingFields.push(fieldKey);
-          }
-        });
-        return { isValid: missingFields.length === 0, missingFields };
+      let parsed: unknown;
+      try {
+        parsed = component.parse(nodeData.configYaml ?? "");
+      } catch {
+        return { isValid: false, missingFields: [], error: "Invalid YAML format" };
       }
-
-      let configData: any = {};
-      if (nodeData.configYaml && nodeData.configYaml.trim()) {
-        try {
-          configData = yaml.load(nodeData.configYaml) || {};
-        } catch {
-          return { isValid: false, missingFields: [], error: "Invalid YAML format" };
-        }
+      const result = component.configSchema.safeParse(parsed);
+      if (result.success) {
+        return { isValid: true, missingFields: [] };
       }
-
-      const missingFields: string[] = [];
-
-      if (schema.flat === true) {
-        const hasContent =
-          Object.keys(configData).length > 0 ||
-          (Array.isArray(configData) && configData.length > 0) ||
-          (typeof configData === "string" && configData.trim().length > 0);
-        if (!hasContent) {
-          Object.entries(properties).forEach(([fieldKey, fieldSchema]) => {
-            if ((fieldSchema as any).required === true && missingFields.length === 0) {
-              missingFields.push(fieldKey);
-            }
-          });
-        }
-      } else {
-        Object.entries(properties).forEach(([fieldKey, fieldSchema]) => {
-          if ((fieldSchema as any).required === true) {
-            const value = configData[fieldKey];
-            if (value === undefined || value === null || value === "") {
-              missingFields.push(fieldKey);
-            }
-          }
-        });
-      }
-
-      return { isValid: missingFields.length === 0, missingFields };
+      const missing = result.error.issues
+        .map((issue) => issue.path.join("."))
+        .filter((p) => p.length > 0);
+      return { isValid: missing.length === 0, missingFields: missing };
     },
-    [allComponentSchemas]
+    []
   );
 
   const findDisconnectedNodes = useCallback((): Set<string> => {
@@ -2677,19 +2662,12 @@ function FlowBuilderContent({
       const children = nodes.filter((cn) => cn.parentId === groupNode.id).sort((a, b) => a.position.y - b.position.y);
       const childConfigs = children.map((child) => {
         const cd = child.data as StreamFlowNodeData;
-        const comp = allComponentSchemas.processor.find((c) => c.id === cd.componentId);
-        const componentName = comp?.component || cd.componentId || "";
-        const entry: any = {};
-        if (comp?.schema?.flat) {
-          entry[componentName] = cd.configYaml?.trim() || "";
-        } else {
-          let config: any = {};
-          if (cd.configYaml?.trim()) { try { config = yaml.load(cd.configYaml) || {}; } catch {} }
-          entry[componentName] = config;
-        }
-        if (cd.label) {
-          entry.label = cd.label;
-        }
+        const entry: Record<string, unknown> = childToListEntry(
+          "processor",
+          cd.componentId,
+          cd.configYaml,
+        );
+        if (cd.label) entry.label = cd.label;
         return entry;
       });
       const catchYaml = childConfigs.length > 0
@@ -2706,19 +2684,12 @@ function FlowBuilderContent({
       const children = nodes.filter((cn) => cn.parentId === groupNode.id).sort((a, b) => a.position.y - b.position.y);
       const childConfigs = children.map((child) => {
         const cd = child.data as StreamFlowNodeData;
-        const comp = allComponentSchemas.processor.find((c) => c.id === cd.componentId);
-        const componentName = comp?.component || cd.componentId || "";
-        const entry: any = {};
-        if (comp?.schema?.flat) {
-          entry[componentName] = cd.configYaml?.trim() || "";
-        } else {
-          let config: any = {};
-          if (cd.configYaml?.trim()) { try { config = yaml.load(cd.configYaml) || {}; } catch {} }
-          entry[componentName] = config;
-        }
-        if (cd.label) {
-          entry.label = cd.label;
-        }
+        const entry: Record<string, unknown> = childToListEntry(
+          "processor",
+          cd.componentId,
+          cd.configYaml,
+        );
+        if (cd.label) entry.label = cd.label;
         return entry;
       });
 
@@ -2746,19 +2717,12 @@ function FlowBuilderContent({
       // Build outputs array from children
       const outputsList = children.map((child) => {
         const cd = child.data as StreamFlowNodeData;
-        const comp = allComponentSchemas.output.find((c) => c.id === cd.componentId);
-        const componentName = comp?.component || cd.componentId || "";
-        const entry: any = {};
-        if (comp?.schema?.flat) {
-          entry[componentName] = cd.configYaml?.trim() || "";
-        } else {
-          let config: any = {};
-          if (cd.configYaml?.trim()) { try { config = yaml.load(cd.configYaml) || {}; } catch {} }
-          entry[componentName] = config;
-        }
-        if (cd.label) {
-          entry.label = cd.label;
-        }
+        const entry: Record<string, unknown> = childToListEntry(
+          "output",
+          cd.componentId,
+          cd.configYaml,
+        );
+        if (cd.label) entry.label = cd.label;
         return entry;
       });
 
@@ -2791,19 +2755,12 @@ function FlowBuilderContent({
 
       const inputsList = children.map((child) => {
         const cd = child.data as StreamFlowNodeData;
-        const comp = allComponentSchemas.input.find((c) => c.id === cd.componentId);
-        const componentName = comp?.component || cd.componentId || "";
-        const entry: any = {};
-        if (comp?.schema?.flat) {
-          entry[componentName] = cd.configYaml?.trim() || "";
-        } else {
-          let config: any = {};
-          if (cd.configYaml?.trim()) { try { config = yaml.load(cd.configYaml) || {}; } catch {} }
-          entry[componentName] = config;
-        }
-        if (cd.label) {
-          entry.label = cd.label;
-        }
+        const entry: Record<string, unknown> = childToListEntry(
+          "input",
+          cd.componentId,
+          cd.configYaml,
+        );
+        if (cd.label) entry.label = cd.label;
         return entry;
       });
 
@@ -2835,20 +2792,14 @@ function FlowBuilderContent({
 
       const casesList = caseStarts.map((caseNode) => {
         const cd = caseNode.data as StreamFlowNodeData;
-        const comp = allComponentSchemas.output.find((c) => c.id === cd.componentId);
-        const componentName = comp?.component || cd.componentId || "";
         const caseEntry: any = {};
         const check = (cd as any).caseCheck;
         if (check) caseEntry.check = check;
-        const output: any = {};
-        if (comp?.schema?.flat) {
-          output[componentName] = cd.configYaml?.trim() || "";
-        } else {
-          let config: any = {};
-          if (cd.configYaml?.trim()) { try { config = yaml.load(cd.configYaml) || {}; } catch {} }
-          output[componentName] = config;
-        }
-        caseEntry.output = output;
+        caseEntry.output = childToListEntry(
+          "output",
+          cd.componentId,
+          cd.configYaml,
+        );
         if ((cd as any).caseContinue === true) caseEntry.continue = true;
         return caseEntry;
       });
@@ -2895,17 +2846,9 @@ function FlowBuilderContent({
           const nextNode = nodes.find((n) => n.id === outEdge.target);
           if (!nextNode || nextNode.type !== "processorNode") break;
           const pd = nextNode.data as StreamFlowNodeData;
-          const comp = allComponentSchemas.processor.find((c) => c.id === pd.componentId);
-          const componentName = comp?.component || pd.componentId || "";
-          const procObj: any = {};
-          if (comp?.schema?.flat) {
-            procObj[componentName] = pd.configYaml?.trim() || "";
-          } else {
-            let config: any = {};
-            if (pd.configYaml?.trim()) { try { config = yaml.load(pd.configYaml) || {}; } catch {} }
-            procObj[componentName] = config;
-          }
-          processorsList.push(procObj);
+          processorsList.push(
+            childToListEntry("processor", pd.componentId, pd.configYaml),
+          );
           currentId = nextNode.id;
         }
 
@@ -3853,7 +3796,6 @@ function FlowBuilderContent({
                 })()}
                 <NodeConfigPanel
                   key={editingNodeId || "none"}
-                  allComponentSchemas={editingNode?.isGroupChild || editingNode?.isSwitchCaseProc || editingNode?.isOutputCaseStart ? childFilteredSchemas : allComponentSchemas}
                   selectedNode={editingNode}
                   onUpdateNode={handleUpdateNode}
                   onDeleteNode={(id) => { handleDeleteNode(id); setEditingNodeId(null); }}

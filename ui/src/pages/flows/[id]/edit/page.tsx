@@ -4,11 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/toast";
 import { FlowBuilder } from "@/components/flow-builder/flow-builder";
 import { fetchStream, updateFlow, validateFlow, tryFlow } from "@/lib/api";
-import { 
-  componentSchemas as rawComponentSchemas, 
-  componentLists 
-} from "@/lib/component-schemas";
-import type { AllComponentSchemas } from "@/components/flow-builder/node-config-panel";
+import { getFlowCatalog, type FlowCatalog } from "@/components/flow-components/registry";
 
 // Define StreamNodeData type locally since the file was deleted
 export interface StreamNodeData {
@@ -20,37 +16,6 @@ export interface StreamNodeData {
   status?: string;
 }
 
-const transformComponentSchemas = (): AllComponentSchemas => {
-  const allSchemas: AllComponentSchemas = {
-    input: [],
-    processor: [],
-    output: [],
-  };
-
-  for (const typeKey of ["input", "pipeline", "output"] as const) {
-    const list = componentLists[typeKey] || [];
-    const targetTypeForApp = typeKey === 'pipeline' ? 'processor' : typeKey;
-    
-    let schemaCategory: typeof rawComponentSchemas.input | typeof rawComponentSchemas.pipeline | typeof rawComponentSchemas.output | undefined;
-    if (typeKey === 'input') schemaCategory = rawComponentSchemas.input;
-    else if (typeKey === 'pipeline') schemaCategory = rawComponentSchemas.pipeline;
-    else if (typeKey === 'output') schemaCategory = rawComponentSchemas.output;
-
-    list.forEach((componentName: string) => {
-      const rawSchema = schemaCategory?.[componentName as keyof typeof schemaCategory];
-      if (rawSchema) {
-        allSchemas[targetTypeForApp].push({
-          id: componentName,
-          name: (rawSchema as any).title || componentName,
-          component: componentName,
-          type: targetTypeForApp,
-          schema: rawSchema,
-        });
-      }
-    });
-  }
-  return allSchemas;
-};
 
 export default function EditStreamPage() {
   const navigate = useNavigate();
@@ -66,7 +31,7 @@ export default function EditStreamPage() {
     nodes: StreamNodeData[];
     builderState?: string;
   } | null>(null);
-  const [transformedSchemas, setTransformedSchemas] = useState<AllComponentSchemas | null>(null);
+  const [transformedSchemas, setTransformedSchemas] = useState<FlowCatalog | null>(null);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -77,8 +42,7 @@ export default function EditStreamPage() {
       try {
         setIsLoading(true);
         
-        // Load schemas and stream data
-        const schemas = transformComponentSchemas();
+        const schemas = getFlowCatalog();
         setTransformedSchemas(schemas);
         
         const streamResponse = await fetchStream(id || "");

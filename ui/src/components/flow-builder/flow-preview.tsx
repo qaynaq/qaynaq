@@ -11,11 +11,7 @@ import "@xyflow/react/dist/style.css";
 import { v4 as uuidv4 } from "uuid";
 import * as yaml from "js-yaml";
 import { Flow } from "@/lib/entities";
-import {
-  componentSchemas as rawComponentSchemas,
-  componentLists,
-} from "@/lib/component-schemas";
-import type { AllComponentSchemas } from "./node-config-panel";
+import { getFlowCatalog } from "@/components/flow-components/registry";
 
 import { InputNode } from "./nodes/input-node";
 import { ProcessorNode } from "./nodes/processor-node";
@@ -96,48 +92,12 @@ function calcSwitchGroupHeight(childCount: number): number {
   return SWITCH_CHILD_Y_START + childCount * CHILD_NODE_HEIGHT + (childCount - 1) * CHILD_GAP_Y + GROUP_BOTTOM_PAD;
 }
 
-const transformComponentSchemas = (): AllComponentSchemas => {
-  const allSchemas: AllComponentSchemas = {
-    input: [],
-    processor: [],
-    output: [],
-  };
-
-  for (const typeKey of ["input", "pipeline", "output"] as const) {
-    const list = componentLists[typeKey] || [];
-    const targetTypeForApp = typeKey === "pipeline" ? "processor" : typeKey;
-
-    let schemaCategory:
-      | typeof rawComponentSchemas.input
-      | typeof rawComponentSchemas.pipeline
-      | typeof rawComponentSchemas.output
-      | undefined;
-    if (typeKey === "input") schemaCategory = rawComponentSchemas.input;
-    else if (typeKey === "pipeline") schemaCategory = rawComponentSchemas.pipeline;
-    else if (typeKey === "output") schemaCategory = rawComponentSchemas.output;
-
-    list.forEach((componentName: string) => {
-      const rawSchema = schemaCategory?.[componentName as keyof typeof schemaCategory];
-      if (rawSchema) {
-        allSchemas[targetTypeForApp].push({
-          id: componentName,
-          name: (rawSchema as any).title || componentName,
-          component: componentName,
-          type: targetTypeForApp,
-          schema: rawSchema,
-        });
-      }
-    });
-  }
-  return allSchemas;
-};
-
 interface FlowPreviewProps {
   flow: Flow;
 }
 
 function FlowPreviewContent({ flow }: FlowPreviewProps) {
-  const componentSchemas = useMemo(() => transformComponentSchemas(), []);
+  const componentSchemas = useMemo(() => getFlowCatalog(), []);
   const [colorMode, setColorMode] = useState<ColorMode>("light");
 
   useEffect(() => {
