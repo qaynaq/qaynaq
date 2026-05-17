@@ -6,7 +6,6 @@ import { FlowBuilder } from "@/components/flow-builder/flow-builder";
 import { fetchStream, updateFlow, validateFlow, tryFlow } from "@/lib/api";
 import { getFlowCatalog, type FlowCatalog } from "@/components/flow-components/registry";
 
-// Define StreamNodeData type locally since the file was deleted
 export interface StreamNodeData {
   label: string;
   type: "input" | "processor" | "output";
@@ -47,16 +46,13 @@ export default function EditStreamPage() {
         
         const streamResponse = await fetchStream(id || "");
         
-        // Helper function to get component display name with schemas available
         const getDisplayName = (componentId: string, type: "input" | "processor" | "output"): string => {
           const component = schemas[type].find((c) => c.id === componentId);
           return component ? `${component.name} (${component.component})` : componentId;
         };
         
-        // Create visual data from the stream configuration
         const nodes: StreamNodeData[] = [];
 
-        // Create input node
         const inputNode: StreamNodeData = {
           label: streamResponse.input_label || "Input",
           type: "input",
@@ -67,7 +63,6 @@ export default function EditStreamPage() {
         };
         nodes.push(inputNode);
 
-        // Create processor nodes
         if (streamResponse.processors && streamResponse.processors.length > 0) {
           streamResponse.processors.forEach((processor: any) => {
             const processorNode: StreamNodeData = {
@@ -82,7 +77,6 @@ export default function EditStreamPage() {
           });
         }
 
-        // Create output node
         const outputNode: StreamNodeData = {
           label: streamResponse.output_label || "Output",
           type: "output",
@@ -213,7 +207,6 @@ export default function EditStreamPage() {
         variant: "success",
       });
 
-      // Navigate back to the streams list
       navigate("/flows");
     } catch (error) {
       addToast({
@@ -226,14 +219,6 @@ export default function EditStreamPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Helper to get component display name
-  const getComponentDisplayName = (componentId: string, type: "input" | "processor" | "output"): string => {
-    if (!transformedSchemas) return componentId;
-    
-    const component = transformedSchemas[type].find((c) => c.id === componentId);
-    return component ? `${component.name} (${component.component})` : componentId;
   };
 
   if (isLoading || !transformedSchemas) {
