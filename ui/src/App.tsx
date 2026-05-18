@@ -47,6 +47,8 @@ const ClientsSettings = lazy(() => import("./pages/settings/clients.tsx"));
 const MCPServersPage = lazy(() => import("./pages/mcp-servers/page.tsx"));
 const OAuthConsentPage = lazy(() => import("./pages/oauth/consent.tsx"));
 const OAuthErrorPage = lazy(() => import("./pages/oauth/error.tsx"));
+const McpAccessPage = lazy(() => import("./pages/mcp-access/page.tsx"));
+const NoAccessPage = lazy(() => import("./pages/no-access/page.tsx"));
 
 const RouteFallback: React.FC = () => (
   <div className="flex h-full min-h-[200px] items-center justify-center p-8 text-sm text-muted-foreground">
@@ -106,6 +108,14 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/oauth/error" element={<OAuthErrorPage />} />
             <Route
+              path="/no-access"
+              element={
+                <ProtectedRoute requireRole="none">
+                  <NoAccessPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/oauth/consent"
               element={
                 <ProtectedRoute>
@@ -114,9 +124,17 @@ function App() {
               }
             />
             <Route
+              path="/mcp-access"
+              element={
+                <ProtectedRoute requireRole="mcp">
+                  <McpAccessPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requireRole="admin">
                   <AppLayout />
                 </ProtectedRoute>
               }

@@ -6,7 +6,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,11 +104,12 @@ export default function LoginPage() {
         <ThemeSwitcher />
       </div>
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            Qaynaq
-          </CardTitle>
-          <CardDescription className="text-center">
+        <CardHeader className="space-y-3 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <img src="/logo.png" alt="Qaynaq" className="h-16 w-auto" />
+            <span className="text-2xl font-bold">Qaynaq</span>
+          </div>
+          <CardDescription>
             Sign in to access your dashboard
           </CardDescription>
         </CardHeader>
