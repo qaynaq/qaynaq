@@ -64,14 +64,14 @@ func buildAuthConfig(ctx *cli.Context) *config.AuthConfig {
 		BasicPassword:           expandStr(ctx, "auth.basic-password"),
 		OAuth2ClientID:          expandStr(ctx, "auth.oauth2-client-id"),
 		OAuth2ClientSecret:      expandStr(ctx, "auth.oauth2-client-secret"),
-		OAuth2AuthorizationURL:  expandStr(ctx, "auth.oauth2-authorization-url"),
-		OAuth2TokenURL:          expandStr(ctx, "auth.oauth2-token-url"),
-		OAuth2RedirectURL:       expandStr(ctx, "auth.oauth2-redirect-url"),
+		OAuth2IssuerURL:         strings.TrimRight(expandStr(ctx, "auth.oauth2-issuer-url"), "/"),
 		OAuth2Scopes:            splitComma(expandStr(ctx, "auth.oauth2-scopes")),
-		OAuth2UserInfoURL:       expandStr(ctx, "auth.oauth2-user-info-url"),
 		OAuth2AllowedUsers:      splitComma(expandStr(ctx, "auth.oauth2-allowed-users")),
 		OAuth2AllowedDomains:    splitComma(expandStr(ctx, "auth.oauth2-allowed-domains")),
 		OAuth2SessionCookieName: expandStr(ctx, "auth.oauth2-session-cookie-name"),
+		OAuth2RoleAttributePath: expandStr(ctx, "auth.oauth2-role-attribute-path"),
+		OAuth2AdminUsers:        splitComma(expandStr(ctx, "auth.oauth2-admin-users")),
+		OAuth2MCPUsers:          splitComma(expandStr(ctx, "auth.oauth2-mcp-users")),
 	}
 }
 

@@ -18,14 +18,15 @@ type AuthConfig struct {
 
 	OAuth2ClientID          string
 	OAuth2ClientSecret      string
-	OAuth2AuthorizationURL  string
-	OAuth2TokenURL          string
-	OAuth2RedirectURL       string
+	OAuth2IssuerURL         string
 	OAuth2Scopes            []string
-	OAuth2UserInfoURL       string
 	OAuth2AllowedUsers      []string
 	OAuth2AllowedDomains    []string
 	OAuth2SessionCookieName string
+
+	OAuth2RoleAttributePath string
+	OAuth2AdminUsers        []string
+	OAuth2MCPUsers          []string
 }
 
 func (c *AuthConfig) Validate() error {
@@ -44,14 +45,8 @@ func (c *AuthConfig) Validate() error {
 		if c.OAuth2ClientSecret == "" {
 			return fmt.Errorf("oauth2 requires auth.oauth2-client-secret")
 		}
-		if c.OAuth2AuthorizationURL == "" {
-			return fmt.Errorf("oauth2 requires auth.oauth2-authorization-url")
-		}
-		if c.OAuth2TokenURL == "" {
-			return fmt.Errorf("oauth2 requires auth.oauth2-token-url")
-		}
-		if c.OAuth2RedirectURL == "" {
-			return fmt.Errorf("oauth2 requires auth.oauth2-redirect-url")
+		if c.OAuth2IssuerURL == "" {
+			return fmt.Errorf("oauth2 requires auth.oauth2-issuer-url (the OIDC issuer; we discover the rest via .well-known/openid-configuration)")
 		}
 		return nil
 	default:

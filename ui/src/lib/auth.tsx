@@ -6,11 +6,15 @@ import React, {
   ReactNode,
 } from "react";
 
+export type UserRole = "admin" | "mcp" | "";
+
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   authType: string;
   token: string | null;
+  role: UserRole;
+  email: string;
   login: (token: string) => Promise<void>;
   logout: () => void;
 }
@@ -29,11 +33,28 @@ async function exchangeSessionCookie(token: string): Promise<void> {
   }
 }
 
+async function fetchSession(): Promise<{ authenticated: boolean; role: UserRole; email: string }> {
+  try {
+    const resp = await fetch("/auth/session", { credentials: "include" });
+    if (!resp.ok) return { authenticated: false, role: "", email: "" };
+    const data = await resp.json();
+    return {
+      authenticated: !!data.authenticated,
+      role: (data.role || "") as UserRole,
+      email: data.email || "",
+    };
+  } catch {
+    return { authenticated: false, role: "", email: "" };
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [authType, setAuthType] = useState("none");
   const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<UserRole>("");
+  const [email, setEmail] = useState<string>("");
 
   useEffect(() => {
     const savedToken = localStorage.getItem("qaynaq_token");
@@ -56,17 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (authTypeValue === "none") {
           setIsAuthenticated(true);
+          setRole("admin");
         } else {
-          const savedToken = localStorage.getItem("qaynaq_token");
-          if (savedToken) {
-            setToken(savedToken);
+          const session = await fetchSession();
+          if (session.authenticated) {
             setIsAuthenticated(true);
-            // Mirror the localStorage token into a session cookie so
-            // cross-document navigations (MCP OAuth /authorize, server-side
-            // redirects) can identify the user. Best-effort.
-            void exchangeSessionCookie(savedToken);
+            setRole(session.role);
+            setEmail(session.email);
+            const savedToken = localStorage.getItem("qaynaq_token");
+            if (savedToken) {
+              setToken(savedToken);
+            }
           } else {
             setIsAuthenticated(false);
+            localStorage.removeItem("qaynaq_token");
           }
         }
       } else {
@@ -86,20 +110,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(newToken);
     setIsAuthenticated(true);
     await exchangeSessionCookie(newToken);
+    const session = await fetchSession();
+    setRole(session.role);
+    setEmail(session.email);
   };
 
   const logout = async () => {
     const savedToken = localStorage.getItem("qaynaq_token");
+    const headers: Record<string, string> = {};
     if (savedToken) {
+      headers.Authorization = `Bearer ${savedToken}`;
+    }
+    try {
+      // credentials:"include" is required so the browser sends our session
+      // cookie and accepts the Set-Cookie that clears it server-side.
       await fetch("/auth/logout", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${savedToken}`,
-        },
-        // credentials:"include" is required so the browser sends our session
-        // cookie and accepts the Set-Cookie that clears it server-side.
+        headers,
         credentials: "include",
       });
+    } catch (error) {
+      console.error("Logout request failed:", error);
     }
     localStorage.removeItem("qaynaq_token");
     setToken(null);
@@ -109,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, isLoading, authType, token, login, logout }}
+      value={{ isAuthenticated, isLoading, authType, token, role, email, login, logout }}
     >
       {children}
     </AuthContext.Provider>

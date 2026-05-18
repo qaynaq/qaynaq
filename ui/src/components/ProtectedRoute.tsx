@@ -1,12 +1,19 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/lib/auth';
+import { useAuth, UserRole } from '@/lib/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireRole?: 'admin' | 'mcp' | 'none';
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+const homeForRole = (role: UserRole): string => {
+  if (role === 'admin') return '/';
+  if (role === 'mcp') return '/mcp-access';
+  return '/no-access';
+};
+
+export default function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading, role } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -27,6 +34,13 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         ? `/login?return_to=${encodeURIComponent(target)}`
         : '/login';
     return <Navigate to={dest} replace />;
+  }
+
+  if (requireRole) {
+    const userRole: 'admin' | 'mcp' | 'none' = role === '' ? 'none' : role;
+    if (userRole !== requireRole) {
+      return <Navigate to={homeForRole(role)} replace />;
+    }
   }
 
   return <>{children}</>;

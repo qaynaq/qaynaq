@@ -35,14 +35,14 @@ auth:
 
   # oauth2-client-id: ""
   # oauth2-client-secret: ""
-  # oauth2-authorization-url: ""
-  # oauth2-token-url: ""
-  # oauth2-redirect-url: ""
+  # oauth2-issuer-url: ""    # e.g. https://accounts.google.com or http://localhost:8090/realms/qaynaq
   # oauth2-scopes: "openid,email,profile"
-  # oauth2-user-info-url: ""
   # oauth2-allowed-users: ""
   # oauth2-allowed-domains: ""
   # oauth2-session-cookie-name: qaynaq_session
+  # oauth2-admin-users: ""              # email patterns granted Admin role (supports globs)
+  # oauth2-mcp-users: ""                # email patterns granted MCP-only role
+  # oauth2-role-attribute-path: ""      # JMESPath against userinfo claims returning Admin/MCP
 
 # ====================
 # MCP OAuth

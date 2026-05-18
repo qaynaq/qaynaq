@@ -40,15 +40,13 @@ Set the following environment variables to connect Qaynaq to Keycloak:
 export AUTH_TYPE=oauth2
 export AUTH_OAUTH2_CLIENT_ID=qaynaq
 export AUTH_OAUTH2_CLIENT_SECRET=qaynaq-secret-change-in-production
-export AUTH_OAUTH2_AUTHORIZATION_URL=http://localhost:8090/realms/qaynaq/protocol/openid-connect/auth
-export AUTH_OAUTH2_TOKEN_URL=http://keycloak:8080/realms/qaynaq/protocol/openid-connect/token
-export AUTH_OAUTH2_REDIRECT_URL=http://localhost:8080/auth/callback
-export AUTH_OAUTH2_SCOPES=openid,email,profile
-export AUTH_OAUTH2_USER_INFO_URL=http://keycloak:8080/realms/qaynaq/protocol/openid-connect/userinfo
+export AUTH_OAUTH2_ISSUER_URL=http://localhost:8090/realms/qaynaq
 ```
 
+Qaynaq fetches `http://localhost:8090/realms/qaynaq/.well-known/openid-configuration` at startup and discovers the authorization, token, and userinfo endpoints from there. The redirect URL is derived from the request host, so no extra config is needed for the standard `localhost:8080/auth/callback` flow.
+
 :::tip
-The authorization URL uses `localhost:8090` because it's accessed from the user's browser. The token and user info URLs use `keycloak:8080` because they're accessed server-side within the Docker network.
+Use the same hostname for browser-side and server-side access to the issuer when possible. If Qaynaq and Keycloak are split across Docker network and the browser (so the issuer host differs between them), give Keycloak a `KC_HOSTNAME` that resolves the same way from both, or run them on the same host network.
 :::
 
 ## Create Users
@@ -73,7 +71,7 @@ export AUTH_OAUTH2_ALLOWED_USERS=alice@company.com,bob@company.com
 export AUTH_OAUTH2_ALLOWED_DOMAINS=company.com
 ```
 
-See [Authentication](/docs/getting-started/authentication#access-restrictions) for more details.
+See [Authentication](/docs/getting-started/authentication#access-restrictions) for more details. To split signed-in users into Admin and MCP-only roles (for example, mapped from Keycloak group claims), see [Access Control](/docs/guides/access-control).
 
 ## Production Considerations
 
@@ -85,6 +83,5 @@ For production deployments:
 
 - Create your own Keycloak realm and client with a strong client secret.
 - Enable HTTPS on both Keycloak and Qaynaq.
-- Update the authorization, token, and user info URLs to use your production Keycloak domain.
-- Set `AUTH_OAUTH2_REDIRECT_URL` to your production Qaynaq URL (e.g., `https://qaynaq.example.com/auth/callback`).
-- Configure the Keycloak client's **Valid redirect URIs** to match your production redirect URL.
+- Set `AUTH_OAUTH2_ISSUER_URL` to your production Keycloak realm URL (e.g. `https://keycloak.example.com/realms/qaynaq`).
+- Configure the Keycloak client's **Valid redirect URIs** to match your production Qaynaq host (e.g. `https://qaynaq.example.com/auth/callback`).

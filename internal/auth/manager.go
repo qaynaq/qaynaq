@@ -12,6 +12,7 @@ import (
 
 type Manager struct {
 	authType      config.AuthType
+	authConfig    *config.AuthConfig
 	basicHandler  *BasicAuthHandler
 	oauth2Handler *OAuth2Handler
 }
@@ -22,7 +23,8 @@ func NewManager(cfg *config.AuthConfig, secretKey string) (*Manager, error) {
 	}
 
 	manager := &Manager{
-		authType: cfg.Type,
+		authType:   cfg.Type,
+		authConfig: cfg,
 	}
 
 	switch cfg.Type {
@@ -32,7 +34,11 @@ func NewManager(cfg *config.AuthConfig, secretKey string) (*Manager, error) {
 		manager.basicHandler = NewBasicAuthHandler(cfg, secretKey)
 		log.Info().Msg("Basic authentication enabled")
 	case config.AuthTypeOAuth2:
-		manager.oauth2Handler = NewOAuth2Handler(cfg, secretKey)
+		oauth2Handler, err := NewOAuth2Handler(cfg, secretKey)
+		if err != nil {
+			return nil, err
+		}
+		manager.oauth2Handler = oauth2Handler
 		log.Info().Msg("OAuth2 authentication enabled")
 	}
 
@@ -100,27 +106,114 @@ func (m *Manager) HandleAuthInfo(w http.ResponseWriter, r *http.Request) {
 func (m *Manager) HandleSessionCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	response := map[string]any{"authenticated": false, "role": "", "email": ""}
+
 	if m.authType == config.AuthTypeNone {
-		_ = json.NewEncoder(w).Encode(map[string]bool{"authenticated": true})
+		response["authenticated"] = true
+		response["role"] = RoleAdmin
+		_ = json.NewEncoder(w).Encode(response)
 		return
 	}
-
-	authenticated := false
 
 	switch m.authType {
 	case config.AuthTypeBasic:
 		cookie, err := r.Cookie("qaynaq_session")
 		if err == nil {
-			authenticated = m.basicHandler.isValidSession(cookie.Value)
+			claims, vErr := m.basicHandler.jwtManager.ValidateToken(cookie.Value)
+			if vErr == nil && claims.AuthType == "basic" {
+				response["authenticated"] = true
+				response["role"] = RoleAdmin
+				response["email"] = claims.UserID
+			}
 		}
 	case config.AuthTypeOAuth2:
 		cookie, err := r.Cookie(m.oauth2Handler.cookieName)
 		if err == nil {
-			authenticated = m.oauth2Handler.isValidSession(cookie.Value)
+			claims, vErr := m.oauth2Handler.jwtManager.ValidateToken(cookie.Value)
+			if vErr == nil && claims.AuthType == "oauth2" {
+				response["authenticated"] = true
+				response["email"] = claims.Email
+				if claims.Claims == nil {
+					response["role"] = RoleAdmin
+				} else {
+					response["role"] = EvaluateRole(m.authConfig, claims.Claims, claims.Email)
+				}
+			}
 		}
 	}
 
-	_ = json.NewEncoder(w).Encode(map[string]bool{"authenticated": authenticated})
+	_ = json.NewEncoder(w).Encode(response)
+}
+
+func (m *Manager) RequireRole(required string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if m.authType == config.AuthTypeNone {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if m.authType == config.AuthTypeBasic {
+				if required == RoleAdmin {
+					next.ServeHTTP(w, r)
+					return
+				}
+				m.denyRole(w, r)
+				return
+			}
+
+			if m.authType != config.AuthTypeOAuth2 || m.oauth2Handler == nil {
+				m.denyRole(w, r)
+				return
+			}
+
+			token := extractBearer(r.Header.Get("Authorization"))
+			if token == "" {
+				if cookie, err := r.Cookie(m.oauth2Handler.cookieName); err == nil {
+					token = cookie.Value
+				}
+			}
+			if token == "" {
+				m.denyRole(w, r)
+				return
+			}
+			claims, err := m.oauth2Handler.jwtManager.ValidateToken(token)
+			if err != nil || claims.AuthType != "oauth2" {
+				m.denyRole(w, r)
+				return
+			}
+
+			role := ""
+			if claims.Claims == nil {
+				role = RoleAdmin
+			} else {
+				role = EvaluateRole(m.authConfig, claims.Claims, claims.Email)
+			}
+
+			if role != required {
+				m.denyRole(w, r)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func (m *Manager) denyRole(w http.ResponseWriter, r *http.Request) {
+	if strings.Contains(r.Header.Get("Accept"), "application/json") || strings.HasPrefix(r.URL.Path, "/api/") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":"forbidden: role required"}`))
+		return
+	}
+	http.Redirect(w, r, "/no-access", http.StatusTemporaryRedirect)
+}
+
+func extractBearer(header string) string {
+	if !strings.HasPrefix(header, "Bearer ") {
+		return ""
+	}
+	return strings.TrimPrefix(header, "Bearer ")
 }
 
 // HandleExchange writes the SPA's localStorage JWT (sent as a Bearer header)

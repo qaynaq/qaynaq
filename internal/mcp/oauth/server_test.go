@@ -152,13 +152,18 @@ func (r *fakeRefreshRepo) ListActiveSessions() ([]persistence.OAuthSession, erro
 
 type fakeSession struct {
 	email string
+	role  string
 }
 
-func (s fakeSession) ResolveUser(_ *http.Request) (string, bool) {
+func (s fakeSession) ResolveUser(_ *http.Request) (string, string, bool) {
 	if s.email == "" {
-		return "", false
+		return "", "", false
 	}
-	return s.email, true
+	role := s.role
+	if role == "" {
+		role = "admin"
+	}
+	return s.email, role, true
 }
 func (s fakeSession) AuthType() config.AuthType { return config.AuthTypeOAuth2 }
 func (s fakeSession) LoginRedirectPath() string { return "/auth/login" }

@@ -31,14 +31,14 @@ All Qaynaq settings can be configured via environment variables.
 | `AUTH_BASIC_PASSWORD` | string | — | Password for basic auth |
 | `AUTH_OAUTH2_CLIENT_ID` | string | — | OAuth2 client ID |
 | `AUTH_OAUTH2_CLIENT_SECRET` | string | — | OAuth2 client secret |
-| `AUTH_OAUTH2_AUTHORIZATION_URL` | string | — | OAuth2 authorization endpoint |
-| `AUTH_OAUTH2_TOKEN_URL` | string | — | OAuth2 token endpoint |
-| `AUTH_OAUTH2_REDIRECT_URL` | string | — | OAuth2 redirect URL (e.g., `http://localhost:8080/auth/callback`) |
-| `AUTH_OAUTH2_SCOPES` | string | — | Comma-separated OAuth2 scopes |
-| `AUTH_OAUTH2_USER_INFO_URL` | string | — | OAuth2 user info endpoint |
+| `AUTH_OAUTH2_ISSUER_URL` | string | — | OIDC issuer URL (e.g. `https://accounts.google.com`, `http://localhost:8090/realms/qaynaq`). Qaynaq discovers the authorization, token, and userinfo endpoints from `<issuer>/.well-known/openid-configuration` at startup. |
+| `AUTH_OAUTH2_SCOPES` | string | `openid,email,profile` | Comma-separated OAuth2 scopes |
 | `AUTH_OAUTH2_ALLOWED_USERS` | string | — | Comma-separated allowed email addresses |
 | `AUTH_OAUTH2_ALLOWED_DOMAINS` | string | — | Comma-separated allowed email domains |
 | `AUTH_OAUTH2_SESSION_COOKIE_NAME` | string | `qaynaq_session` | Session cookie name |
+| `AUTH_OAUTH2_ADMIN_USERS` | string | — | Comma-separated email patterns granted Admin role (supports `*@x.com`, `sales-*@x.com`). See [Access Control](/docs/guides/access-control). |
+| `AUTH_OAUTH2_MCP_USERS` | string | — | Comma-separated email patterns granted MCP-only role. |
+| `AUTH_OAUTH2_ROLE_ATTRIBUTE_PATH` | string | — | JMESPath expression against userinfo claims that returns `Admin`, `MCP`, or anything else (no role). |
 
 See [Authentication](/docs/getting-started/authentication) for setup instructions.
 
