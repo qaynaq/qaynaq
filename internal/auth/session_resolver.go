@@ -18,26 +18,32 @@ func NewSessionResolver(m *Manager) *SessionResolver {
 	return &SessionResolver{manager: m}
 }
 
-func (s *SessionResolver) ResolveUser(r *http.Request) (string, bool) {
+func (s *SessionResolver) ResolveUser(r *http.Request) (string, string, bool) {
 	switch s.manager.authType {
 	case config.AuthTypeNone:
-		return "anonymous@qaynaq.local", true
+		return "anonymous@qaynaq.local", RoleAdmin, true
 	case config.AuthTypeOAuth2:
 		if s.manager.oauth2Handler == nil {
-			return "", false
+			return "", "", false
 		}
 		cookie, err := r.Cookie(s.manager.oauth2Handler.cookieName)
 		if err != nil {
-			return "", false
+			return "", "", false
 		}
 		claims, err := s.manager.oauth2Handler.jwtManager.ValidateToken(cookie.Value)
 		if err != nil || claims.AuthType != "oauth2" {
-			return "", false
+			return "", "", false
 		}
-		return claims.Email, true
+		role := ""
+		if claims.Claims == nil {
+			role = RoleAdmin
+		} else {
+			role = EvaluateRole(s.manager.authConfig, claims.Claims, claims.Email)
+		}
+		return claims.Email, role, true
 	case config.AuthTypeBasic:
 		if s.manager.basicHandler == nil {
-			return "", false
+			return "", "", false
 		}
 		// Prefer the cookie set by /auth/exchange; fall back to Bearer for
 		// the same-origin SPA case.
@@ -47,20 +53,20 @@ func (s *SessionResolver) ResolveUser(r *http.Request) (string, bool) {
 		} else {
 			authHeader := r.Header.Get("Authorization")
 			if !strings.HasPrefix(authHeader, "Bearer ") {
-				return "", false
+				return "", "", false
 			}
 			raw = strings.TrimPrefix(authHeader, "Bearer ")
 		}
 		claims, err := s.manager.basicHandler.jwtManager.ValidateToken(raw)
 		if err != nil || claims.AuthType != "basic" {
-			return "", false
+			return "", "", false
 		}
 		if claims.UserID == "" {
-			return s.manager.basicHandler.username, true
+			return s.manager.basicHandler.username, RoleAdmin, true
 		}
-		return claims.UserID, true
+		return claims.UserID, RoleAdmin, true
 	}
-	return "", false
+	return "", "", false
 }
 
 func (s *SessionResolver) AuthType() config.AuthType {

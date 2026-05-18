@@ -11,7 +11,7 @@ func TestJWTManager_GenerateToken(t *testing.T) {
 	secretKey := "test-secret-key-at-least-32-chars-long"
 	manager := NewJWTManager(secretKey, 1*time.Hour)
 
-	token, err := manager.GenerateToken("user123", "user@example.com", "basic")
+	token, err := manager.GenerateToken("user123", "user@example.com", "basic", nil)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -39,7 +39,8 @@ func TestJWTManager_ValidateToken(t *testing.T) {
 	email := "user@example.com"
 	authType := "oauth2"
 
-	token, err := manager.GenerateToken(userID, email, authType)
+	userClaims := map[string]any{"groups": []any{"qaynaq-admins"}}
+	token, err := manager.GenerateToken(userID, email, authType, userClaims)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -64,13 +65,17 @@ func TestJWTManager_ValidateToken(t *testing.T) {
 	if claims.Issuer != "qaynaq" {
 		t.Errorf("Expected Issuer 'qaynaq', got %s", claims.Issuer)
 	}
+
+	if claims.Claims == nil {
+		t.Error("Expected Claims map to round-trip, got nil")
+	}
 }
 
 func TestJWTManager_ValidateToken_InvalidSignature(t *testing.T) {
 	secretKey := "test-secret-key-at-least-32-chars-long"
 	manager := NewJWTManager(secretKey, 1*time.Hour)
 
-	token, err := manager.GenerateToken("user123", "user@example.com", "basic")
+	token, err := manager.GenerateToken("user123", "user@example.com", "basic", nil)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -87,7 +92,7 @@ func TestJWTManager_ValidateToken_Expired(t *testing.T) {
 	secretKey := "test-secret-key-at-least-32-chars-long"
 	manager := NewJWTManager(secretKey, 1*time.Millisecond)
 
-	token, err := manager.GenerateToken("user123", "user@example.com", "basic")
+	token, err := manager.GenerateToken("user123", "user@example.com", "basic", nil)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -128,7 +133,7 @@ func TestJWTManager_RefreshToken(t *testing.T) {
 	email := "user@example.com"
 	authType := "basic"
 
-	originalToken, err := manager.GenerateToken(userID, email, authType)
+	originalToken, err := manager.GenerateToken(userID, email, authType, nil)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -164,7 +169,7 @@ func TestJWTManager_RefreshToken_Expired(t *testing.T) {
 	secretKey := "test-secret-key-at-least-32-chars-long"
 	manager := NewJWTManager(secretKey, 1*time.Millisecond)
 
-	token, err := manager.GenerateToken("user123", "user@example.com", "basic")
+	token, err := manager.GenerateToken("user123", "user@example.com", "basic", nil)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -181,7 +186,7 @@ func TestJWTManager_DefaultDuration(t *testing.T) {
 	secretKey := "test-secret-key-at-least-32-chars-long"
 	manager := NewJWTManager(secretKey, 0) // 0 should use default
 
-	token, err := manager.GenerateToken("user123", "user@example.com", "basic")
+	token, err := manager.GenerateToken("user123", "user@example.com", "basic", nil)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -204,7 +209,7 @@ func TestJWTManager_TokenContainsExpectedClaims(t *testing.T) {
 	secretKey := "test-secret-key-at-least-32-chars-long"
 	manager := NewJWTManager(secretKey, 1*time.Hour)
 
-	token, err := manager.GenerateToken("user123", "user@example.com", "basic")
+	token, err := manager.GenerateToken("user123", "user@example.com", "basic", nil)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -251,7 +256,7 @@ func TestJWTManager_MultipleAuthTypes(t *testing.T) {
 	authTypes := []string{"basic", "oauth2", "custom"}
 
 	for _, authType := range authTypes {
-		token, err := manager.GenerateToken("user123", "user@example.com", authType)
+		token, err := manager.GenerateToken("user123", "user@example.com", authType, nil)
 		if err != nil {
 			t.Fatalf("Failed to generate token for auth type %s: %v", authType, err)
 		}

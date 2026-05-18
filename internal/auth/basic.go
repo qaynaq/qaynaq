@@ -69,7 +69,7 @@ func (h *BasicAuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.jwtManager.GenerateToken(loginReq.Username, "", "basic")
+	token, err := h.jwtManager.GenerateToken(loginReq.Username, "", "basic", nil)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate JWT token")
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)

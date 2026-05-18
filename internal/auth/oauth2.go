@@ -19,8 +19,13 @@ import (
 )
 
 type OAuth2Handler struct {
-	config         *oauth2.Config
+	clientID       string
+	clientSecret   string
+	authURL        string
+	tokenURL       string
 	userInfoURL    string
+	scopes         []string
+	authConfig     *config.AuthConfig
 	allowedUsers   map[string]bool
 	allowedDomains map[string]bool
 	jwtManager     *JWTManager
@@ -29,9 +34,17 @@ type OAuth2Handler struct {
 	stateStoreMux  sync.RWMutex
 }
 
+type oidcDiscovery struct {
+	Issuer                string `json:"issuer"`
+	AuthorizationEndpoint string `json:"authorization_endpoint"`
+	TokenEndpoint         string `json:"token_endpoint"`
+	UserInfoEndpoint      string `json:"userinfo_endpoint"`
+}
+
 type stateEntry struct {
-	expiresAt time.Time
-	returnTo  string
+	expiresAt   time.Time
+	returnTo    string
+	redirectURL string
 }
 
 type UserInfo struct {
@@ -41,17 +54,20 @@ type UserInfo struct {
 	Picture       string `json:"picture"`
 }
 
-func NewOAuth2Handler(cfg *config.AuthConfig, secretKey string) *OAuth2Handler {
-	oauth2Config := &oauth2.Config{
-		ClientID:     cfg.OAuth2ClientID,
-		ClientSecret: cfg.OAuth2ClientSecret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  cfg.OAuth2AuthorizationURL,
-			TokenURL: cfg.OAuth2TokenURL,
-		},
-		RedirectURL: cfg.OAuth2RedirectURL,
-		Scopes:      cfg.OAuth2Scopes,
+func NewOAuth2Handler(cfg *config.AuthConfig, secretKey string) (*OAuth2Handler, error) {
+	doc, err := discoverOIDC(cfg.OAuth2IssuerURL)
+	if err != nil {
+		return nil, fmt.Errorf("oauth2 OIDC discovery failed for %s: %w", cfg.OAuth2IssuerURL, err)
 	}
+	if doc.AuthorizationEndpoint == "" || doc.TokenEndpoint == "" || doc.UserInfoEndpoint == "" {
+		return nil, fmt.Errorf("oauth2 issuer %s does not publish a complete OIDC discovery document (authorization_endpoint, token_endpoint, userinfo_endpoint all required)", cfg.OAuth2IssuerURL)
+	}
+	log.Info().
+		Str("issuer", doc.Issuer).
+		Str("authorization_endpoint", doc.AuthorizationEndpoint).
+		Str("token_endpoint", doc.TokenEndpoint).
+		Str("userinfo_endpoint", doc.UserInfoEndpoint).
+		Msg("OIDC discovery succeeded")
 
 	allowedUsers := make(map[string]bool)
 	for _, user := range cfg.OAuth2AllowedUsers {
@@ -64,8 +80,13 @@ func NewOAuth2Handler(cfg *config.AuthConfig, secretKey string) *OAuth2Handler {
 	}
 
 	handler := &OAuth2Handler{
-		config:         oauth2Config,
-		userInfoURL:    cfg.OAuth2UserInfoURL,
+		clientID:       cfg.OAuth2ClientID,
+		clientSecret:   cfg.OAuth2ClientSecret,
+		authURL:        doc.AuthorizationEndpoint,
+		tokenURL:       doc.TokenEndpoint,
+		userInfoURL:    doc.UserInfoEndpoint,
+		scopes:         cfg.OAuth2Scopes,
+		authConfig:     cfg,
 		allowedUsers:   allowedUsers,
 		allowedDomains: allowedDomains,
 		jwtManager:     NewJWTManager(secretKey, 24*time.Hour),
@@ -75,7 +96,57 @@ func NewOAuth2Handler(cfg *config.AuthConfig, secretKey string) *OAuth2Handler {
 
 	go handler.cleanupExpiredStates()
 
-	return handler
+	return handler, nil
+}
+
+func discoverOIDC(issuer string) (*oidcDiscovery, error) {
+	if issuer == "" {
+		return nil, fmt.Errorf("issuer URL is empty")
+	}
+	discoveryURL := strings.TrimRight(issuer, "/") + "/.well-known/openid-configuration"
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(discoveryURL)
+	if err != nil {
+		return nil, fmt.Errorf("fetch %s: %w", discoveryURL, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GET %s returned %d", discoveryURL, resp.StatusCode)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read body: %w", err)
+	}
+	var doc oidcDiscovery
+	if err := json.Unmarshal(body, &doc); err != nil {
+		return nil, fmt.Errorf("parse discovery JSON: %w", err)
+	}
+	return &doc, nil
+}
+
+func (h *OAuth2Handler) oauth2Config(redirectURL string) *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     h.clientID,
+		ClientSecret: h.clientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  h.authURL,
+			TokenURL: h.tokenURL,
+		},
+		RedirectURL: redirectURL,
+		Scopes:      h.scopes,
+	}
+}
+
+func deriveRedirectURL(r *http.Request) string {
+	scheme := "http"
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
+	host := r.Host
+	if fwd := r.Header.Get("X-Forwarded-Host"); fwd != "" {
+		host = fwd
+	}
+	return fmt.Sprintf("%s://%s/auth/callback", scheme, host)
 }
 
 func (h *OAuth2Handler) Middleware(next http.Handler) http.Handler {
@@ -112,14 +183,17 @@ func (h *OAuth2Handler) Middleware(next http.Handler) http.Handler {
 func (h *OAuth2Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	state := h.generateState()
 	returnTo := safeReturnTo(r.URL.Query().Get("return_to"))
+	redirectURL := deriveRedirectURL(r)
 	h.stateStoreMux.Lock()
 	h.stateStore[state] = stateEntry{
-		expiresAt: time.Now().Add(10 * time.Minute),
-		returnTo:  returnTo,
+		expiresAt:   time.Now().Add(10 * time.Minute),
+		returnTo:    returnTo,
+		redirectURL: redirectURL,
 	}
 	h.stateStoreMux.Unlock()
 
-	url := h.config.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	cfg := h.oauth2Config(redirectURL)
+	url := cfg.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -139,14 +213,15 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.config.Exchange(context.Background(), code)
+	cfg := h.oauth2Config(entry.redirectURL)
+	token, err := cfg.Exchange(context.Background(), code)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to exchange OAuth2 code for token")
 		http.Redirect(w, r, "/login?error=token_exchange_failed", http.StatusTemporaryRedirect)
 		return
 	}
 
-	userInfo, err := h.fetchUserInfo(token)
+	userInfo, claimsMap, err := h.fetchUserInfo(cfg, token)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to fetch user info")
 		http.Redirect(w, r, "/login?error=user_info_failed", http.StatusTemporaryRedirect)
@@ -159,7 +234,14 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtToken, err := h.createJWTToken(userInfo.Email)
+	role := EvaluateRole(h.authConfig, claimsMap, userInfo.Email)
+	if role == "" {
+		log.Warn().Str("email", userInfo.Email).Msg("User authenticated but has no role mapping")
+		http.Redirect(w, r, "/no-access", http.StatusTemporaryRedirect)
+		return
+	}
+
+	jwtToken, err := h.createJWTToken(userInfo.Email, claimsMap)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create JWT token")
 		http.Redirect(w, r, "/login?error=token_generation_failed", http.StatusTemporaryRedirect)
@@ -197,22 +279,26 @@ func (h *OAuth2Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("Logged out successfully"))
 }
 
-func (h *OAuth2Handler) fetchUserInfo(token *oauth2.Token) (*UserInfo, error) {
+func (h *OAuth2Handler) fetchUserInfo(cfg *oauth2.Config, token *oauth2.Token) (*UserInfo, map[string]any, error) {
 	log.Debug().
 		Str("url", h.userInfoURL).
 		Bool("token_valid", token.Valid()).
 		Str("token_type", token.TokenType).
 		Msg("Fetching user info from OAuth2 provider")
 
-	client := h.config.Client(context.Background(), token)
+	client := cfg.Client(context.Background(), token)
 	resp, err := client.Get(h.userInfoURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user info: %w", err)
+		return nil, nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
+	bodyBytes, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return nil, nil, fmt.Errorf("failed to read user info body: %w", readErr)
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
 		log.Error().
 			Int("status", resp.StatusCode).
 			Str("url", h.userInfoURL).
@@ -220,15 +306,20 @@ func (h *OAuth2Handler) fetchUserInfo(token *oauth2.Token) (*UserInfo, error) {
 			Str("content_type", resp.Header.Get("Content-Type")).
 			Bool("token_valid", token.Valid()).
 			Msg("User info request failed - check OAuth2 provider configuration and token")
-		return nil, fmt.Errorf("user info request failed with status: %d", resp.StatusCode)
+		return nil, nil, fmt.Errorf("user info request failed with status: %d", resp.StatusCode)
+	}
+
+	var claimsMap map[string]any
+	if err := json.Unmarshal(bodyBytes, &claimsMap); err != nil {
+		return nil, nil, fmt.Errorf("failed to decode user info claims: %w", err)
 	}
 
 	var userInfo UserInfo
-	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
-		return nil, fmt.Errorf("failed to decode user info: %w", err)
+	if err := json.Unmarshal(bodyBytes, &userInfo); err != nil {
+		return nil, nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
 
-	return &userInfo, nil
+	return &userInfo, claimsMap, nil
 }
 
 func (h *OAuth2Handler) isUserAllowed(email string) bool {
@@ -253,8 +344,8 @@ func (h *OAuth2Handler) isUserAllowed(email string) bool {
 	return false
 }
 
-func (h *OAuth2Handler) createJWTToken(email string) (string, error) {
-	token, err := h.jwtManager.GenerateToken(email, email, "oauth2")
+func (h *OAuth2Handler) createJWTToken(email string, claims map[string]any) (string, error) {
+	token, err := h.jwtManager.GenerateToken(email, email, "oauth2", claims)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate JWT token: %w", err)
 	}

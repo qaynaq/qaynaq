@@ -39,11 +39,12 @@ const (
 	tokenIssuer   = "qaynaq"
 )
 
-// SessionResolver returns the authenticated user (email) associated with the
-// incoming HTTP request, sourced from the host application's session cookie.
-// When the host runs without auth, it returns an anonymous identity.
+// SessionResolver returns the authenticated user (email + role) associated
+// with the incoming HTTP request, sourced from the host application's session
+// cookie. When the host runs without auth, it returns an anonymous admin
+// identity.
 type SessionResolver interface {
-	ResolveUser(r *http.Request) (email string, ok bool)
+	ResolveUser(r *http.Request) (email string, role string, ok bool)
 	AuthType() config.AuthType
 	LoginRedirectPath() string
 }
@@ -313,9 +314,13 @@ func (s *Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, ok := s.session.ResolveUser(r)
+	email, role, ok := s.session.ResolveUser(r)
 	if !ok {
 		s.redirectToLogin(w, r)
+		return
+	}
+	if role == "" {
+		http.Redirect(w, r, "/no-access", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -433,9 +438,13 @@ func buildErrorRedirect(redirectURI, state, code, description string) string {
 // /api/v0/mcp/oauth/consent-request. GET fetches metadata for the consent
 // page, POST records the user's decision and returns a redirect URL.
 func (s *Server) HandleConsentRequest(w http.ResponseWriter, r *http.Request) {
-	email, ok := s.session.ResolveUser(r)
+	email, role, ok := s.session.ResolveUser(r)
 	if !ok {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "not authenticated"})
+		return
+	}
+	if role == "" {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "no role assigned"})
 		return
 	}
 

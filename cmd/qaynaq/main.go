@@ -119,29 +119,15 @@ func main() {
 				EnvVars: []string{"AUTH_OAUTH2_CLIENT_SECRET"},
 			}),
 			altsrc.NewStringFlag(&cli.StringFlag{
-				Name:    "auth.oauth2-authorization-url",
-				Usage:   "OAuth2 authorization endpoint",
-				EnvVars: []string{"AUTH_OAUTH2_AUTHORIZATION_URL"},
-			}),
-			altsrc.NewStringFlag(&cli.StringFlag{
-				Name:    "auth.oauth2-token-url",
-				Usage:   "OAuth2 token endpoint",
-				EnvVars: []string{"AUTH_OAUTH2_TOKEN_URL"},
-			}),
-			altsrc.NewStringFlag(&cli.StringFlag{
-				Name:    "auth.oauth2-redirect-url",
-				Usage:   "OAuth2 redirect/callback URL",
-				EnvVars: []string{"AUTH_OAUTH2_REDIRECT_URL"},
+				Name:    "auth.oauth2-issuer-url",
+				Usage:   "OIDC issuer URL (e.g. https://accounts.google.com or http://localhost:8090/realms/qaynaq) - endpoints are discovered via .well-known/openid-configuration",
+				EnvVars: []string{"AUTH_OAUTH2_ISSUER_URL"},
 			}),
 			altsrc.NewStringFlag(&cli.StringFlag{
 				Name:    "auth.oauth2-scopes",
-				Usage:   "OAuth2 scopes (comma-separated)",
+				Usage:   "OAuth2 scopes (comma-separated, defaults to openid,email,profile)",
 				EnvVars: []string{"AUTH_OAUTH2_SCOPES"},
-			}),
-			altsrc.NewStringFlag(&cli.StringFlag{
-				Name:    "auth.oauth2-user-info-url",
-				Usage:   "OAuth2 user info endpoint",
-				EnvVars: []string{"AUTH_OAUTH2_USER_INFO_URL"},
+				Value:   "openid,email,profile",
 			}),
 			altsrc.NewStringFlag(&cli.StringFlag{
 				Name:    "auth.oauth2-allowed-users",
@@ -158,6 +144,21 @@ func main() {
 				Usage:   "OAuth2 session cookie name",
 				EnvVars: []string{"AUTH_OAUTH2_SESSION_COOKIE_NAME"},
 				Value:   "qaynaq_session",
+			}),
+			altsrc.NewStringFlag(&cli.StringFlag{
+				Name:    "auth.oauth2-role-attribute-path",
+				Usage:   "JMESPath expression evaluated against OAuth2 userinfo claims to derive role (Admin, MCP, or other = no access)",
+				EnvVars: []string{"AUTH_OAUTH2_ROLE_ATTRIBUTE_PATH"},
+			}),
+			altsrc.NewStringFlag(&cli.StringFlag{
+				Name:    "auth.oauth2-admin-users",
+				Usage:   "OAuth2 admin user email patterns (comma-separated, supports globs like *@x.com)",
+				EnvVars: []string{"AUTH_OAUTH2_ADMIN_USERS"},
+			}),
+			altsrc.NewStringFlag(&cli.StringFlag{
+				Name:    "auth.oauth2-mcp-users",
+				Usage:   "OAuth2 MCP-only user email patterns (comma-separated, supports globs like *@x.com)",
+				EnvVars: []string{"AUTH_OAUTH2_MCP_USERS"},
 			}),
 			// MCP OAuth (separate from app auth: this lets MCP clients
 			// such as Claude Desktop authenticate via the OAuth 2.1 flow

@@ -221,7 +221,7 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 	if c.mcpOAuthServer != nil {
 		c.mcpOAuthServer.MountAPIRoutes(apiMux)
 	}
-	protectedAPI := c.authManager.Middleware(apiMux)
+	protectedAPI := c.authManager.RequireRole(auth.RoleAdmin)(c.authManager.Middleware(apiMux))
 	mainMux.Handle("/api/", http.StripPrefix("/api", protectedAPI))
 	mainMux.HandleFunc("/ingest/", func(w http.ResponseWriter, r *http.Request) {
 		statusCode, response, err := c.executor.ForwardRequestToWorker(r.Context(), r)
