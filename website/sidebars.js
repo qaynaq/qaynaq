@@ -106,6 +106,7 @@ const sidebars = {
         },
         "guides/scaling-workers",
         "guides/keycloak-authentication",
+        "guides/access-control",
       ],
     },
     {

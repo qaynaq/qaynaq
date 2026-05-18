@@ -85,11 +85,8 @@ OAuth2 mode lets you delegate authentication to an external identity provider. Q
 | `AUTH_TYPE` | Yes | Set to `oauth2` |
 | `AUTH_OAUTH2_CLIENT_ID` | Yes | OAuth2 client ID |
 | `AUTH_OAUTH2_CLIENT_SECRET` | Yes | OAuth2 client secret |
-| `AUTH_OAUTH2_AUTHORIZATION_URL` | Yes | Provider's authorization endpoint |
-| `AUTH_OAUTH2_TOKEN_URL` | Yes | Provider's token endpoint |
-| `AUTH_OAUTH2_REDIRECT_URL` | Yes | Callback URL (must be `http(s)://<your-host>/auth/callback`) |
-| `AUTH_OAUTH2_SCOPES` | No | Comma-separated scopes (e.g., `openid,email,profile`) |
-| `AUTH_OAUTH2_USER_INFO_URL` | No | Provider's user info endpoint |
+| `AUTH_OAUTH2_ISSUER_URL` | Yes | OIDC issuer URL (e.g. `https://accounts.google.com`, `http://localhost:8090/realms/qaynaq`). Qaynaq fetches `<issuer>/.well-known/openid-configuration` at startup and discovers the authorization, token, and userinfo endpoints. |
+| `AUTH_OAUTH2_SCOPES` | No | Comma-separated scopes (default: `openid,email,profile`) |
 | `AUTH_OAUTH2_ALLOWED_USERS` | No | Comma-separated list of allowed email addresses |
 | `AUTH_OAUTH2_ALLOWED_DOMAINS` | No | Comma-separated list of allowed email domains |
 | `AUTH_OAUTH2_SESSION_COOKIE_NAME` | No | Session cookie name (default: `qaynaq_session`) |
@@ -97,15 +94,13 @@ OAuth2 mode lets you delegate authentication to an external identity provider. Q
 
 ### Provider Requirements
 
-To connect any OAuth2/OIDC provider, you need the following from your provider's configuration:
+Qaynaq only supports OIDC-compliant providers. You need:
 
-1. **Authorization URL** -- where users are redirected to log in.
-2. **Token URL** -- where Qaynaq exchanges the authorization code for a token.
-3. **User Info URL** -- where Qaynaq fetches the user's email after authentication.
-4. **Client ID and Secret** -- created when you register Qaynaq as an application in your provider.
-5. **Redirect URL** -- set to `http(s)://<your-qaynaq-host>/auth/callback` in your provider's allowed redirect URIs.
+1. **Issuer URL** -- the base URL of your provider's OIDC realm. The provider must serve a valid `<issuer>/.well-known/openid-configuration` document containing `authorization_endpoint`, `token_endpoint`, and `userinfo_endpoint`.
+2. **Client ID and Secret** -- created when you register Qaynaq as a client in your provider.
+3. **Redirect URI** -- register `http(s)://<your-qaynaq-host>/auth/callback` as an allowed redirect URI in your provider's client configuration. Qaynaq derives this from the incoming request host at runtime.
 
-The provider must return a JSON response from the user info endpoint that includes an `email` field.
+The provider's userinfo endpoint must return a JSON response that includes an `email` field.
 
 ### Access Restrictions
 
