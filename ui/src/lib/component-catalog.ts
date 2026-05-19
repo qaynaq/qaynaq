@@ -87,6 +87,11 @@ const catalog: Record<NodeKind, Record<string, ComponentCatalogEntry>> = {
       icon: ShoppingBag,
       description: "Pull orders, products, and other data from Shopify.",
     },
+    file: {
+      group: "Local",
+      icon: FileText,
+      description: "Read messages from files on disk, with glob support.",
+    },
   },
   processor: {
     ai_gateway: {
@@ -261,6 +266,7 @@ export function groupComponents<T extends { id: string }>(
     "AI",
     "Google",
     "E-commerce",
+    "Local",
     "System",
     "Transform",
     "Flow control",

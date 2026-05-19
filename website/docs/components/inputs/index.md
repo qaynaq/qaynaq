@@ -17,3 +17,4 @@ Inputs define where data enters your pipeline. Select an input type when creatin
 | [CDC MySQL](/docs/components/inputs/cdc-mysql) | CDC from MySQL/MariaDB binlog |
 | [MCP Tool](/docs/components/inputs/mcp-tool) | Exposes a flow as a tool for AI assistants via MCP |
 | [Shopify](/docs/components/inputs/shopify) | Fetches data from Shopify stores |
+| [File](/docs/components/inputs/file) | Reads messages from files on disk, with glob support |
