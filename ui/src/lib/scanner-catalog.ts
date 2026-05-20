@@ -10,11 +10,17 @@ import {
   Layers,
   Package,
   ScanLine,
+  Sparkles,
   StopCircle,
   type LucideIcon,
 } from "lucide-react";
 
-export type ScannerGroup = "Text" | "Structured" | "Binary" | "Composite";
+export type ScannerGroup =
+  | "RAG"
+  | "Text"
+  | "Structured"
+  | "Binary"
+  | "Composite";
 
 export interface ScannerCatalogEntry {
   group: ScannerGroup;
@@ -23,6 +29,12 @@ export interface ScannerCatalogEntry {
 }
 
 const catalog: Record<string, ScannerCatalogEntry> = {
+  rag_chunker: {
+    group: "RAG",
+    icon: Sparkles,
+    description:
+      "Split text into overlapping chunks for RAG indexing, with recursive, token, or markdown strategies.",
+  },
   lines: {
     group: "Text",
     icon: AlignLeft,
@@ -96,7 +108,13 @@ export interface ScannerCatalogGroup<T> {
   items: T[];
 }
 
-const groupOrder: ScannerGroup[] = ["Text", "Structured", "Binary", "Composite"];
+const groupOrder: ScannerGroup[] = [
+  "RAG",
+  "Text",
+  "Structured",
+  "Binary",
+  "Composite",
+];
 
 export function groupScanners<T extends { id: string }>(
   scanners: T[],

@@ -87,6 +87,7 @@ const sidebars = {
           label: "Scanners",
           link: { type: "doc", id: "components/scanners/index" },
           items: [
+            "components/scanners/rag-chunker",
             "components/scanners/lines",
             "components/scanners/csv",
             "components/scanners/re-match",
