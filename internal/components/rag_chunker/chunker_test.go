@@ -61,13 +61,12 @@ func TestRecursiveSplit_RespectsChunkSize(t *testing.T) {
 	if len(chunks) < 2 {
 		t.Fatalf("expected multiple chunks, got %d", len(chunks))
 	}
-	// Each chunk should be within the upper bound. We allow chunkSize + overlap
-	// slack since the merge step packs splits up to chunkSize and then carries
-	// trailing splits forward.
-	max := 100 + 20
+	// chunkSize plus overlap, since the merge step packs splits up to chunkSize
+	// and then carries trailing splits forward.
+	upperBound := 100 + 20
 	for i, ch := range chunks {
-		if len(ch.Content) > max {
-			t.Fatalf("chunk %d exceeds bound: %d > %d", i, len(ch.Content), max)
+		if len(ch.Content) > upperBound {
+			t.Fatalf("chunk %d exceeds bound: %d > %d", i, len(ch.Content), upperBound)
 		}
 	}
 }
@@ -219,10 +218,10 @@ c body
 
 func TestParseHeading(t *testing.T) {
 	cases := []struct {
-		line   string
-		level  int
-		title  string
-		ok     bool
+		line  string
+		level int
+		title string
+		ok    bool
 	}{
 		{"# Hello", 1, "Hello", true},
 		{"### Nested  ", 3, "Nested", true},

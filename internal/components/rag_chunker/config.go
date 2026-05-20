@@ -3,9 +3,9 @@ package rag_chunker
 import "github.com/warpstreamlabs/bento/public/service"
 
 const (
-	fieldStrategy   = "strategy"
-	fieldChunkSize  = "chunk_size"
-	fieldOverlap    = "overlap"
+	fieldStrategy  = "strategy"
+	fieldChunkSize = "chunk_size"
+	fieldOverlap   = "overlap"
 )
 
 func configSpec() *service.ConfigSpec {
