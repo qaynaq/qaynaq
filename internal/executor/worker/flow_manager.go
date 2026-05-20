@@ -328,13 +328,18 @@ func (m *flowManager) StartFlow(ctx context.Context, workerFlowID int64) {
 
 			log.Info().Int64("worker_flow_id", workerFlowID).Str("status", string(flowStatus)).Msg("Finishing flow")
 
-			m.shipMetrics(ctx, workerFlowID, flow.TracingSummary)
+			// Cleanup RPCs must succeed even when the parent ctx is canceled
+			// (worker shutdown, user stop). Detach with a fresh timeout.
+			cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cleanupCancel()
+
+			m.shipMetrics(cleanupCtx, workerFlowID, flow.TracingSummary)
 
 			if err := m.DeleteFlow(workerFlowID); err != nil {
 				log.Debug().Err(err).Int64("worker_flow_id", workerFlowID).Msg("Flow already deleted")
 			}
 
-			if err := m.coordinatorConnection.UpdateWorkerFlowStatus(ctx, workerFlowID, pb.WorkerFlowStatus(pb.WorkerFlowStatus_value[string(flowStatus)])); err != nil {
+			if err := m.coordinatorConnection.UpdateWorkerFlowStatus(cleanupCtx, workerFlowID, pb.WorkerFlowStatus(pb.WorkerFlowStatus_value[string(flowStatus)])); err != nil {
 				log.Warn().
 					Err(err).
 					Int64("worker_flow_id", workerFlowID).
