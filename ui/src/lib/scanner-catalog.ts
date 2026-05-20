@@ -10,6 +10,7 @@ import {
   Layers,
   Package,
   ScanLine,
+  Sparkles,
   StopCircle,
   type LucideIcon,
 } from "lucide-react";
@@ -23,6 +24,12 @@ export interface ScannerCatalogEntry {
 }
 
 const catalog: Record<string, ScannerCatalogEntry> = {
+  rag_chunker: {
+    group: "Text",
+    icon: Sparkles,
+    description:
+      "Split text into overlapping chunks for RAG indexing, with recursive, token, or markdown strategies.",
+  },
   lines: {
     group: "Text",
     icon: AlignLeft,
