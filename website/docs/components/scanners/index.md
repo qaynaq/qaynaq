@@ -6,12 +6,6 @@ sidebar_position: 4
 
 Scanners turn a continuous byte stream into discrete messages. Wherever a component accepts a stream of data (file inputs, blob storage, HTTP downloads), you choose a scanner to decide how the bytes are split.
 
-## RAG
-
-| Scanner | Description |
-|---------|-------------|
-| [RAG Chunker](/docs/components/scanners/rag-chunker) | Split text into overlapping chunks for RAG indexing, with recursive, token, or markdown strategies |
-
 ## Text
 
 | Scanner | Description |
@@ -19,6 +13,7 @@ Scanners turn a continuous byte stream into discrete messages. Wherever a compon
 | [Lines](/docs/components/scanners/lines) | One message per line. The default for most text inputs |
 | [CSV](/docs/components/scanners/csv) | One message per CSV row, with header support |
 | [Regex Match](/docs/components/scanners/re-match) | Split wherever a regular expression matches |
+| [RAG Chunker](/docs/components/scanners/rag-chunker) | Split text into overlapping chunks for RAG indexing, with recursive, token, or markdown strategies |
 
 ## Structured
 
