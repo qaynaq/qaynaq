@@ -16,7 +16,7 @@ COPY ui ./ui
 RUN pnpm --prefix ui build
 
 # --- Go build stage -----------------------------------------------------------
-FROM golang:1.25 AS build
+FROM golang:1.26 AS build
 
 ENV CGO_ENABLED=1
 ENV GOOS=linux

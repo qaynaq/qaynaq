@@ -2,7 +2,9 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"reflect"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -76,7 +78,7 @@ func (t *telemetryManager) ShipLogs(ctx context.Context) {
 					for section, getEvents := range eventGetters {
 						for componentLabel, events := range getEvents(true) {
 							for _, event := range events {
-								metaStruct, err := structpb.NewStruct(event.Meta)
+								metaStruct, err := structpb.NewStruct(normalizeMeta(event.Meta))
 								if err != nil {
 									log.Error().
 										Err(err).
@@ -148,4 +150,52 @@ func (t *telemetryManager) ShipMetrics(ctx context.Context) {
 			log.Error().Err(err).Msg("Failed to send metrics")
 		}
 	}
+}
+
+// structpb.NewStruct accepts only nil, bool, float64, int (coerced), string,
+// []any, and map[string]any. Bento components like the NLP processors emit
+// typed slices (e.g. []int64 for output_shape), which trip the converter and
+// drop the whole event. Coerce anything unusual into a structpb-friendly shape.
+func normalizeMeta(in map[string]any) map[string]any {
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		out[k] = normalizeMetaValue(v)
+	}
+	return out
+}
+
+func normalizeMetaValue(v any) any {
+	switch x := v.(type) {
+	case nil, bool, string, []byte,
+		int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64:
+		return x
+	case []any:
+		out := make([]any, len(x))
+		for i, item := range x {
+			out[i] = normalizeMetaValue(item)
+		}
+		return out
+	case map[string]any:
+		return normalizeMeta(x)
+	}
+
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array:
+		out := make([]any, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			out[i] = normalizeMetaValue(rv.Index(i).Interface())
+		}
+		return out
+	case reflect.Map:
+		out := make(map[string]any, rv.Len())
+		iter := rv.MapRange()
+		for iter.Next() {
+			out[fmt.Sprint(iter.Key().Interface())] = normalizeMetaValue(iter.Value().Interface())
+		}
+		return out
+	}
+	return fmt.Sprint(v)
 }

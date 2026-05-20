@@ -9,6 +9,10 @@ Processors transform, validate, or route messages within a pipeline. They are ap
 | Component | Description |
 |-----------|-------------|
 | [AI Gateway](/docs/components/processors/ai-gateway) | Calls an AI chat completion API (OpenAI, Anthropic) |
+| [NLP Extract Features](/docs/components/processors/nlp-extract-features) | Embed text with an ONNX feature extraction model |
+| [NLP Classify Text](/docs/components/processors/nlp-classify-text) | Classify text with an ONNX classifier |
+| [NLP Classify Tokens](/docs/components/processors/nlp-classify-tokens) | Extract named entities or other token-level labels |
+| [NLP Zero-Shot Classify](/docs/components/processors/nlp-zero-shot-classify) | Classify text into arbitrary labels at runtime using an NLI model |
 | [Google Calendar](/docs/components/processors/google-calendar) | Google Calendar operations (events, calendars, availability) |
 | [Google Drive](/docs/components/processors/google-drive) | Google Drive operations (files, folders, permissions, shared drives) |
 | [Google Sheets](/docs/components/processors/google-sheets) | Google Sheets operations (spreadsheets, worksheets, rows, formatting) |
