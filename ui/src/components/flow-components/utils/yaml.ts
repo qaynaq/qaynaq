@@ -20,7 +20,9 @@ export function parseYaml<T>(
       ? { ...defaults, ...(raw as object) }
       : raw;
   const result = schema.safeParse(merged);
-  return result.success ? result.data : structuredClone(defaults);
+  // Validation failure (e.g. unfilled required field) must not wipe the user's
+  // input. Return the merged shape; errors surface via the editor's errors prop.
+  return result.success ? result.data : (merged as T);
 }
 
 export function serializeYaml<T>(config: T): string {

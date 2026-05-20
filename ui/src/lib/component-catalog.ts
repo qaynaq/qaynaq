@@ -20,8 +20,11 @@ import {
   Shuffle,
   Sparkles,
   Split,
+  Tag,
+  Tags,
   Terminal,
   TerminalSquare,
+  Wand2,
   Wrench,
   Zap,
   Code2,
@@ -98,6 +101,29 @@ const catalog: Record<NodeKind, Record<string, ComponentCatalogEntry>> = {
       group: "AI",
       icon: Sparkles,
       description: "Route requests to LLM providers with retries and caching.",
+    },
+    nlp_extract_features: {
+      group: "AI",
+      icon: Sparkles,
+      description:
+        "Embed text with an ONNX feature extraction model. Drop-in for RAG pipelines.",
+    },
+    nlp_classify_text: {
+      group: "AI",
+      icon: Tag,
+      description:
+        "Classify text with an ONNX classifier (sentiment, intent, topic).",
+    },
+    nlp_classify_tokens: {
+      group: "AI",
+      icon: Tags,
+      description: "Extract named entities or other token-level labels.",
+    },
+    nlp_zero_shot_classify: {
+      group: "AI",
+      icon: Wand2,
+      description:
+        "Classify text into arbitrary labels at runtime using an NLI model. No training required.",
     },
     google_calendar: {
       group: "Google",

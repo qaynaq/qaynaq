@@ -51,6 +51,10 @@ const sidebars = {
           link: { type: "doc", id: "components/processors/index" },
           items: [
             "components/processors/ai-gateway",
+            "components/processors/nlp-extract-features",
+            "components/processors/nlp-classify-text",
+            "components/processors/nlp-classify-tokens",
+            "components/processors/nlp-zero-shot-classify",
             "components/processors/google-calendar",
             "components/processors/google-drive",
             "components/processors/google-sheets",
