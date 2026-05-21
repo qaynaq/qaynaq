@@ -87,7 +87,7 @@ func (s *flowAssigner) AssignFlows(ctx context.Context) error {
 				Msg("Assigned job to worker")
 			worker.RunningFlowCount++
 		}
-		workerHeap.Push(worker)
+		heap.Push(workerHeap, worker)
 	}
 
 	return nil
