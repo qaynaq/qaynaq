@@ -62,17 +62,13 @@ func TestWorkerHeap_AssignmentLoopBalancesLoad(t *testing.T) {
 		heap.Push(h, w)
 	}
 
-	min, max := flows, 0
+	lo, hi := flows, 0
 	for _, c := range assignments {
-		if c < min {
-			min = c
-		}
-		if c > max {
-			max = c
-		}
+		lo = min(lo, c)
+		hi = max(hi, c)
 	}
-	if max-min > 1 {
-		t.Fatalf("load not balanced: %v (spread %d)", assignments, max-min)
+	if hi-lo > 1 {
+		t.Fatalf("load not balanced: %v (spread %d)", assignments, hi-lo)
 	}
 }
 
