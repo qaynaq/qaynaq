@@ -7,7 +7,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	_ "github.com/warpstreamlabs/bento/public/components/all"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
