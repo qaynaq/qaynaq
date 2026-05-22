@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 	"github.com/urfave/cli/v2/altsrc"
-	_ "github.com/warpstreamlabs/bento/public/components/all"
 )
 
 var (
