@@ -17,6 +17,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { v4 as uuidv4 } from "uuid";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Save,
@@ -2960,6 +2961,16 @@ function FlowBuilderContent({
       return;
     }
 
+    if (status === "failed") {
+      addToast({
+        id: "status-req",
+        title: "Status Required",
+        description: "Pick a status (Active, Paused, or Completed) to restart this flow.",
+        variant: "warning",
+      });
+      return;
+    }
+
     const inputNode = nodes.find((n) => (n.data as StreamFlowNodeData).type === "input");
     const outputNode = nodes.find((n) => (n.data as StreamFlowNodeData).type === "output");
 
@@ -3168,9 +3179,16 @@ function FlowBuilderContent({
           <Input id="stream-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter stream name" />
         </div>
         <div className="w-40">
-          <Label htmlFor="stream-status">Status</Label>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+          <div className="flex items-center justify-between mb-1 h-5">
+            <Label htmlFor="stream-status">Status</Label>
+            {initialData?.status === "failed" && (
+              <Badge variant="destructive">Failed</Badge>
+            )}
+          </div>
+          <Select value={status === "failed" ? "" : status} onValueChange={setStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder={status === "failed" ? "Pick to restart" : "Select status"} />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="paused">Paused</SelectItem>
@@ -3205,7 +3223,7 @@ function FlowBuilderContent({
             Try
           </Button>
         )}
-        <Button onClick={handleSave} disabled={!name.trim() || !hasInput || !hasOutput} className="flex items-center gap-1">
+        <Button onClick={handleSave} disabled={!name.trim() || !hasInput || !hasOutput || status === "failed"} className="flex items-center gap-1">
           <Save className="h-4 w-4" /> Save
         </Button>
       </div>
