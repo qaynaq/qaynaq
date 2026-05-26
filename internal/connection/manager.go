@@ -461,15 +461,19 @@ type TokenData struct {
 }
 
 type ConnectionInfo struct {
-	Name             string    `json:"name"`
-	Provider         string    `json:"provider"`
-	Scopes           []string  `json:"scopes"`
-	ClientID         string    `json:"client_id"`
-	ClientSecretHint string    `json:"client_secret_hint"`
-	Shop             string    `json:"shop,omitempty"`
-	CloudID          string    `json:"cloud_id,omitempty"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	Name                string     `json:"name"`
+	Provider            string     `json:"provider"`
+	Scopes              []string   `json:"scopes"`
+	ClientID            string     `json:"client_id"`
+	ClientSecretHint    string     `json:"client_secret_hint"`
+	Shop                string     `json:"shop,omitempty"`
+	CloudID             string     `json:"cloud_id,omitempty"`
+	LastError           string     `json:"last_error,omitempty"`
+	LastErrorAt         *time.Time `json:"last_error_at,omitempty"`
+	FirstFailedAt       *time.Time `json:"first_failed_at,omitempty"`
+	ConsecutiveFailures int        `json:"consecutive_failures"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
 }
 
 const refreshSafetyMargin = 2 * time.Minute
@@ -645,6 +649,10 @@ func (m *Manager) ReauthorizeConnection(name string, cfg Config, token *oauth2.T
 		return err
 	}
 
+	if err := m.connRepo.ClearError(name); err != nil {
+		log.Warn().Err(err).Str("connection", name).Msg("Failed to clear connection error state after re-authorize")
+	}
+
 	if token.AccessToken != "" {
 		m.cachePut(name, cachedAccessToken{accessToken: token.AccessToken, expiresAt: token.Expiry})
 	} else {
@@ -666,10 +674,14 @@ func (m *Manager) ListConnections() ([]ConnectionInfo, error) {
 	result := make([]ConnectionInfo, 0, len(conns))
 	for _, c := range conns {
 		info := ConnectionInfo{
-			Name:      c.Name,
-			Provider:  c.Provider,
-			CreatedAt: c.CreatedAt,
-			UpdatedAt: c.UpdatedAt,
+			Name:                c.Name,
+			Provider:            c.Provider,
+			LastError:           c.LastError,
+			LastErrorAt:         c.LastErrorAt,
+			FirstFailedAt:       c.FirstFailedAt,
+			ConsecutiveFailures: c.ConsecutiveFailures,
+			CreatedAt:           c.CreatedAt,
+			UpdatedAt:           c.UpdatedAt,
 		}
 		if c.EncryptedConfig != "" {
 			if configJSON, err := m.aesgcm.Decrypt(c.EncryptedConfig); err == nil {
@@ -819,7 +831,9 @@ func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string, fo
 	}
 
 	if token.RefreshToken == "" {
-		return AccessToken{}, fmt.Errorf("connection %q access token expired and no refresh token is available; re-authorize required", name)
+		err := fmt.Errorf("connection %q access token expired and no refresh token is available; re-authorize required", name)
+		m.recordFailure(name, err)
+		return AccessToken{}, err
 	}
 
 	endpoint, err := GetEndpoint(conn.Provider)
@@ -843,7 +857,9 @@ func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string, fo
 	src := oauth2Cfg.TokenSource(ctx, token)
 	newToken, err := src.Token()
 	if err != nil {
-		return AccessToken{}, fmt.Errorf("failed to refresh token for %q: %w", name, err)
+		wrapped := fmt.Errorf("failed to refresh token for %q: %w", name, err)
+		m.recordFailure(name, wrapped)
+		return AccessToken{}, wrapped
 	}
 
 	if newToken.RefreshToken == "" {
@@ -863,6 +879,12 @@ func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string, fo
 		return AccessToken{}, fmt.Errorf("failed to persist refreshed token: %w", err)
 	}
 
+	if conn.LastError != "" || conn.ConsecutiveFailures > 0 {
+		if err := m.connRepo.ClearError(name); err != nil {
+			log.Warn().Err(err).Str("connection", name).Msg("Failed to clear connection error state after successful refresh")
+		}
+	}
+
 	m.cachePut(name, cachedAccessToken{accessToken: newToken.AccessToken, expiresAt: newToken.Expiry})
 
 	log.Debug().
@@ -871,6 +893,12 @@ func (m *Manager) loadAndMaybeRefreshLocked(ctx context.Context, name string, fo
 		Msg("Refreshed OAuth access token")
 
 	return AccessToken{AccessToken: newToken.AccessToken, ExpiresAt: newToken.Expiry}, nil
+}
+
+func (m *Manager) recordFailure(name string, refreshErr error) {
+	if err := m.connRepo.RecordFailure(name, refreshErr.Error()); err != nil {
+		log.Warn().Err(err).Str("connection", name).Msg("Failed to record connection refresh failure")
+	}
 }
 
 func (m *Manager) decryptRow(conn *persistence.Connection) (*Config, *oauth2.Token, error) {

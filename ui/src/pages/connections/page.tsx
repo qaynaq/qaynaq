@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table";
-import { Plus, Link2, Eye, EyeOff, ExternalLink, RefreshCw, Search, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Link2, Eye, EyeOff, ExternalLink, RefreshCw, Search, Check, ChevronsUpDown, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Connection } from "@/lib/entities";
 import { fetchConnections, deleteConnection, fetchProviders, type Provider } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -40,6 +42,60 @@ import { cn, useRelativeTime } from "@/lib/utils";
 const RelativeTime = ({ dateString }: { dateString: string }) => {
   const relativeTime = useRelativeTime(dateString);
   return <span>{relativeTime}</span>;
+};
+
+const BACKOFF_THRESHOLD = 3;
+
+const ConnectionStatus = ({ conn }: { conn: Connection }) => {
+  const failingSince = useRelativeTime(conn.firstFailedAt || "");
+  const lastTriedAt = useRelativeTime(conn.lastErrorAt || "");
+
+  if (!conn.lastError) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+        Healthy
+      </span>
+    );
+  }
+
+  const inBackoff = conn.consecutiveFailures >= BACKOFF_THRESHOLD;
+
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant="destructive" className="cursor-help gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            {inBackoff ? "Re-authorize" : "Failing"}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" align="start" className="max-w-sm">
+          <div className="space-y-1.5">
+            <p className="font-medium text-destructive">
+              Token refresh failed
+              {conn.consecutiveFailures > 1 && (
+                <span className="text-muted-foreground font-normal"> ({conn.consecutiveFailures}x)</span>
+              )}
+            </p>
+            <p className="text-xs text-muted-foreground break-words">
+              {conn.lastError}
+            </p>
+            {conn.firstFailedAt && (
+              <p className="text-xs text-muted-foreground">
+                Failing since {failingSince} - last tried {lastTriedAt}
+              </p>
+            )}
+            {inBackoff && (
+              <p className="text-xs text-muted-foreground">
+                Retries throttled. Click Re-authorize to fix.
+              </p>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 };
 
 export default function ConnectionsPage() {
@@ -310,6 +366,11 @@ export default function ConnectionsPage() {
         const label = match?.display_name || (value ? value.charAt(0).toUpperCase() + value.slice(1) : "Unknown");
         return <span>{label}</span>;
       },
+    },
+    {
+      key: "lastError" as keyof Connection,
+      title: "Status",
+      render: (_: any, row: Connection) => <ConnectionStatus conn={row} />,
     },
     {
       key: "createdAt" as keyof Connection,

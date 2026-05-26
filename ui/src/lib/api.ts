@@ -569,6 +569,10 @@ export async function fetchConnections(): Promise<Connection[]> {
         clientSecretHint: conn.client_secret_hint || "",
         shop: conn.shop || undefined,
         cloudId: conn.cloud_id || undefined,
+        lastError: conn.last_error || undefined,
+        lastErrorAt: conn.last_error_at || undefined,
+        firstFailedAt: conn.first_failed_at || undefined,
+        consecutiveFailures: Number(conn.consecutive_failures) || 0,
         createdAt: conn.created_at
           ? new Date(conn.created_at).toLocaleString()
           : "Unknown",

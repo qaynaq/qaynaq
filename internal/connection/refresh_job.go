@@ -7,6 +7,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Some OAuth providers revoke refresh tokens under repeated failed exchanges,
+// so once a connection looks broken we back off and wait for re-authorize.
+const (
+	backoffThreshold = 3
+	backoffInterval  = 1 * time.Hour
+)
+
 // RefreshJob proactively rotates access tokens before they expire so
 // workers' caches don't have to.
 type RefreshJob struct {
@@ -59,8 +66,22 @@ func (j *RefreshJob) runOnce(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
+		if inBackoff(conn.ConsecutiveFailures, conn.LastErrorAt) {
+			log.Debug().
+				Str("connection", conn.Name).
+				Int("consecutive_failures", conn.ConsecutiveFailures).
+				Msg("Refresh job: skipping connection in backoff")
+			continue
+		}
 		if err := j.manager.RefreshIfExpiring(ctx, conn.Name); err != nil {
 			log.Warn().Err(err).Str("connection", conn.Name).Msg("Refresh job: failed to refresh connection")
 		}
 	}
+}
+
+func inBackoff(failures int, lastErrorAt *time.Time) bool {
+	if failures < backoffThreshold || lastErrorAt == nil {
+		return false
+	}
+	return time.Since(*lastErrorAt) < backoffInterval
 }

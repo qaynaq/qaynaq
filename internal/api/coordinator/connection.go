@@ -53,17 +53,26 @@ func (c *CoordinatorAPI) ListConnections(_ context.Context, _ *emptypb.Empty) (*
 	}
 
 	for i, conn := range connections {
-		result.Data[i] = &pb.ConnectionInfo{
-			Name:             conn.Name,
-			Provider:         conn.Provider,
-			Scopes:           conn.Scopes,
-			ClientId:         conn.ClientID,
-			ClientSecretHint: conn.ClientSecretHint,
-			Shop:             conn.Shop,
-			CloudId:          conn.CloudID,
-			CreatedAt:        timestamppb.New(conn.CreatedAt),
-			UpdatedAt:        timestamppb.New(conn.UpdatedAt),
+		info := &pb.ConnectionInfo{
+			Name:                conn.Name,
+			Provider:            conn.Provider,
+			Scopes:              conn.Scopes,
+			ClientId:            conn.ClientID,
+			ClientSecretHint:    conn.ClientSecretHint,
+			Shop:                conn.Shop,
+			CloudId:             conn.CloudID,
+			LastError:           conn.LastError,
+			ConsecutiveFailures: int32(conn.ConsecutiveFailures),
+			CreatedAt:           timestamppb.New(conn.CreatedAt),
+			UpdatedAt:           timestamppb.New(conn.UpdatedAt),
 		}
+		if conn.LastErrorAt != nil {
+			info.LastErrorAt = timestamppb.New(*conn.LastErrorAt)
+		}
+		if conn.FirstFailedAt != nil {
+			info.FirstFailedAt = timestamppb.New(*conn.FirstFailedAt)
+		}
+		result.Data[i] = info
 	}
 
 	return result, nil

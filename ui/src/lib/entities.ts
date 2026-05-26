@@ -22,6 +22,10 @@ export type Connection = {
   shop?: string;
   // cloudId is the Atlassian Cloud ID for cloudid-required providers.
   cloudId?: string;
+  lastError?: string;
+  lastErrorAt?: string;
+  firstFailedAt?: string;
+  consecutiveFailures: number;
   createdAt: string;
   updatedAt: string;
 };
