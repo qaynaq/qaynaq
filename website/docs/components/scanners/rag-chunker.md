@@ -2,6 +2,8 @@
 
 Splits text into overlapping chunks suitable for retrieval-augmented generation (RAG) indexing. Read a document with a file or blob input, scan it with the RAG Chunker, generate embeddings on each chunk, and write the result to a vector database.
 
+For a full end-to-end example, see the [RAG Knowledge Base for AI Assistants](/playbooks/rag-knowledge-base) playbook.
+
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | Strategy | enum | `Recursive` | How the text is broken up. See below |

@@ -2,6 +2,8 @@
 
 Runs an ONNX feature extraction model against the message and replaces its content with the resulting embedding vector. This is the embedding step in a RAG pipeline: combine it with the [RAG Chunker](/docs/components/scanners/rag-chunker) scanner and a vector store output.
 
+For a full end-to-end example, see the [RAG Knowledge Base for AI Assistants](/playbooks/rag-knowledge-base) playbook.
+
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | Name | string | required | Identifier for this pipeline instance. Must be unique within the flow |
