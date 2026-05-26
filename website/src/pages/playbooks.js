@@ -31,6 +31,13 @@ const playbooks = [
     href: "/playbooks/customer-support-agent",
     tags: ["mcp", "ai", "sqlite", "sql", "agent"],
   },
+  {
+    title: "RAG Knowledge Base for AI Assistants",
+    description:
+      "Build a RAG knowledge base over your documents and expose it to AI assistants as an MCP tool.",
+    href: "/playbooks/rag-knowledge-base",
+    tags: ["rag", "mcp", "ai", "postgresql", "pgvector", "embeddings"],
+  },
 ];
 
 export default function Playbooks() {

@@ -120,4 +120,4 @@ Each MCP Tool flow becomes a separate tool on the same `/mcp` endpoint. Create a
 
 To quickly deploy a full set of tools for a supported service, use [MCP Tool Packs](/docs/guides/mcp-tool-packs). Packs let you configure shared credentials once and create multiple tools at once.
 
-For a step-by-step example, see the [Build a Weather Tool for AI Assistants](/playbooks/mcp-weather-tool) playbook.
+For step-by-step examples, see the [Build a Weather Tool for AI Assistants](/playbooks/mcp-weather-tool) and [RAG Knowledge Base for AI Assistants](/playbooks/rag-knowledge-base) playbooks.
