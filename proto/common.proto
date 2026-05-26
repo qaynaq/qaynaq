@@ -85,6 +85,8 @@ message Flow {
   bool is_ready = 18 [json_name = "is_ready"];
   string builder_state = 19 [json_name = "builder_state"];
   optional string managed_by = 20 [json_name = "managed_by"];
+  string last_error = 21 [json_name = "last_error"];
+  optional google.protobuf.Timestamp last_error_at = 22 [json_name = "last_error_at"];
 }
 
 message Secret {

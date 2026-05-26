@@ -39,6 +39,8 @@ type Flow struct {
 	BuilderState    []byte     `json:"builder_state"`
 	ManagedBy       *string    `json:"managed_by"`
 	Status          FlowStatus `json:"status" gorm:"not null"`
+	LastError       string     `json:"last_error,omitempty"`
+	LastErrorAt     *time.Time `json:"last_error_at,omitempty"`
 	CreatedAt       time.Time  `json:"created_at" gorm:"not null"`
 	UpdatedAt       *time.Time `json:"updated_at"`
 
@@ -52,6 +54,11 @@ func (s *Flow) ToProto() *pb.Flow {
 	var updatedAt *timestamppb.Timestamp
 	if s.UpdatedAt != nil {
 		updatedAt = timestamppb.New(*s.UpdatedAt)
+	}
+
+	var lastErrorAt *timestamppb.Timestamp
+	if s.LastErrorAt != nil {
+		lastErrorAt = timestamppb.New(*s.LastErrorAt)
 	}
 
 	result := &pb.Flow{
@@ -71,6 +78,8 @@ func (s *Flow) ToProto() *pb.Flow {
 		BuilderState:    string(s.BuilderState),
 		ManagedBy:       s.ManagedBy,
 		Status:          string(s.Status),
+		LastError:       s.LastError,
+		LastErrorAt:     lastErrorAt,
 		CreatedAt:       timestamppb.New(s.CreatedAt),
 		UpdatedAt:       updatedAt,
 		IsHttpServer:    s.InputComponent == "http_server",
@@ -106,6 +115,11 @@ func (s *Flow) FromProto(p *pb.Flow) {
 	s.BuilderState = []byte(p.GetBuilderState())
 	s.ManagedBy = p.ManagedBy
 	s.Status = FlowStatus(p.GetStatus())
+	s.LastError = p.GetLastError()
+	if p.GetLastErrorAt() != nil {
+		lastErrorAt := p.GetLastErrorAt().AsTime()
+		s.LastErrorAt = &lastErrorAt
+	}
 	s.CreatedAt = p.CreatedAt.AsTime()
 	s.UpdatedAt = &updatedAt
 }
@@ -116,6 +130,7 @@ type FlowRepository interface {
 	FindByID(id int64) (*Flow, error)
 	FindByNameAndManagedBy(name string, managedBy string) (*Flow, error)
 	UpdateStatus(id int64, status FlowStatus) error
+	RecordFailure(id int64, reason string) error
 	Delete(id int64) error
 	ListAllByStatuses(...FlowStatus) ([]Flow, error)
 	ListAllActiveAndNonAssigned() ([]Flow, error)
@@ -206,10 +221,28 @@ func (r *flowRepository) FindByID(id int64) (*Flow, error) {
 }
 
 func (r *flowRepository) UpdateStatus(id int64, status FlowStatus) error {
+	updates := map[string]any{"status": status, "updated_at": time.Now()}
+	if status != FlowStatusFailed {
+		updates["last_error"] = ""
+		updates["last_error_at"] = nil
+	}
 	return r.db.
 		Model(&Flow{}).
 		Where("id = ?", id).
-		Updates(map[string]any{"status": status, "updated_at": time.Now()}).
+		Updates(updates).
+		Error
+}
+
+func (r *flowRepository) RecordFailure(id int64, reason string) error {
+	return r.db.
+		Model(&Flow{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"status":        FlowStatusFailed,
+			"last_error":    reason,
+			"last_error_at": gorm.Expr("CURRENT_TIMESTAMP"),
+			"updated_at":    time.Now(),
+		}).
 		Error
 }
 

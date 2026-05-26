@@ -20,6 +20,8 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Check,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Loader2,
   Plus,
@@ -38,8 +40,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { fetchAnalytics, fetchConnections, fetchSetupStatus } from "@/lib/api";
-import type { Analytics, Connection } from "@/lib/entities";
+import { fetchAnalytics, fetchConnections, fetchFailedFlows, fetchSetupStatus } from "@/lib/api";
+import type { Analytics, Connection, Flow } from "@/lib/entities";
+import { formatRelativeTime } from "@/lib/utils";
 import { WelcomeOverlay } from "@/components/first-run/welcome-overlay";
 import { DatabaseWizard, type DatabaseWizardResult } from "@/components/first-run/database-wizard";
 import { GoogleWorkspaceWizard, type GoogleWorkspaceResult } from "@/components/first-run/google-workspace-wizard";
@@ -100,9 +103,17 @@ function CopySnippet({ content }: { content: string }) {
   );
 }
 
+const COLLAPSE_THRESHOLD = 1;
+const MAX_ITEMS_EXPANDED = 5;
+
 function FailingConnectionsCard({ connections }: { connections: Connection[] }) {
   const navigate = useNavigate();
+  const collapsible = connections.length > COLLAPSE_THRESHOLD;
+  const [expanded, setExpanded] = useState(!collapsible);
   if (connections.length === 0) return null;
+
+  const visible = connections.slice(0, MAX_ITEMS_EXPANDED);
+  const remaining = connections.length - visible.length;
 
   return (
     <Card className="mb-6 border-destructive/40 bg-destructive/[0.03]">
@@ -110,38 +121,144 @@ function FailingConnectionsCard({ connections }: { connections: Connection[] }) 
         <div className="flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold">
-              {connections.length === 1
-                ? "1 connection is failing"
-                : `${connections.length} connections are failing`}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold">
+                {connections.length === 1
+                  ? "1 connection is failing"
+                  : `${connections.length} connections are failing`}
+              </p>
+              {collapsible && (
+                <button
+                  onClick={() => setExpanded((v) => !v)}
+                  className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                  aria-expanded={expanded}
+                >
+                  {expanded ? "Hide" : "Show"}
+                  {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               Token refresh is failing. Flows using these connections will stop working until they are re-authorized or removed.
             </p>
-            <ul className="mt-3 space-y-1.5">
-              {connections.map((conn) => (
-                <li key={conn.name} className="flex items-center gap-2 text-sm">
-                  <button
+            {expanded && (
+              <>
+                <ul className="mt-3 space-y-1.5">
+                  {visible.map((conn) => (
+                    <li key={conn.name} className="flex items-center gap-2 text-sm">
+                      <button
+                        onClick={() => navigate("/connections")}
+                        className="font-medium hover:underline"
+                      >
+                        {conn.name}
+                      </button>
+                      <span className="text-xs text-muted-foreground">
+                        ({conn.provider}
+                        {conn.consecutiveFailures > 1 && ` - ${conn.consecutiveFailures} attempts`})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-3 mt-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => navigate("/connections")}
-                    className="font-medium hover:underline"
                   >
-                    {conn.name}
-                  </button>
-                  <span className="text-xs text-muted-foreground">
-                    ({conn.provider}
-                    {conn.consecutiveFailures > 1 && ` - ${conn.consecutiveFailures} attempts`})
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-3"
-              onClick={() => navigate("/connections")}
-            >
-              Review connections
-            </Button>
+                    Review connections
+                  </Button>
+                  {remaining > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{remaining} more
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FailedFlowsCard({ flows }: { flows: Flow[] }) {
+  const navigate = useNavigate();
+  const collapsible = flows.length > COLLAPSE_THRESHOLD;
+  const [expanded, setExpanded] = useState(!collapsible);
+  if (flows.length === 0) return null;
+
+  const visible = flows.slice(0, MAX_ITEMS_EXPANDED);
+  const remaining = flows.length - visible.length;
+
+  return (
+    <Card className="mb-6 border-destructive/40 bg-destructive/[0.03]">
+      <CardContent className="pt-5 pb-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold">
+                {flows.length === 1
+                  ? "1 flow has failed"
+                  : `${flows.length} flows have failed`}
+              </p>
+              {collapsible && (
+                <button
+                  onClick={() => setExpanded((v) => !v)}
+                  className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                  aria-expanded={expanded}
+                >
+                  {expanded ? "Hide" : "Show"}
+                  {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              These flows stopped running after an error. Open each to review the cause and restart it.
+            </p>
+            {expanded && (
+              <>
+                <ul className="mt-3 space-y-1.5">
+                  {visible.map((flow) => (
+                    <li key={flow.id} className="text-sm">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <button
+                          onClick={() => navigate(`/flows/${flow.id}/edit`)}
+                          className="font-medium hover:underline text-left"
+                        >
+                          {flow.name}
+                        </button>
+                        {flow.last_error_at && (
+                          <span className="text-xs text-muted-foreground">
+                            ({formatRelativeTime(flow.last_error_at)})
+                          </span>
+                        )}
+                      </div>
+                      {flow.last_error && (
+                        <p className="text-xs text-muted-foreground truncate" title={flow.last_error}>
+                          {flow.last_error}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-3 mt-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate("/flows")}
+                  >
+                    View all
+                  </Button>
+                  {remaining > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{remaining} more
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </CardContent>
@@ -243,6 +360,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [data, setData] = useState<Analytics | null>(null);
   const [failingConnections, setFailingConnections] = useState<Connection[]>([]);
+  const [failedFlows, setFailedFlows] = useState<Flow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -276,6 +394,9 @@ export default function Home() {
     fetchConnections()
       .then((conns) => setFailingConnections(conns.filter((c) => c.lastError)))
       .catch(() => setFailingConnections([]));
+    fetchFailedFlows()
+      .then(setFailedFlows)
+      .catch(() => setFailedFlows([]));
   }, []);
 
   const handleSelectPath = (path: string) => {
@@ -439,6 +560,7 @@ export default function Home() {
       </div>
 
       <FailingConnectionsCard connections={failingConnections} />
+      <FailedFlowsCard flows={failedFlows} />
 
       {showNextSteps && <NextStepsCard onDismiss={handleDismissNextSteps} />}
 

@@ -246,6 +246,7 @@ type WorkerFlowStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	WorkerFlowId  int64                  `protobuf:"varint,1,opt,name=worker_flow_id,json=workerFlowId,proto3" json:"worker_flow_id,omitempty"`
 	Status        WorkerFlowStatus       `protobuf:"varint,2,opt,name=status,proto3,enum=protorender.WorkerFlowStatus" json:"status,omitempty"`
+	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -292,6 +293,13 @@ func (x *WorkerFlowStatusRequest) GetStatus() WorkerFlowStatus {
 		return x.Status
 	}
 	return WorkerFlowStatus_waiting
+}
+
+func (x *WorkerFlowStatusRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
 }
 
 type ListWorkersRequest struct {
@@ -4844,10 +4852,11 @@ const file_coordinator_proto_rawDesc = "" +
 	"\x11HeartbeatResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12@\n" +
 	"\x1drenewed_lease_worker_flow_ids\x18\x02 \x03(\x03R\x19renewedLeaseWorkerFlowIds\x12@\n" +
-	"\x1dexpired_lease_worker_flow_ids\x18\x03 \x03(\x03R\x19expiredLeaseWorkerFlowIds\"v\n" +
+	"\x1dexpired_lease_worker_flow_ids\x18\x03 \x03(\x03R\x19expiredLeaseWorkerFlowIds\"\x8e\x01\n" +
 	"\x17WorkerFlowStatusRequest\x12$\n" +
 	"\x0eworker_flow_id\x18\x01 \x01(\x03R\fworkerFlowId\x125\n" +
-	"\x06status\x18\x02 \x01(\x0e2\x1d.protorender.WorkerFlowStatusR\x06status\"J\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x1d.protorender.WorkerFlowStatusR\x06status\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"J\n" +
 	"\x12ListWorkersRequest\x124\n" +
 	"\x06status\x18\x01 \x01(\tB\x1c\xfaB\x19r\x17R\x06activeR\binactiveR\x03allR\x06status\"\xe3\x01\n" +
 	"\x13ListWorkersResponse\x12;\n" +

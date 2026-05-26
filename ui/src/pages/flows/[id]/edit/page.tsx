@@ -28,6 +28,8 @@ export default function EditStreamPage() {
     bufferId?: number;
     nodes: StreamNodeData[];
     builderState?: string;
+    last_error?: string;
+    last_error_at?: string;
   } | null>(null);
   const [catalog, setCatalog] = useState<FlowCatalog | null>(null);
   const loadedRef = useRef(false);
@@ -87,6 +89,8 @@ export default function EditStreamPage() {
           bufferId: streamResponse.buffer_id,
           nodes,
           builderState: streamResponse.builder_state,
+          last_error: streamResponse.last_error,
+          last_error_at: streamResponse.last_error_at,
         });
 
         setIsLoading(false);

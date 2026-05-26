@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/components/toast";
+import { AlertTriangle } from "lucide-react";
 
 const getComponentDisplayName = (
   componentId: string,
@@ -16,6 +17,36 @@ const getComponentDisplayName = (
 ): string => {
   const component = getComponent(type, componentId);
   return component ? component.name : componentId;
+};
+
+const FlowErrorTooltip = ({
+  lastError,
+  lastErrorAt,
+}: {
+  lastError: string;
+  lastErrorAt?: string;
+}) => {
+  const failedAt = useRelativeTime(lastErrorAt || "");
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <AlertTriangle className="h-3.5 w-3.5 text-red-600 cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent side="bottom" align="start" className="max-w-sm">
+          <div className="space-y-1.5">
+            <p className="font-medium text-destructive">Flow failed</p>
+            <p className="text-xs text-muted-foreground break-words whitespace-pre-wrap">
+              {lastError}
+            </p>
+            {lastErrorAt && (
+              <p className="text-xs text-muted-foreground">Failed {failedAt}</p>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 };
 
 export const columns = () => [
@@ -40,6 +71,12 @@ export const columns = () => [
           <Badge className={colorMap[value] || ""} variant="outline">
             {value}
           </Badge>
+          {value === "failed" && record.last_error && (
+            <FlowErrorTooltip
+              lastError={record.last_error}
+              lastErrorAt={record.last_error_at}
+            />
+          )}
           {!record.is_ready && (
             <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" variant="outline">
               draft
