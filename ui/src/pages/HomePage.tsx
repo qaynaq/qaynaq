@@ -38,8 +38,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { fetchAnalytics, fetchSetupStatus } from "@/lib/api";
-import type { Analytics } from "@/lib/entities";
+import { fetchAnalytics, fetchConnections, fetchSetupStatus } from "@/lib/api";
+import type { Analytics, Connection } from "@/lib/entities";
 import { WelcomeOverlay } from "@/components/first-run/welcome-overlay";
 import { DatabaseWizard, type DatabaseWizardResult } from "@/components/first-run/database-wizard";
 import { GoogleWorkspaceWizard, type GoogleWorkspaceResult } from "@/components/first-run/google-workspace-wizard";
@@ -97,6 +97,55 @@ function CopySnippet({ content }: { content: string }) {
         )}
       </button>
     </div>
+  );
+}
+
+function FailingConnectionsCard({ connections }: { connections: Connection[] }) {
+  const navigate = useNavigate();
+  if (connections.length === 0) return null;
+
+  return (
+    <Card className="mb-6 border-destructive/40 bg-destructive/[0.03]">
+      <CardContent className="pt-5 pb-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">
+              {connections.length === 1
+                ? "1 connection is failing"
+                : `${connections.length} connections are failing`}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Token refresh is failing. Flows using these connections will stop working until they are re-authorized or removed.
+            </p>
+            <ul className="mt-3 space-y-1.5">
+              {connections.map((conn) => (
+                <li key={conn.name} className="flex items-center gap-2 text-sm">
+                  <button
+                    onClick={() => navigate("/connections")}
+                    className="font-medium hover:underline"
+                  >
+                    {conn.name}
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    ({conn.provider}
+                    {conn.consecutiveFailures > 1 && ` - ${conn.consecutiveFailures} attempts`})
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-3"
+              onClick={() => navigate("/connections")}
+            >
+              Review connections
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -193,6 +242,7 @@ function NextStepsCard({ onDismiss }: { onDismiss: () => void }) {
 export default function Home() {
   const navigate = useNavigate();
   const [data, setData] = useState<Analytics | null>(null);
+  const [failingConnections, setFailingConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -223,6 +273,9 @@ export default function Home() {
       }
     };
     load();
+    fetchConnections()
+      .then((conns) => setFailingConnections(conns.filter((c) => c.lastError)))
+      .catch(() => setFailingConnections([]));
   }, []);
 
   const handleSelectPath = (path: string) => {
@@ -384,6 +437,8 @@ export default function Home() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
       </div>
+
+      <FailingConnectionsCard connections={failingConnections} />
 
       {showNextSteps && <NextStepsCard onDismiss={handleDismissNextSteps} />}
 

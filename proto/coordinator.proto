@@ -439,6 +439,10 @@ message ConnectionInfo {
   google.protobuf.Timestamp updated_at = 7 [json_name = "updated_at"];
   string shop = 8 [json_name = "shop"];
   string cloud_id = 9 [json_name = "cloud_id"];
+  string last_error = 10 [json_name = "last_error"];
+  google.protobuf.Timestamp last_error_at = 11 [json_name = "last_error_at"];
+  google.protobuf.Timestamp first_failed_at = 12 [json_name = "first_failed_at"];
+  int32 consecutive_failures = 13 [json_name = "consecutive_failures"];
 }
 
 message ListConnectionsResponse {

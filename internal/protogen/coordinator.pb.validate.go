@@ -8494,6 +8494,68 @@ func (m *ConnectionInfo) validate(all bool) error {
 
 	// no validation rules for CloudId
 
+	// no validation rules for LastError
+
+	if all {
+		switch v := interface{}(m.GetLastErrorAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ConnectionInfoValidationError{
+					field:  "LastErrorAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ConnectionInfoValidationError{
+					field:  "LastErrorAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetLastErrorAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ConnectionInfoValidationError{
+				field:  "LastErrorAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetFirstFailedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ConnectionInfoValidationError{
+					field:  "FirstFailedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ConnectionInfoValidationError{
+					field:  "FirstFailedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFirstFailedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ConnectionInfoValidationError{
+				field:  "FirstFailedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for ConsecutiveFailures
+
 	if len(errors) > 0 {
 		return ConnectionInfoMultiError(errors)
 	}

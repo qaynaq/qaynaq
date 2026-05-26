@@ -1,9 +1,45 @@
 package connection
 
 import (
+	"crypto/rand"
+	"database/sql"
 	"strings"
 	"testing"
+	"time"
+
+	"golang.org/x/oauth2"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	_ "modernc.org/sqlite"
+
+	"github.com/qaynaq/qaynaq/internal/persistence"
+	"github.com/qaynaq/qaynaq/internal/vault"
 )
+
+func newTestManager(t *testing.T) (*Manager, persistence.ConnectionRepository) {
+	t.Helper()
+	sqlDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	db, err := gorm.Open(sqlite.New(sqlite.Config{Conn: sqlDB}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open gorm: %v", err)
+	}
+	if err := db.AutoMigrate(&persistence.Connection{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		t.Fatalf("key: %v", err)
+	}
+	aesgcm, err := vault.NewAESGCM(key)
+	if err != nil {
+		t.Fatalf("aesgcm: %v", err)
+	}
+	repo := persistence.NewConnectionRepository(db)
+	return NewManager(repo, aesgcm), repo
+}
 
 func TestProviderAcceptsNoScopes(t *testing.T) {
 	cases := map[string]bool{
@@ -195,5 +231,40 @@ func TestPKCEVerifierIsRandom(t *testing.T) {
 			t.Errorf("duplicate verifier generated: %q", v)
 		}
 		seen[v] = true
+	}
+}
+
+func TestReauthorizeConnectionClearsErrorState(t *testing.T) {
+	mgr, repo := newTestManager(t)
+
+	cfg := Config{ClientID: "id", ClientSecret: "secret", Scopes: []string{"x"}}
+	tok := &oauth2.Token{AccessToken: "a", RefreshToken: "r", Expiry: time.Now().Add(time.Hour)}
+	if err := mgr.StoreConnection("c1", "google", cfg, tok); err != nil {
+		t.Fatalf("StoreConnection: %v", err)
+	}
+	if err := repo.RecordFailure("c1", "boom"); err != nil {
+		t.Fatalf("RecordFailure: %v", err)
+	}
+	if err := repo.RecordFailure("c1", "boom"); err != nil {
+		t.Fatalf("RecordFailure: %v", err)
+	}
+
+	before, _ := repo.GetByName("c1")
+	if before.LastError == "" || before.ConsecutiveFailures != 2 {
+		t.Fatalf("precondition: expected failure state, got %+v", before)
+	}
+
+	newTok := &oauth2.Token{AccessToken: "a2", RefreshToken: "r2", Expiry: time.Now().Add(time.Hour)}
+	if err := mgr.ReauthorizeConnection("c1", cfg, newTok); err != nil {
+		t.Fatalf("ReauthorizeConnection: %v", err)
+	}
+
+	after, err := repo.GetByName("c1")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if after.LastError != "" || after.LastErrorAt != nil || after.FirstFailedAt != nil || after.ConsecutiveFailures != 0 {
+		t.Errorf("expected error state cleared, got last_error=%q last_error_at=%v first_failed_at=%v consecutive_failures=%d",
+			after.LastError, after.LastErrorAt, after.FirstFailedAt, after.ConsecutiveFailures)
 	}
 }

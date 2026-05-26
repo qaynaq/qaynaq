@@ -180,6 +180,22 @@ time they need one. The refresh path:
 - **Slack non-rotating apps**: tokens with no expiry and no refresh token are treated
   as non-expiring (returned as-is until revoked).
 
+## Health and recovery
+
+When a refresh fails, the connection row records the upstream error, the time
+it started failing, and a consecutive-failure counter. The connections page
+shows a red **Failing** badge with a tooltip describing the error, and the
+dashboard renders an alert listing every broken connection.
+
+After three consecutive failures the refresh job backs off to one retry per
+hour instead of every five minutes. Some OAuth providers revoke refresh tokens
+under repeated failed exchanges, and a broken connection almost always needs a
+user-driven re-authorize to recover anyway. The badge switches to
+**Re-authorize** once the connection is in backoff.
+
+The error state clears automatically on the next successful refresh, or
+immediately when you re-authorize.
+
 ## Re-authorization
 
 If a connection's tokens become invalid (revoked, secret rotated upstream, scope

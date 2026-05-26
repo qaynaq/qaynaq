@@ -3709,18 +3709,22 @@ func (x *ConnectionRequest) GetName() string {
 }
 
 type ConnectionInfo struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Provider         string                 `protobuf:"bytes,2,opt,name=provider,proto3" json:"provider,omitempty"`
-	Scopes           []string               `protobuf:"bytes,3,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	ClientId         string                 `protobuf:"bytes,4,opt,name=client_id,proto3" json:"client_id,omitempty"`
-	ClientSecretHint string                 `protobuf:"bytes,5,opt,name=client_secret_hint,proto3" json:"client_secret_hint,omitempty"`
-	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,proto3" json:"created_at,omitempty"`
-	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
-	Shop             string                 `protobuf:"bytes,8,opt,name=shop,proto3" json:"shop,omitempty"`
-	CloudId          string                 `protobuf:"bytes,9,opt,name=cloud_id,proto3" json:"cloud_id,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Name                string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Provider            string                 `protobuf:"bytes,2,opt,name=provider,proto3" json:"provider,omitempty"`
+	Scopes              []string               `protobuf:"bytes,3,rep,name=scopes,proto3" json:"scopes,omitempty"`
+	ClientId            string                 `protobuf:"bytes,4,opt,name=client_id,proto3" json:"client_id,omitempty"`
+	ClientSecretHint    string                 `protobuf:"bytes,5,opt,name=client_secret_hint,proto3" json:"client_secret_hint,omitempty"`
+	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	UpdatedAt           *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
+	Shop                string                 `protobuf:"bytes,8,opt,name=shop,proto3" json:"shop,omitempty"`
+	CloudId             string                 `protobuf:"bytes,9,opt,name=cloud_id,proto3" json:"cloud_id,omitempty"`
+	LastError           string                 `protobuf:"bytes,10,opt,name=last_error,proto3" json:"last_error,omitempty"`
+	LastErrorAt         *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=last_error_at,proto3" json:"last_error_at,omitempty"`
+	FirstFailedAt       *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=first_failed_at,proto3" json:"first_failed_at,omitempty"`
+	ConsecutiveFailures int32                  `protobuf:"varint,13,opt,name=consecutive_failures,proto3" json:"consecutive_failures,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ConnectionInfo) Reset() {
@@ -3814,6 +3818,34 @@ func (x *ConnectionInfo) GetCloudId() string {
 		return x.CloudId
 	}
 	return ""
+}
+
+func (x *ConnectionInfo) GetLastError() string {
+	if x != nil {
+		return x.LastError
+	}
+	return ""
+}
+
+func (x *ConnectionInfo) GetLastErrorAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastErrorAt
+	}
+	return nil
+}
+
+func (x *ConnectionInfo) GetFirstFailedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FirstFailedAt
+	}
+	return nil
+}
+
+func (x *ConnectionInfo) GetConsecutiveFailures() int32 {
+	if x != nil {
+		return x.ConsecutiveFailures
+	}
+	return 0
 }
 
 type ListConnectionsResponse struct {
@@ -5115,7 +5147,7 @@ const file_coordinator_proto_rawDesc = "" +
 	"\x16ListMCPCatalogResponse\x120\n" +
 	"\x04data\x18\x01 \x03(\v2\x1c.protorender.MCPCatalogEntryR\x04data\"'\n" +
 	"\x11ConnectionRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\xce\x02\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xaa\x04\n" +
 	"\x0eConnectionInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\bprovider\x18\x02 \x01(\tR\bprovider\x12\x16\n" +
@@ -5129,7 +5161,14 @@ const file_coordinator_proto_rawDesc = "" +
 	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"updated_at\x12\x12\n" +
 	"\x04shop\x18\b \x01(\tR\x04shop\x12\x1a\n" +
-	"\bcloud_id\x18\t \x01(\tR\bcloud_id\"J\n" +
+	"\bcloud_id\x18\t \x01(\tR\bcloud_id\x12\x1e\n" +
+	"\n" +
+	"last_error\x18\n" +
+	" \x01(\tR\n" +
+	"last_error\x12@\n" +
+	"\rlast_error_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\rlast_error_at\x12D\n" +
+	"\x0ffirst_failed_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\x0ffirst_failed_at\x122\n" +
+	"\x14consecutive_failures\x18\r \x01(\x05R\x14consecutive_failures\"J\n" +
 	"\x17ListConnectionsResponse\x12/\n" +
 	"\x04data\x18\x01 \x03(\v2\x1b.protorender.ConnectionInfoR\x04data\"-\n" +
 	"\x17ConnectionTokenResponse\x12\x12\n" +
@@ -5425,152 +5464,154 @@ var file_coordinator_proto_depIdxs = []int32{
 	59,  // 54: protorender.ListMCPCatalogResponse.data:type_name -> protorender.MCPCatalogEntry
 	91,  // 55: protorender.ConnectionInfo.created_at:type_name -> google.protobuf.Timestamp
 	91,  // 56: protorender.ConnectionInfo.updated_at:type_name -> google.protobuf.Timestamp
-	63,  // 57: protorender.ListConnectionsResponse.data:type_name -> protorender.ConnectionInfo
-	91,  // 58: protorender.AccessTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	73,  // 59: protorender.Provider.scopes:type_name -> protorender.ProviderScope
-	74,  // 60: protorender.ListProvidersResponse.data:type_name -> protorender.Provider
-	91,  // 61: protorender.ListWorkersResponse.Worker.last_heartbeat:type_name -> google.protobuf.Timestamp
-	4,   // 62: protorender.Coordinator.UpdateWorkerFlowStatus:input_type -> protorender.WorkerFlowStatusRequest
-	0,   // 63: protorender.Coordinator.RegisterWorker:input_type -> protorender.RegisterWorkerRequest
-	1,   // 64: protorender.Coordinator.DeregisterWorker:input_type -> protorender.DeregisterWorkerRequest
-	2,   // 65: protorender.Coordinator.Heartbeat:input_type -> protorender.HeartbeatRequest
-	5,   // 66: protorender.Coordinator.ListWorkers:input_type -> protorender.ListWorkersRequest
-	7,   // 67: protorender.Coordinator.ListFlows:input_type -> protorender.ListFlowsRequest
-	9,   // 68: protorender.Coordinator.GetFlow:input_type -> protorender.GetFlowRequest
-	88,  // 69: protorender.Coordinator.CreateFlow:input_type -> protorender.Flow
-	88,  // 70: protorender.Coordinator.UpdateFlow:input_type -> protorender.Flow
-	9,   // 71: protorender.Coordinator.DeleteFlow:input_type -> protorender.GetFlowRequest
-	32,  // 72: protorender.Coordinator.ValidateFlow:input_type -> protorender.ValidateFlowRequest
-	34,  // 73: protorender.Coordinator.TryFlow:input_type -> protorender.TryFlowRequest
-	98,  // 74: protorender.Coordinator.ListSecrets:input_type -> google.protobuf.Empty
-	17,  // 75: protorender.Coordinator.CreateSecret:input_type -> protorender.SecretRequest
-	17,  // 76: protorender.Coordinator.UpdateSecret:input_type -> protorender.SecretRequest
-	17,  // 77: protorender.Coordinator.GetSecret:input_type -> protorender.SecretRequest
-	17,  // 78: protorender.Coordinator.DeleteSecret:input_type -> protorender.SecretRequest
-	98,  // 79: protorender.Coordinator.ListCaches:input_type -> google.protobuf.Empty
-	21,  // 80: protorender.Coordinator.GetCache:input_type -> protorender.GetCacheRequest
-	93,  // 81: protorender.Coordinator.CreateCache:input_type -> protorender.Cache
-	93,  // 82: protorender.Coordinator.UpdateCache:input_type -> protorender.Cache
-	21,  // 83: protorender.Coordinator.DeleteCache:input_type -> protorender.GetCacheRequest
-	98,  // 84: protorender.Coordinator.ListRateLimits:input_type -> google.protobuf.Empty
-	30,  // 85: protorender.Coordinator.GetRateLimit:input_type -> protorender.GetRateLimitRequest
-	94,  // 86: protorender.Coordinator.CreateRateLimit:input_type -> protorender.RateLimit
-	94,  // 87: protorender.Coordinator.UpdateRateLimit:input_type -> protorender.RateLimit
-	30,  // 88: protorender.Coordinator.DeleteRateLimit:input_type -> protorender.GetRateLimitRequest
-	99,  // 89: protorender.Coordinator.CheckRateLimit:input_type -> protorender.RateLimitCheckRequest
-	98,  // 90: protorender.Coordinator.ListBuffers:input_type -> google.protobuf.Empty
-	24,  // 91: protorender.Coordinator.GetBuffer:input_type -> protorender.GetBufferRequest
-	95,  // 92: protorender.Coordinator.CreateBuffer:input_type -> protorender.Buffer
-	95,  // 93: protorender.Coordinator.UpdateBuffer:input_type -> protorender.Buffer
-	24,  // 94: protorender.Coordinator.DeleteBuffer:input_type -> protorender.GetBufferRequest
-	98,  // 95: protorender.Coordinator.ListFiles:input_type -> google.protobuf.Empty
-	28,  // 96: protorender.Coordinator.GetFile:input_type -> protorender.GetFileRequest
-	96,  // 97: protorender.Coordinator.CreateFile:input_type -> protorender.File
-	96,  // 98: protorender.Coordinator.UpdateFile:input_type -> protorender.File
-	28,  // 99: protorender.Coordinator.DeleteFile:input_type -> protorender.GetFileRequest
-	12,  // 100: protorender.Coordinator.ListEvents:input_type -> protorender.ListEventsRequest
-	11,  // 101: protorender.Coordinator.IngestEvents:input_type -> protorender.Event
-	14,  // 102: protorender.Coordinator.IngestMetrics:input_type -> protorender.MetricsRequest
-	15,  // 103: protorender.Coordinator.GetAnalytics:input_type -> protorender.GetAnalyticsRequest
-	98,  // 104: protorender.Coordinator.GetMCPSettings:input_type -> google.protobuf.Empty
-	37,  // 105: protorender.Coordinator.UpdateMCPProtected:input_type -> protorender.UpdateMCPProtectedRequest
-	98,  // 106: protorender.Coordinator.ListAPITokens:input_type -> google.protobuf.Empty
-	40,  // 107: protorender.Coordinator.CreateAPIToken:input_type -> protorender.CreateAPITokenRequest
-	42,  // 108: protorender.Coordinator.DeleteAPIToken:input_type -> protorender.DeleteAPITokenRequest
-	98,  // 109: protorender.Coordinator.ListOAuthClients:input_type -> google.protobuf.Empty
-	46,  // 110: protorender.Coordinator.DeleteOAuthClient:input_type -> protorender.DeleteOAuthClientRequest
-	98,  // 111: protorender.Coordinator.ListOAuthSessions:input_type -> google.protobuf.Empty
-	50,  // 112: protorender.Coordinator.RevokeOAuthSession:input_type -> protorender.RevokeOAuthSessionRequest
-	47,  // 113: protorender.Coordinator.RevokeOAuthConsent:input_type -> protorender.RevokeOAuthConsentRequest
-	98,  // 114: protorender.Coordinator.ListMCPServers:input_type -> google.protobuf.Empty
-	53,  // 115: protorender.Coordinator.CreateMCPServer:input_type -> protorender.CreateMCPServerRequest
-	54,  // 116: protorender.Coordinator.UpdateMCPServer:input_type -> protorender.UpdateMCPServerRequest
-	55,  // 117: protorender.Coordinator.DeleteMCPServer:input_type -> protorender.DeleteMCPServerRequest
-	56,  // 118: protorender.Coordinator.RestartMCPServer:input_type -> protorender.RestartMCPServerRequest
-	57,  // 119: protorender.Coordinator.GetMCPServerLogs:input_type -> protorender.GetMCPServerLogsRequest
-	98,  // 120: protorender.Coordinator.ListMCPCatalog:input_type -> google.protobuf.Empty
-	98,  // 121: protorender.Coordinator.ListProviders:input_type -> google.protobuf.Empty
-	98,  // 122: protorender.Coordinator.ListConnections:input_type -> google.protobuf.Empty
-	62,  // 123: protorender.Coordinator.DeleteConnection:input_type -> protorender.ConnectionRequest
-	62,  // 124: protorender.Coordinator.GetConnectionToken:input_type -> protorender.ConnectionRequest
-	66,  // 125: protorender.Coordinator.GetAccessToken:input_type -> protorender.AccessTokenRequest
-	98,  // 126: protorender.Coordinator.GetSetupStatus:input_type -> google.protobuf.Empty
-	98,  // 127: protorender.Coordinator.CompleteSetup:input_type -> google.protobuf.Empty
-	69,  // 128: protorender.Coordinator.TestConnection:input_type -> protorender.TestConnectionRequest
-	71,  // 129: protorender.Coordinator.TestShopifyConnection:input_type -> protorender.TestShopifyConnectionRequest
-	89,  // 130: protorender.Coordinator.UpdateWorkerFlowStatus:output_type -> protorender.CommonResponse
-	89,  // 131: protorender.Coordinator.RegisterWorker:output_type -> protorender.CommonResponse
-	89,  // 132: protorender.Coordinator.DeregisterWorker:output_type -> protorender.CommonResponse
-	3,   // 133: protorender.Coordinator.Heartbeat:output_type -> protorender.HeartbeatResponse
-	6,   // 134: protorender.Coordinator.ListWorkers:output_type -> protorender.ListWorkersResponse
-	8,   // 135: protorender.Coordinator.ListFlows:output_type -> protorender.ListFlowsResponse
-	10,  // 136: protorender.Coordinator.GetFlow:output_type -> protorender.FlowResponse
-	10,  // 137: protorender.Coordinator.CreateFlow:output_type -> protorender.FlowResponse
-	10,  // 138: protorender.Coordinator.UpdateFlow:output_type -> protorender.FlowResponse
-	89,  // 139: protorender.Coordinator.DeleteFlow:output_type -> protorender.CommonResponse
-	33,  // 140: protorender.Coordinator.ValidateFlow:output_type -> protorender.ValidateFlowResponse
-	35,  // 141: protorender.Coordinator.TryFlow:output_type -> protorender.TryFlowResponse
-	18,  // 142: protorender.Coordinator.ListSecrets:output_type -> protorender.ListSecretsResponse
-	89,  // 143: protorender.Coordinator.CreateSecret:output_type -> protorender.CommonResponse
-	89,  // 144: protorender.Coordinator.UpdateSecret:output_type -> protorender.CommonResponse
-	19,  // 145: protorender.Coordinator.GetSecret:output_type -> protorender.SecretResponse
-	89,  // 146: protorender.Coordinator.DeleteSecret:output_type -> protorender.CommonResponse
-	20,  // 147: protorender.Coordinator.ListCaches:output_type -> protorender.ListCachesResponse
-	22,  // 148: protorender.Coordinator.GetCache:output_type -> protorender.CacheResponse
-	22,  // 149: protorender.Coordinator.CreateCache:output_type -> protorender.CacheResponse
-	22,  // 150: protorender.Coordinator.UpdateCache:output_type -> protorender.CacheResponse
-	89,  // 151: protorender.Coordinator.DeleteCache:output_type -> protorender.CommonResponse
-	23,  // 152: protorender.Coordinator.ListRateLimits:output_type -> protorender.ListRateLimitsResponse
-	31,  // 153: protorender.Coordinator.GetRateLimit:output_type -> protorender.RateLimitResponse
-	31,  // 154: protorender.Coordinator.CreateRateLimit:output_type -> protorender.RateLimitResponse
-	31,  // 155: protorender.Coordinator.UpdateRateLimit:output_type -> protorender.RateLimitResponse
-	89,  // 156: protorender.Coordinator.DeleteRateLimit:output_type -> protorender.CommonResponse
-	100, // 157: protorender.Coordinator.CheckRateLimit:output_type -> protorender.RateLimitCheckResponse
-	26,  // 158: protorender.Coordinator.ListBuffers:output_type -> protorender.ListBuffersResponse
-	25,  // 159: protorender.Coordinator.GetBuffer:output_type -> protorender.BufferResponse
-	25,  // 160: protorender.Coordinator.CreateBuffer:output_type -> protorender.BufferResponse
-	25,  // 161: protorender.Coordinator.UpdateBuffer:output_type -> protorender.BufferResponse
-	89,  // 162: protorender.Coordinator.DeleteBuffer:output_type -> protorender.CommonResponse
-	27,  // 163: protorender.Coordinator.ListFiles:output_type -> protorender.ListFilesResponse
-	29,  // 164: protorender.Coordinator.GetFile:output_type -> protorender.FileResponse
-	29,  // 165: protorender.Coordinator.CreateFile:output_type -> protorender.FileResponse
-	29,  // 166: protorender.Coordinator.UpdateFile:output_type -> protorender.FileResponse
-	89,  // 167: protorender.Coordinator.DeleteFile:output_type -> protorender.CommonResponse
-	13,  // 168: protorender.Coordinator.ListEvents:output_type -> protorender.ListEventsResponse
-	98,  // 169: protorender.Coordinator.IngestEvents:output_type -> google.protobuf.Empty
-	98,  // 170: protorender.Coordinator.IngestMetrics:output_type -> google.protobuf.Empty
-	16,  // 171: protorender.Coordinator.GetAnalytics:output_type -> protorender.GetAnalyticsResponse
-	36,  // 172: protorender.Coordinator.GetMCPSettings:output_type -> protorender.GetMCPSettingsResponse
-	38,  // 173: protorender.Coordinator.UpdateMCPProtected:output_type -> protorender.UpdateMCPProtectedResponse
-	43,  // 174: protorender.Coordinator.ListAPITokens:output_type -> protorender.ListAPITokensResponse
-	41,  // 175: protorender.Coordinator.CreateAPIToken:output_type -> protorender.CreateAPITokenResponse
-	89,  // 176: protorender.Coordinator.DeleteAPIToken:output_type -> protorender.CommonResponse
-	45,  // 177: protorender.Coordinator.ListOAuthClients:output_type -> protorender.ListOAuthClientsResponse
-	89,  // 178: protorender.Coordinator.DeleteOAuthClient:output_type -> protorender.CommonResponse
-	49,  // 179: protorender.Coordinator.ListOAuthSessions:output_type -> protorender.ListOAuthSessionsResponse
-	89,  // 180: protorender.Coordinator.RevokeOAuthSession:output_type -> protorender.CommonResponse
-	89,  // 181: protorender.Coordinator.RevokeOAuthConsent:output_type -> protorender.CommonResponse
-	52,  // 182: protorender.Coordinator.ListMCPServers:output_type -> protorender.ListMCPServersResponse
-	51,  // 183: protorender.Coordinator.CreateMCPServer:output_type -> protorender.MCPServerInfo
-	51,  // 184: protorender.Coordinator.UpdateMCPServer:output_type -> protorender.MCPServerInfo
-	89,  // 185: protorender.Coordinator.DeleteMCPServer:output_type -> protorender.CommonResponse
-	89,  // 186: protorender.Coordinator.RestartMCPServer:output_type -> protorender.CommonResponse
-	58,  // 187: protorender.Coordinator.GetMCPServerLogs:output_type -> protorender.MCPServerLogsResponse
-	61,  // 188: protorender.Coordinator.ListMCPCatalog:output_type -> protorender.ListMCPCatalogResponse
-	75,  // 189: protorender.Coordinator.ListProviders:output_type -> protorender.ListProvidersResponse
-	64,  // 190: protorender.Coordinator.ListConnections:output_type -> protorender.ListConnectionsResponse
-	89,  // 191: protorender.Coordinator.DeleteConnection:output_type -> protorender.CommonResponse
-	65,  // 192: protorender.Coordinator.GetConnectionToken:output_type -> protorender.ConnectionTokenResponse
-	67,  // 193: protorender.Coordinator.GetAccessToken:output_type -> protorender.AccessTokenResponse
-	68,  // 194: protorender.Coordinator.GetSetupStatus:output_type -> protorender.SetupStatusResponse
-	89,  // 195: protorender.Coordinator.CompleteSetup:output_type -> protorender.CommonResponse
-	70,  // 196: protorender.Coordinator.TestConnection:output_type -> protorender.TestConnectionResponse
-	72,  // 197: protorender.Coordinator.TestShopifyConnection:output_type -> protorender.TestShopifyConnectionResponse
-	130, // [130:198] is the sub-list for method output_type
-	62,  // [62:130] is the sub-list for method input_type
-	62,  // [62:62] is the sub-list for extension type_name
-	62,  // [62:62] is the sub-list for extension extendee
-	0,   // [0:62] is the sub-list for field type_name
+	91,  // 57: protorender.ConnectionInfo.last_error_at:type_name -> google.protobuf.Timestamp
+	91,  // 58: protorender.ConnectionInfo.first_failed_at:type_name -> google.protobuf.Timestamp
+	63,  // 59: protorender.ListConnectionsResponse.data:type_name -> protorender.ConnectionInfo
+	91,  // 60: protorender.AccessTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	73,  // 61: protorender.Provider.scopes:type_name -> protorender.ProviderScope
+	74,  // 62: protorender.ListProvidersResponse.data:type_name -> protorender.Provider
+	91,  // 63: protorender.ListWorkersResponse.Worker.last_heartbeat:type_name -> google.protobuf.Timestamp
+	4,   // 64: protorender.Coordinator.UpdateWorkerFlowStatus:input_type -> protorender.WorkerFlowStatusRequest
+	0,   // 65: protorender.Coordinator.RegisterWorker:input_type -> protorender.RegisterWorkerRequest
+	1,   // 66: protorender.Coordinator.DeregisterWorker:input_type -> protorender.DeregisterWorkerRequest
+	2,   // 67: protorender.Coordinator.Heartbeat:input_type -> protorender.HeartbeatRequest
+	5,   // 68: protorender.Coordinator.ListWorkers:input_type -> protorender.ListWorkersRequest
+	7,   // 69: protorender.Coordinator.ListFlows:input_type -> protorender.ListFlowsRequest
+	9,   // 70: protorender.Coordinator.GetFlow:input_type -> protorender.GetFlowRequest
+	88,  // 71: protorender.Coordinator.CreateFlow:input_type -> protorender.Flow
+	88,  // 72: protorender.Coordinator.UpdateFlow:input_type -> protorender.Flow
+	9,   // 73: protorender.Coordinator.DeleteFlow:input_type -> protorender.GetFlowRequest
+	32,  // 74: protorender.Coordinator.ValidateFlow:input_type -> protorender.ValidateFlowRequest
+	34,  // 75: protorender.Coordinator.TryFlow:input_type -> protorender.TryFlowRequest
+	98,  // 76: protorender.Coordinator.ListSecrets:input_type -> google.protobuf.Empty
+	17,  // 77: protorender.Coordinator.CreateSecret:input_type -> protorender.SecretRequest
+	17,  // 78: protorender.Coordinator.UpdateSecret:input_type -> protorender.SecretRequest
+	17,  // 79: protorender.Coordinator.GetSecret:input_type -> protorender.SecretRequest
+	17,  // 80: protorender.Coordinator.DeleteSecret:input_type -> protorender.SecretRequest
+	98,  // 81: protorender.Coordinator.ListCaches:input_type -> google.protobuf.Empty
+	21,  // 82: protorender.Coordinator.GetCache:input_type -> protorender.GetCacheRequest
+	93,  // 83: protorender.Coordinator.CreateCache:input_type -> protorender.Cache
+	93,  // 84: protorender.Coordinator.UpdateCache:input_type -> protorender.Cache
+	21,  // 85: protorender.Coordinator.DeleteCache:input_type -> protorender.GetCacheRequest
+	98,  // 86: protorender.Coordinator.ListRateLimits:input_type -> google.protobuf.Empty
+	30,  // 87: protorender.Coordinator.GetRateLimit:input_type -> protorender.GetRateLimitRequest
+	94,  // 88: protorender.Coordinator.CreateRateLimit:input_type -> protorender.RateLimit
+	94,  // 89: protorender.Coordinator.UpdateRateLimit:input_type -> protorender.RateLimit
+	30,  // 90: protorender.Coordinator.DeleteRateLimit:input_type -> protorender.GetRateLimitRequest
+	99,  // 91: protorender.Coordinator.CheckRateLimit:input_type -> protorender.RateLimitCheckRequest
+	98,  // 92: protorender.Coordinator.ListBuffers:input_type -> google.protobuf.Empty
+	24,  // 93: protorender.Coordinator.GetBuffer:input_type -> protorender.GetBufferRequest
+	95,  // 94: protorender.Coordinator.CreateBuffer:input_type -> protorender.Buffer
+	95,  // 95: protorender.Coordinator.UpdateBuffer:input_type -> protorender.Buffer
+	24,  // 96: protorender.Coordinator.DeleteBuffer:input_type -> protorender.GetBufferRequest
+	98,  // 97: protorender.Coordinator.ListFiles:input_type -> google.protobuf.Empty
+	28,  // 98: protorender.Coordinator.GetFile:input_type -> protorender.GetFileRequest
+	96,  // 99: protorender.Coordinator.CreateFile:input_type -> protorender.File
+	96,  // 100: protorender.Coordinator.UpdateFile:input_type -> protorender.File
+	28,  // 101: protorender.Coordinator.DeleteFile:input_type -> protorender.GetFileRequest
+	12,  // 102: protorender.Coordinator.ListEvents:input_type -> protorender.ListEventsRequest
+	11,  // 103: protorender.Coordinator.IngestEvents:input_type -> protorender.Event
+	14,  // 104: protorender.Coordinator.IngestMetrics:input_type -> protorender.MetricsRequest
+	15,  // 105: protorender.Coordinator.GetAnalytics:input_type -> protorender.GetAnalyticsRequest
+	98,  // 106: protorender.Coordinator.GetMCPSettings:input_type -> google.protobuf.Empty
+	37,  // 107: protorender.Coordinator.UpdateMCPProtected:input_type -> protorender.UpdateMCPProtectedRequest
+	98,  // 108: protorender.Coordinator.ListAPITokens:input_type -> google.protobuf.Empty
+	40,  // 109: protorender.Coordinator.CreateAPIToken:input_type -> protorender.CreateAPITokenRequest
+	42,  // 110: protorender.Coordinator.DeleteAPIToken:input_type -> protorender.DeleteAPITokenRequest
+	98,  // 111: protorender.Coordinator.ListOAuthClients:input_type -> google.protobuf.Empty
+	46,  // 112: protorender.Coordinator.DeleteOAuthClient:input_type -> protorender.DeleteOAuthClientRequest
+	98,  // 113: protorender.Coordinator.ListOAuthSessions:input_type -> google.protobuf.Empty
+	50,  // 114: protorender.Coordinator.RevokeOAuthSession:input_type -> protorender.RevokeOAuthSessionRequest
+	47,  // 115: protorender.Coordinator.RevokeOAuthConsent:input_type -> protorender.RevokeOAuthConsentRequest
+	98,  // 116: protorender.Coordinator.ListMCPServers:input_type -> google.protobuf.Empty
+	53,  // 117: protorender.Coordinator.CreateMCPServer:input_type -> protorender.CreateMCPServerRequest
+	54,  // 118: protorender.Coordinator.UpdateMCPServer:input_type -> protorender.UpdateMCPServerRequest
+	55,  // 119: protorender.Coordinator.DeleteMCPServer:input_type -> protorender.DeleteMCPServerRequest
+	56,  // 120: protorender.Coordinator.RestartMCPServer:input_type -> protorender.RestartMCPServerRequest
+	57,  // 121: protorender.Coordinator.GetMCPServerLogs:input_type -> protorender.GetMCPServerLogsRequest
+	98,  // 122: protorender.Coordinator.ListMCPCatalog:input_type -> google.protobuf.Empty
+	98,  // 123: protorender.Coordinator.ListProviders:input_type -> google.protobuf.Empty
+	98,  // 124: protorender.Coordinator.ListConnections:input_type -> google.protobuf.Empty
+	62,  // 125: protorender.Coordinator.DeleteConnection:input_type -> protorender.ConnectionRequest
+	62,  // 126: protorender.Coordinator.GetConnectionToken:input_type -> protorender.ConnectionRequest
+	66,  // 127: protorender.Coordinator.GetAccessToken:input_type -> protorender.AccessTokenRequest
+	98,  // 128: protorender.Coordinator.GetSetupStatus:input_type -> google.protobuf.Empty
+	98,  // 129: protorender.Coordinator.CompleteSetup:input_type -> google.protobuf.Empty
+	69,  // 130: protorender.Coordinator.TestConnection:input_type -> protorender.TestConnectionRequest
+	71,  // 131: protorender.Coordinator.TestShopifyConnection:input_type -> protorender.TestShopifyConnectionRequest
+	89,  // 132: protorender.Coordinator.UpdateWorkerFlowStatus:output_type -> protorender.CommonResponse
+	89,  // 133: protorender.Coordinator.RegisterWorker:output_type -> protorender.CommonResponse
+	89,  // 134: protorender.Coordinator.DeregisterWorker:output_type -> protorender.CommonResponse
+	3,   // 135: protorender.Coordinator.Heartbeat:output_type -> protorender.HeartbeatResponse
+	6,   // 136: protorender.Coordinator.ListWorkers:output_type -> protorender.ListWorkersResponse
+	8,   // 137: protorender.Coordinator.ListFlows:output_type -> protorender.ListFlowsResponse
+	10,  // 138: protorender.Coordinator.GetFlow:output_type -> protorender.FlowResponse
+	10,  // 139: protorender.Coordinator.CreateFlow:output_type -> protorender.FlowResponse
+	10,  // 140: protorender.Coordinator.UpdateFlow:output_type -> protorender.FlowResponse
+	89,  // 141: protorender.Coordinator.DeleteFlow:output_type -> protorender.CommonResponse
+	33,  // 142: protorender.Coordinator.ValidateFlow:output_type -> protorender.ValidateFlowResponse
+	35,  // 143: protorender.Coordinator.TryFlow:output_type -> protorender.TryFlowResponse
+	18,  // 144: protorender.Coordinator.ListSecrets:output_type -> protorender.ListSecretsResponse
+	89,  // 145: protorender.Coordinator.CreateSecret:output_type -> protorender.CommonResponse
+	89,  // 146: protorender.Coordinator.UpdateSecret:output_type -> protorender.CommonResponse
+	19,  // 147: protorender.Coordinator.GetSecret:output_type -> protorender.SecretResponse
+	89,  // 148: protorender.Coordinator.DeleteSecret:output_type -> protorender.CommonResponse
+	20,  // 149: protorender.Coordinator.ListCaches:output_type -> protorender.ListCachesResponse
+	22,  // 150: protorender.Coordinator.GetCache:output_type -> protorender.CacheResponse
+	22,  // 151: protorender.Coordinator.CreateCache:output_type -> protorender.CacheResponse
+	22,  // 152: protorender.Coordinator.UpdateCache:output_type -> protorender.CacheResponse
+	89,  // 153: protorender.Coordinator.DeleteCache:output_type -> protorender.CommonResponse
+	23,  // 154: protorender.Coordinator.ListRateLimits:output_type -> protorender.ListRateLimitsResponse
+	31,  // 155: protorender.Coordinator.GetRateLimit:output_type -> protorender.RateLimitResponse
+	31,  // 156: protorender.Coordinator.CreateRateLimit:output_type -> protorender.RateLimitResponse
+	31,  // 157: protorender.Coordinator.UpdateRateLimit:output_type -> protorender.RateLimitResponse
+	89,  // 158: protorender.Coordinator.DeleteRateLimit:output_type -> protorender.CommonResponse
+	100, // 159: protorender.Coordinator.CheckRateLimit:output_type -> protorender.RateLimitCheckResponse
+	26,  // 160: protorender.Coordinator.ListBuffers:output_type -> protorender.ListBuffersResponse
+	25,  // 161: protorender.Coordinator.GetBuffer:output_type -> protorender.BufferResponse
+	25,  // 162: protorender.Coordinator.CreateBuffer:output_type -> protorender.BufferResponse
+	25,  // 163: protorender.Coordinator.UpdateBuffer:output_type -> protorender.BufferResponse
+	89,  // 164: protorender.Coordinator.DeleteBuffer:output_type -> protorender.CommonResponse
+	27,  // 165: protorender.Coordinator.ListFiles:output_type -> protorender.ListFilesResponse
+	29,  // 166: protorender.Coordinator.GetFile:output_type -> protorender.FileResponse
+	29,  // 167: protorender.Coordinator.CreateFile:output_type -> protorender.FileResponse
+	29,  // 168: protorender.Coordinator.UpdateFile:output_type -> protorender.FileResponse
+	89,  // 169: protorender.Coordinator.DeleteFile:output_type -> protorender.CommonResponse
+	13,  // 170: protorender.Coordinator.ListEvents:output_type -> protorender.ListEventsResponse
+	98,  // 171: protorender.Coordinator.IngestEvents:output_type -> google.protobuf.Empty
+	98,  // 172: protorender.Coordinator.IngestMetrics:output_type -> google.protobuf.Empty
+	16,  // 173: protorender.Coordinator.GetAnalytics:output_type -> protorender.GetAnalyticsResponse
+	36,  // 174: protorender.Coordinator.GetMCPSettings:output_type -> protorender.GetMCPSettingsResponse
+	38,  // 175: protorender.Coordinator.UpdateMCPProtected:output_type -> protorender.UpdateMCPProtectedResponse
+	43,  // 176: protorender.Coordinator.ListAPITokens:output_type -> protorender.ListAPITokensResponse
+	41,  // 177: protorender.Coordinator.CreateAPIToken:output_type -> protorender.CreateAPITokenResponse
+	89,  // 178: protorender.Coordinator.DeleteAPIToken:output_type -> protorender.CommonResponse
+	45,  // 179: protorender.Coordinator.ListOAuthClients:output_type -> protorender.ListOAuthClientsResponse
+	89,  // 180: protorender.Coordinator.DeleteOAuthClient:output_type -> protorender.CommonResponse
+	49,  // 181: protorender.Coordinator.ListOAuthSessions:output_type -> protorender.ListOAuthSessionsResponse
+	89,  // 182: protorender.Coordinator.RevokeOAuthSession:output_type -> protorender.CommonResponse
+	89,  // 183: protorender.Coordinator.RevokeOAuthConsent:output_type -> protorender.CommonResponse
+	52,  // 184: protorender.Coordinator.ListMCPServers:output_type -> protorender.ListMCPServersResponse
+	51,  // 185: protorender.Coordinator.CreateMCPServer:output_type -> protorender.MCPServerInfo
+	51,  // 186: protorender.Coordinator.UpdateMCPServer:output_type -> protorender.MCPServerInfo
+	89,  // 187: protorender.Coordinator.DeleteMCPServer:output_type -> protorender.CommonResponse
+	89,  // 188: protorender.Coordinator.RestartMCPServer:output_type -> protorender.CommonResponse
+	58,  // 189: protorender.Coordinator.GetMCPServerLogs:output_type -> protorender.MCPServerLogsResponse
+	61,  // 190: protorender.Coordinator.ListMCPCatalog:output_type -> protorender.ListMCPCatalogResponse
+	75,  // 191: protorender.Coordinator.ListProviders:output_type -> protorender.ListProvidersResponse
+	64,  // 192: protorender.Coordinator.ListConnections:output_type -> protorender.ListConnectionsResponse
+	89,  // 193: protorender.Coordinator.DeleteConnection:output_type -> protorender.CommonResponse
+	65,  // 194: protorender.Coordinator.GetConnectionToken:output_type -> protorender.ConnectionTokenResponse
+	67,  // 195: protorender.Coordinator.GetAccessToken:output_type -> protorender.AccessTokenResponse
+	68,  // 196: protorender.Coordinator.GetSetupStatus:output_type -> protorender.SetupStatusResponse
+	89,  // 197: protorender.Coordinator.CompleteSetup:output_type -> protorender.CommonResponse
+	70,  // 198: protorender.Coordinator.TestConnection:output_type -> protorender.TestConnectionResponse
+	72,  // 199: protorender.Coordinator.TestShopifyConnection:output_type -> protorender.TestShopifyConnectionResponse
+	132, // [132:200] is the sub-list for method output_type
+	64,  // [64:132] is the sub-list for method input_type
+	64,  // [64:64] is the sub-list for extension type_name
+	64,  // [64:64] is the sub-list for extension extendee
+	0,   // [0:64] is the sub-list for field type_name
 }
 
 func init() { file_coordinator_proto_init() }
