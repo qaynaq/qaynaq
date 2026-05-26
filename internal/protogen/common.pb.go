@@ -145,6 +145,8 @@ type Flow struct {
 	IsReady         bool                   `protobuf:"varint,18,opt,name=is_ready,proto3" json:"is_ready,omitempty"`
 	BuilderState    string                 `protobuf:"bytes,19,opt,name=builder_state,proto3" json:"builder_state,omitempty"`
 	ManagedBy       *string                `protobuf:"bytes,20,opt,name=managed_by,proto3,oneof" json:"managed_by,omitempty"`
+	LastError       string                 `protobuf:"bytes,21,opt,name=last_error,proto3" json:"last_error,omitempty"`
+	LastErrorAt     *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=last_error_at,proto3,oneof" json:"last_error_at,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -317,6 +319,20 @@ func (x *Flow) GetManagedBy() string {
 		return *x.ManagedBy
 	}
 	return ""
+}
+
+func (x *Flow) GetLastError() string {
+	if x != nil {
+		return x.LastError
+	}
+	return ""
+}
+
+func (x *Flow) GetLastErrorAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastErrorAt
+	}
+	return nil
 }
 
 type Secret struct {
@@ -998,7 +1014,7 @@ const file_common_proto_rawDesc = "" +
 	"\n" +
 	"\fcommon.proto\x12\vprotorender\x1a google/protobuf/descriptor.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17validate/validate.proto\"*\n" +
 	"\x0eCommonResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"\x9b\b\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\x94\t\n" +
 	"\x04Flow\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12!\n" +
 	"\tparent_id\x18\x02 \x01(\x03H\x00R\tparent_id\x88\x01\x01\x12\x1d\n" +
@@ -1030,7 +1046,11 @@ const file_common_proto_rawDesc = "" +
 	"\rbuilder_state\x18\x13 \x01(\tR\rbuilder_state\x12#\n" +
 	"\n" +
 	"managed_by\x18\x14 \x01(\tH\x03R\n" +
-	"managed_by\x88\x01\x01\x1au\n" +
+	"managed_by\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"last_error\x18\x15 \x01(\tR\n" +
+	"last_error\x12E\n" +
+	"\rlast_error_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampH\x04R\rlast_error_at\x88\x01\x01\x1au\n" +
 	"\tProcessor\x122\n" +
 	"\x05label\x18\x01 \x01(\tB\x1c\xfaB\x19r\x17\x10\x01\x18d2\x11^[a-zA-Z0-9 _-]+$R\x05label\x12\x1c\n" +
 	"\tcomponent\x18\x02 \x01(\tR\tcomponent\x12\x16\n" +
@@ -1040,7 +1060,8 @@ const file_common_proto_rawDesc = "" +
 	"\v_updated_atB\f\n" +
 	"\n" +
 	"_buffer_idB\r\n" +
-	"\v_managed_by\"\x80\x01\n" +
+	"\v_managed_byB\x10\n" +
+	"\x0e_last_error_at\"\x80\x01\n" +
 	"\x06Secret\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
 	"\x0fencrypted_value\x18\x02 \x01(\tR\x0fencrypted_value\x12:\n" +
@@ -1172,21 +1193,22 @@ var file_common_proto_depIdxs = []int32{
 	11, // 0: protorender.Flow.created_at:type_name -> google.protobuf.Timestamp
 	11, // 1: protorender.Flow.updated_at:type_name -> google.protobuf.Timestamp
 	10, // 2: protorender.Flow.processors:type_name -> protorender.Flow.Processor
-	11, // 3: protorender.Secret.created_at:type_name -> google.protobuf.Timestamp
-	11, // 4: protorender.Cache.created_at:type_name -> google.protobuf.Timestamp
-	11, // 5: protorender.Cache.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 6: protorender.Buffer.created_at:type_name -> google.protobuf.Timestamp
-	11, // 7: protorender.Buffer.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 8: protorender.RateLimit.created_at:type_name -> google.protobuf.Timestamp
-	11, // 9: protorender.RateLimit.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 10: protorender.File.created_at:type_name -> google.protobuf.Timestamp
-	11, // 11: protorender.File.updated_at:type_name -> google.protobuf.Timestamp
-	12, // 12: protorender.string_value:extendee -> google.protobuf.EnumValueOptions
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	12, // [12:13] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	11, // 3: protorender.Flow.last_error_at:type_name -> google.protobuf.Timestamp
+	11, // 4: protorender.Secret.created_at:type_name -> google.protobuf.Timestamp
+	11, // 5: protorender.Cache.created_at:type_name -> google.protobuf.Timestamp
+	11, // 6: protorender.Cache.updated_at:type_name -> google.protobuf.Timestamp
+	11, // 7: protorender.Buffer.created_at:type_name -> google.protobuf.Timestamp
+	11, // 8: protorender.Buffer.updated_at:type_name -> google.protobuf.Timestamp
+	11, // 9: protorender.RateLimit.created_at:type_name -> google.protobuf.Timestamp
+	11, // 10: protorender.RateLimit.updated_at:type_name -> google.protobuf.Timestamp
+	11, // 11: protorender.File.created_at:type_name -> google.protobuf.Timestamp
+	11, // 12: protorender.File.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 13: protorender.string_value:extendee -> google.protobuf.EnumValueOptions
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	13, // [13:14] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_init() }

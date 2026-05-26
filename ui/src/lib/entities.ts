@@ -53,6 +53,8 @@ export type Flow = {
   is_ready: boolean;
   builder_state?: string;
   managed_by?: string;
+  last_error?: string;
+  last_error_at?: string;
 
   // Legacy fields for backward compatibility
   inputLabel?: string;

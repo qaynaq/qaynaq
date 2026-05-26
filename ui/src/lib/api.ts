@@ -108,11 +108,44 @@ export async function fetchFlows(): Promise<Flow[]> {
       is_ready: flow.is_ready || false,
       builder_state: flow.builder_state || undefined,
       managed_by: flow.managed_by || undefined,
+      last_error: flow.last_error || undefined,
+      last_error_at: flow.last_error_at || undefined,
     }));
   } catch (error) {
     console.error("Error fetching flows:", error);
     throw error; // Re-throw error to be handled by the calling component
   }
+}
+
+export async function fetchFailedFlows(): Promise<Flow[]> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/flows?status=failed`, {
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return (data?.data || []).map((flow: any) => ({
+    id: flow.id,
+    parentID: flow.parent_id || flow.id,
+    name: flow.name,
+    status: flow.status,
+    input_label: flow.input_label,
+    input_component: flow.input_component,
+    input_config: "",
+    output_label: flow.output_label,
+    output_component: flow.output_component,
+    output_config: "",
+    processors: [],
+    createdAt: new Date(flow.created_at).toLocaleString(),
+    is_http_server: flow.is_http_server || false,
+    is_mcp_tool: flow.is_mcp_tool || false,
+    is_ready: flow.is_ready || false,
+    last_error: flow.last_error || undefined,
+    last_error_at: flow.last_error_at || undefined,
+  }));
 }
 
 export async function fetchStream(id: string): Promise<Flow> {
@@ -150,6 +183,8 @@ export async function fetchStream(id: string): Promise<Flow> {
       is_mcp_tool: data.data.is_mcp_tool || false,
       is_ready: data.data.is_ready || false,
       builder_state: data.data.builder_state || undefined,
+      last_error: data.data.last_error || undefined,
+      last_error_at: data.data.last_error_at || undefined,
     };
   } catch (error) {
     console.error("Error fetching flow:", error);

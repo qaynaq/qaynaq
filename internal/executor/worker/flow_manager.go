@@ -307,7 +307,7 @@ func (m *flowManager) StartFlow(ctx context.Context, workerFlowID int64) {
 
 	log.Info().Int64("worker_flow_id", workerFlowID).Msg("Starting flow")
 
-	if err := m.coordinatorConnection.UpdateWorkerFlowStatus(ctx, workerFlowID, pb.WorkerFlowStatus(pb.WorkerFlowStatus_value[string(persistence.WorkerFlowStatusRunning)])); err != nil {
+	if err := m.coordinatorConnection.UpdateWorkerFlowStatus(ctx, workerFlowID, pb.WorkerFlowStatus(pb.WorkerFlowStatus_value[string(persistence.WorkerFlowStatusRunning)]), ""); err != nil {
 		log.Warn().
 			Err(err).
 			Int64("worker_flow_id", workerFlowID).
@@ -316,7 +316,10 @@ func (m *flowManager) StartFlow(ctx context.Context, workerFlowID int64) {
 	}
 
 	go func() {
-		var flowStatus persistence.WorkerFlowStatus
+		var (
+			flowStatus persistence.WorkerFlowStatus
+			flowReason string
+		)
 
 		defer func() {
 			if r := recover(); r != nil {
@@ -339,7 +342,7 @@ func (m *flowManager) StartFlow(ctx context.Context, workerFlowID int64) {
 				log.Debug().Err(err).Int64("worker_flow_id", workerFlowID).Msg("Flow already deleted")
 			}
 
-			if err := m.coordinatorConnection.UpdateWorkerFlowStatus(cleanupCtx, workerFlowID, pb.WorkerFlowStatus(pb.WorkerFlowStatus_value[string(flowStatus)])); err != nil {
+			if err := m.coordinatorConnection.UpdateWorkerFlowStatus(cleanupCtx, workerFlowID, pb.WorkerFlowStatus(pb.WorkerFlowStatus_value[string(flowStatus)]), flowReason); err != nil {
 				log.Warn().
 					Err(err).
 					Int64("worker_flow_id", workerFlowID).
@@ -370,6 +373,7 @@ func (m *flowManager) StartFlow(ctx context.Context, workerFlowID int64) {
 			default:
 				log.Error().Err(err).Msg("Failed to run flow")
 				flowStatus = persistence.WorkerFlowStatusFailed
+				flowReason = err.Error()
 			}
 		} else {
 			log.Info().Int64("worker_flow_id", workerFlowID).Msg("Flow has been completed")

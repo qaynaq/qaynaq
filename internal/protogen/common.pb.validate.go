@@ -307,6 +307,8 @@ func (m *Flow) validate(all bool) error {
 
 	// no validation rules for BuilderState
 
+	// no validation rules for LastError
+
 	if m.ParentId != nil {
 		// no validation rules for ParentId
 	}
@@ -350,6 +352,39 @@ func (m *Flow) validate(all bool) error {
 
 	if m.ManagedBy != nil {
 		// no validation rules for ManagedBy
+	}
+
+	if m.LastErrorAt != nil {
+
+		if all {
+			switch v := interface{}(m.GetLastErrorAt()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FlowValidationError{
+						field:  "LastErrorAt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FlowValidationError{
+						field:  "LastErrorAt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetLastErrorAt()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FlowValidationError{
+					field:  "LastErrorAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {

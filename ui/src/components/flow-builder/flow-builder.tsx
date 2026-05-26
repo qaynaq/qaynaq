@@ -30,7 +30,15 @@ import {
   Download,
   Workflow,
   Upload,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useRelativeTime } from "@/lib/utils";
 import { NodeConfigPanel } from "./node-config-panel";
 import {
   getComponent as getRegisteredComponent,
@@ -149,6 +157,8 @@ interface FlowBuilderProps {
     bufferId?: number;
     nodes: FlowNodeData[];
     builderState?: string;
+    last_error?: string;
+    last_error_at?: string;
   };
   onSave: (data: {
     name: string;
@@ -535,6 +545,42 @@ function resolveFlowNodeType(
     return { nodeType: "brokerInputGroupNode", style: { width: GROUP_WIDTH, height: BROKER_INPUT_GROUP_MIN_HEIGHT }, extraData: { isGroup: true, childCount: 0 }, yOffset: -25 };
   }
   return { nodeType: toFlowNodeType(baseType), extraData: {}, yOffset: 0 };
+}
+
+function FlowFailedBadge({
+  lastError,
+  lastErrorAt,
+}: {
+  lastError?: string;
+  lastErrorAt?: string;
+}) {
+  const failedAt = useRelativeTime(lastErrorAt || "");
+  if (!lastError) {
+    return <Badge variant="destructive">Failed</Badge>;
+  }
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant="destructive" className="cursor-help gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            Failed
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" align="end" className="max-w-sm">
+          <div className="space-y-1.5">
+            <p className="font-medium text-destructive">Flow failed</p>
+            <p className="text-xs text-muted-foreground break-words whitespace-pre-wrap">
+              {lastError}
+            </p>
+            {lastErrorAt && (
+              <p className="text-xs text-muted-foreground">Failed {failedAt}</p>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 function FlowBuilderContent({
@@ -3182,7 +3228,10 @@ function FlowBuilderContent({
           <div className="flex items-center justify-between mb-1 h-5">
             <Label htmlFor="stream-status">Status</Label>
             {initialData?.status === "failed" && (
-              <Badge variant="destructive">Failed</Badge>
+              <FlowFailedBadge
+                lastError={initialData?.last_error}
+                lastErrorAt={initialData?.last_error_at}
+              />
             )}
           </div>
           <Select value={status === "failed" ? "" : status} onValueChange={setStatus}>

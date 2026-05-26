@@ -19,7 +19,7 @@ type CoordinatorConnection interface {
 	SendHeartbeat(ctx context.Context) error
 	SetFlowManager(flowManager any)
 	GetClient() pb.CoordinatorClient
-	UpdateWorkerFlowStatus(ctx context.Context, workerFlowID int64, status pb.WorkerFlowStatus) error
+	UpdateWorkerFlowStatus(ctx context.Context, workerFlowID int64, status pb.WorkerFlowStatus, reason string) error
 	IngestMetrics(ctx context.Context, workerFlowID int64, inputEvents, processorErrors, outputEvents uint64) error
 }
 
@@ -185,12 +185,13 @@ func (c *coordinatorConnection) GetClient() pb.CoordinatorClient {
 	return c.coordinatorClient
 }
 
-func (c *coordinatorConnection) UpdateWorkerFlowStatus(ctx context.Context, workerFlowID int64, status pb.WorkerFlowStatus) error {
+func (c *coordinatorConnection) UpdateWorkerFlowStatus(ctx context.Context, workerFlowID int64, status pb.WorkerFlowStatus, reason string) error {
 	resp, err := c.coordinatorClient.UpdateWorkerFlowStatus(
 		ctx,
 		&pb.WorkerFlowStatusRequest{
 			WorkerFlowId: workerFlowID,
 			Status:       status,
+			Reason:       reason,
 		},
 	)
 	if err != nil {

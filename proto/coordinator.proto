@@ -35,6 +35,7 @@ message HeartbeatResponse {
 message WorkerFlowStatusRequest {
   int64 worker_flow_id = 1;
   WorkerFlowStatus status = 2;
+  string reason = 3;
 }
 
 message ListWorkersRequest {

@@ -479,6 +479,8 @@ func (m *WorkerFlowStatusRequest) validate(all bool) error {
 
 	// no validation rules for Status
 
+	// no validation rules for Reason
+
 	if len(errors) > 0 {
 		return WorkerFlowStatusRequestMultiError(errors)
 	}

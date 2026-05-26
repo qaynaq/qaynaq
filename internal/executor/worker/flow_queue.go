@@ -66,13 +66,13 @@ func (q *flowQueue) ConsumeFlowQueue(ctx context.Context) {
 
 			if err := q.flowManager.WriteFiles(item.Files); err != nil {
 				log.Error().Err(err).Int64("worker_flow_id", item.WorkerFlowID).Msg("Failed to write files to disk")
-				q.reportFailed(ctx, item.WorkerFlowID)
+				q.reportFailed(ctx, item.WorkerFlowID, fmt.Sprintf("failed to write flow files: %s", err.Error()))
 				continue
 			}
 
 			if err := q.flowManager.AddFlow(item.WorkerFlowID, item.Config); err != nil {
 				log.Error().Err(err).Int64("worker_flow_id", item.WorkerFlowID).Msg("Failed to add stream to manager")
-				q.reportFailed(ctx, item.WorkerFlowID)
+				q.reportFailed(ctx, item.WorkerFlowID, fmt.Sprintf("failed to build flow: %s", err.Error()))
 				continue
 			}
 
@@ -90,14 +90,14 @@ func (q *flowQueue) ConsumeFlowQueue(ctx context.Context) {
 	}
 }
 
-func (q *flowQueue) reportFailed(ctx context.Context, workerFlowID int64) {
+func (q *flowQueue) reportFailed(ctx context.Context, workerFlowID int64, reason string) {
 	if q.coordinatorConnection == nil {
 		return
 	}
 	rpcCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 	defer cancel()
 	failed := pb.WorkerFlowStatus(pb.WorkerFlowStatus_value[string(persistence.WorkerFlowStatusFailed)])
-	if err := q.coordinatorConnection.UpdateWorkerFlowStatus(rpcCtx, workerFlowID, failed); err != nil {
+	if err := q.coordinatorConnection.UpdateWorkerFlowStatus(rpcCtx, workerFlowID, failed, reason); err != nil {
 		log.Warn().Err(err).Int64("worker_flow_id", workerFlowID).Msg("Failed to report worker flow init failure")
 	}
 }
