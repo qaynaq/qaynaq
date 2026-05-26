@@ -3176,7 +3176,7 @@ function FlowBuilderContent({
       <div className="flex items-end gap-4 mb-4 flex-wrap">
         <div className="flex-1 min-w-[200px]">
           <Label htmlFor="stream-name">Flow Name</Label>
-          <Input id="stream-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter stream name" />
+          <Input id="stream-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter flow name" />
         </div>
         <div className="w-40">
           <div className="flex items-center justify-between mb-1 h-5">

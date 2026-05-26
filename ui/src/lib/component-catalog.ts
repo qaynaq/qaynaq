@@ -78,7 +78,7 @@ const catalog: Record<NodeKind, Record<string, ComponentCatalogEntry>> = {
     broker: {
       group: "Messaging",
       icon: Network,
-      description: "Combine multiple inputs into one stream.",
+      description: "Combine multiple inputs into one.",
     },
     cdc_mysql: {
       group: "Database",
