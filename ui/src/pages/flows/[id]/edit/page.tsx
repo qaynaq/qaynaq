@@ -113,7 +113,7 @@ export default function EditStreamPage() {
     const processorNodes = data.nodes.filter((node) => node.type === "processor");
     const outputNode = data.nodes.find((node) => node.type === "output");
     if (!inputNode || !outputNode || !inputNode.componentId || !outputNode.componentId) {
-      return { valid: false, error: "Stream must have an input and output with components selected." };
+      return { valid: false, error: "Flow must have an input and output with components selected." };
     }
     const inputComponent = catalog?.input.find(c => c.id === inputNode.componentId);
     const outputComponent = catalog?.output.find(c => c.id === outputNode.componentId);
@@ -147,7 +147,7 @@ export default function EditStreamPage() {
       const outputNode = data.nodes.find((node) => node.type === "output");
 
       if (!inputNode || !outputNode) {
-        throw new Error("Stream must have at least one input and one output");
+        throw new Error("Flow must have at least one input and one output");
       }
 
       if (!inputNode.componentId || !outputNode.componentId) {
@@ -196,7 +196,7 @@ export default function EditStreamPage() {
       await updateFlow(id || "", updatedStreamData);
       addToast({
         id: "stream-updated",
-        title: "Stream Updated",
+        title: "Flow Updated",
         description: `${data.name} has been updated successfully.`,
         variant: "success",
       });
@@ -205,7 +205,7 @@ export default function EditStreamPage() {
     } catch (error) {
       addToast({
         id: "stream-error",
-        title: "Error Updating Stream",
+        title: "Error Updating Flow",
         description:
           error instanceof Error ? error.message : "An unknown error occurred",
         variant: "error",

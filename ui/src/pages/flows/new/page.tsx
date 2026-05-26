@@ -1109,7 +1109,7 @@ export default function NewStreamPage() {
     ) {
       return {
         valid: false,
-        error: "Stream must have an input and output with components selected.",
+        error: "Flow must have an input and output with components selected.",
       };
     }
     const inputComponent = catalog?.input.find(
@@ -1168,7 +1168,7 @@ export default function NewStreamPage() {
       const outputNode = data.nodes.find((node) => node.type === "output");
 
       if (!inputNode || !outputNode) {
-        throw new Error("Stream must have at least one input and one output");
+        throw new Error("Flow must have at least one input and one output");
       }
 
       if (!inputNode.componentId || !outputNode.componentId) {
@@ -1238,7 +1238,7 @@ export default function NewStreamPage() {
         id: "stream-creation-error",
         title: "Error",
         description:
-          error instanceof Error ? error.message : "Failed to create stream.",
+          error instanceof Error ? error.message : "Failed to create flow.",
         variant: "error",
       });
     } finally {
