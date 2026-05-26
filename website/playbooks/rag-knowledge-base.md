@@ -17,7 +17,6 @@ For MCP client setup and authentication, see the [MCP Server guide](/docs/guides
 
 - Docker installed
 - Qaynaq coordinator and worker running ([Installation](/docs/getting-started/installation))
-- A local directory of documents to index (Markdown, plain text, or similar)
 
 ## 1. Start PostgreSQL with pgvector
 
@@ -112,13 +111,15 @@ Point this at the sample file you just created. To ingest a whole directory, use
 |-------|-------|
 | Paths | `/tmp/qaynaq-rag/handbook.md` |
 
-### Scanner - select **RAG Chunker**
+Scroll down in the same File input panel to the **Scanner** field and pick **RAG Chunker**, then fill in:
 
 | Field | Value |
 |-------|-------|
 | Strategy | `Markdown` (or `Recursive` for plain text) |
 | Chunk Size | `1000` |
 | Overlap | `200` |
+
+The scanner runs inside the input - it controls how the bytes coming out of the file are split into messages before they reach the processors.
 
 ### Processors
 
