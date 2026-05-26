@@ -17,8 +17,8 @@ export function parseYaml<T>(
   if (raw === null || raw === undefined) return structuredClone(defaults);
   const merged =
     typeof raw === "object" && !Array.isArray(raw)
-      ? { ...defaults, ...(raw as object) }
-      : raw;
+      ? (deepMerge(defaults, raw) as T)
+      : (raw as T);
   const result = schema.safeParse(merged);
   // Validation failure (e.g. unfilled required field) must not wipe the user's
   // input. Return the merged shape; errors surface via the editor's errors prop.
@@ -27,6 +27,25 @@ export function parseYaml<T>(
 
 export function serializeYaml<T>(config: T): string {
   return yaml.dump(stripEmpty(config) as object, { lineWidth: -1, noRefs: true });
+}
+
+// Recursively merges `override` onto `base`. Plain objects merge key-by-key;
+// arrays and primitives from `override` replace `base` wholesale. Needed so
+// that nested defaults (e.g. batch_policy.period) reappear after stripEmpty
+// has dropped them during serialize.
+function deepMerge(base: unknown, override: unknown): unknown {
+  if (!isPlainObject(base) || !isPlainObject(override)) {
+    return override === undefined ? base : override;
+  }
+  const out: Record<string, unknown> = { ...base };
+  for (const [k, v] of Object.entries(override)) {
+    out[k] = k in out ? deepMerge(out[k], v) : v;
+  }
+  return out;
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
 // Recursively drops keys whose value is "" (and any object/array that becomes
