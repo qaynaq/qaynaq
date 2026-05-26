@@ -7,6 +7,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/qaynaq/qaynaq/internal/persistence"
 	pb "github.com/qaynaq/qaynaq/internal/protogen"
 )
 
@@ -27,14 +28,16 @@ type FlowQueue interface {
 }
 
 type flowQueue struct {
-	queue       chan FlowQueueItem
-	flowManager FlowManager
+	queue                 chan FlowQueueItem
+	flowManager           FlowManager
+	coordinatorConnection CoordinatorConnection
 }
 
-func NewFlowQueue(flowManager FlowManager) FlowQueue {
+func NewFlowQueue(flowManager FlowManager, coordinatorConnection CoordinatorConnection) FlowQueue {
 	return &flowQueue{
-		queue:       make(chan FlowQueueItem, MaxItemsInFlowQueue),
-		flowManager: flowManager,
+		queue:                 make(chan FlowQueueItem, MaxItemsInFlowQueue),
+		flowManager:           flowManager,
+		coordinatorConnection: coordinatorConnection,
 	}
 }
 
@@ -63,11 +66,13 @@ func (q *flowQueue) ConsumeFlowQueue(ctx context.Context) {
 
 			if err := q.flowManager.WriteFiles(item.Files); err != nil {
 				log.Error().Err(err).Int64("worker_flow_id", item.WorkerFlowID).Msg("Failed to write files to disk")
+				q.reportFailed(ctx, item.WorkerFlowID)
 				continue
 			}
 
 			if err := q.flowManager.AddFlow(item.WorkerFlowID, item.Config); err != nil {
 				log.Error().Err(err).Int64("worker_flow_id", item.WorkerFlowID).Msg("Failed to add stream to manager")
+				q.reportFailed(ctx, item.WorkerFlowID)
 				continue
 			}
 
@@ -82,6 +87,18 @@ func (q *flowQueue) ConsumeFlowQueue(ctx context.Context) {
 			log.Info().Msg("Flow queue processing stopped")
 			return
 		}
+	}
+}
+
+func (q *flowQueue) reportFailed(ctx context.Context, workerFlowID int64) {
+	if q.coordinatorConnection == nil {
+		return
+	}
+	rpcCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
+	failed := pb.WorkerFlowStatus(pb.WorkerFlowStatus_value[string(persistence.WorkerFlowStatusFailed)])
+	if err := q.coordinatorConnection.UpdateWorkerFlowStatus(rpcCtx, workerFlowID, failed); err != nil {
+		log.Warn().Err(err).Int64("worker_flow_id", workerFlowID).Msg("Failed to report worker flow init failure")
 	}
 }
 

@@ -36,7 +36,16 @@ func (c *CoordinatorAPI) UpdateWorkerFlowStatus(_ context.Context, in *pb.Worker
 		if workerFlow.Flow.ParentID != nil {
 			c.flowWorkerMap.SetFlowWorker(*workerFlow.Flow.ParentID, workerFlow.WorkerID, workerFlow.ID)
 		}
-	case persistence.WorkerFlowStatusFailed, persistence.WorkerFlowStatusStopped:
+	case persistence.WorkerFlowStatusFailed:
+		c.flowWorkerMap.RemoveFlowIfMatches(workerFlow.FlowID, workerFlow.ID)
+		if workerFlow.Flow.ParentID != nil {
+			c.flowWorkerMap.RemoveFlowIfMatches(*workerFlow.Flow.ParentID, workerFlow.ID)
+		}
+		if err = c.flowRepo.UpdateStatus(workerFlow.FlowID, persistence.FlowStatusFailed); err != nil {
+			log.Error().Err(err).Str("target_status", string(persistence.FlowStatusFailed)).Msg("Failed to update flow status")
+			return nil, status.Error(codes.Internal, "Failed to update worker flow status")
+		}
+	case persistence.WorkerFlowStatusStopped:
 		c.flowWorkerMap.RemoveFlowIfMatches(workerFlow.FlowID, workerFlow.ID)
 		if workerFlow.Flow.ParentID != nil {
 			c.flowWorkerMap.RemoveFlowIfMatches(*workerFlow.Flow.ParentID, workerFlow.ID)

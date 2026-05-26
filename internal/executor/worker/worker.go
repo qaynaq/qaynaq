@@ -37,7 +37,7 @@ func NewWorkerExecutor(ctx context.Context, grpcConn *grpc.ClientConn, grpcPort 
 
 	coordinatorConnection.SetFlowManager(flowManager)
 
-	flowQueue := NewFlowQueue(flowManager)
+	flowQueue := NewFlowQueue(flowManager, coordinatorConnection)
 
 	telemetryManager := NewTelemetryManager(coordinatorConnection, flowManager)
 
