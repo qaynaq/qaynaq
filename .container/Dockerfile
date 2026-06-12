@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- UI build stage -----------------------------------------------------------
-FROM node:20-slim AS ui
+FROM node:22-slim AS ui
 
 WORKDIR /app
 
