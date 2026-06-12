@@ -32,6 +32,9 @@ const (
 	Coordinator_DeleteFlow_FullMethodName             = "/protorender.Coordinator/DeleteFlow"
 	Coordinator_ValidateFlow_FullMethodName           = "/protorender.Coordinator/ValidateFlow"
 	Coordinator_TryFlow_FullMethodName                = "/protorender.Coordinator/TryFlow"
+	Coordinator_ListTemplates_FullMethodName          = "/protorender.Coordinator/ListTemplates"
+	Coordinator_GetTemplate_FullMethodName            = "/protorender.Coordinator/GetTemplate"
+	Coordinator_InstallTemplate_FullMethodName        = "/protorender.Coordinator/InstallTemplate"
 	Coordinator_ListSecrets_FullMethodName            = "/protorender.Coordinator/ListSecrets"
 	Coordinator_CreateSecret_FullMethodName           = "/protorender.Coordinator/CreateSecret"
 	Coordinator_UpdateSecret_FullMethodName           = "/protorender.Coordinator/UpdateSecret"
@@ -109,6 +112,10 @@ type CoordinatorClient interface {
 	DeleteFlow(ctx context.Context, in *GetFlowRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	ValidateFlow(ctx context.Context, in *ValidateFlowRequest, opts ...grpc.CallOption) (*ValidateFlowResponse, error)
 	TryFlow(ctx context.Context, in *TryFlowRequest, opts ...grpc.CallOption) (*TryFlowResponse, error)
+	// Template methods
+	ListTemplates(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListTemplatesResponse, error)
+	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*TemplateResponse, error)
+	InstallTemplate(ctx context.Context, in *InstallTemplateRequest, opts ...grpc.CallOption) (*InstallTemplateResponse, error)
 	// Secret methods
 	ListSecrets(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListSecretsResponse, error)
 	CreateSecret(ctx context.Context, in *SecretRequest, opts ...grpc.CallOption) (*CommonResponse, error)
@@ -300,6 +307,36 @@ func (c *coordinatorClient) TryFlow(ctx context.Context, in *TryFlowRequest, opt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TryFlowResponse)
 	err := c.cc.Invoke(ctx, Coordinator_TryFlow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) ListTemplates(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListTemplatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTemplatesResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ListTemplates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*TemplateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TemplateResponse)
+	err := c.cc.Invoke(ctx, Coordinator_GetTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) InstallTemplate(ctx context.Context, in *InstallTemplateRequest, opts ...grpc.CallOption) (*InstallTemplateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InstallTemplateResponse)
+	err := c.cc.Invoke(ctx, Coordinator_InstallTemplate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -888,6 +925,10 @@ type CoordinatorServer interface {
 	DeleteFlow(context.Context, *GetFlowRequest) (*CommonResponse, error)
 	ValidateFlow(context.Context, *ValidateFlowRequest) (*ValidateFlowResponse, error)
 	TryFlow(context.Context, *TryFlowRequest) (*TryFlowResponse, error)
+	// Template methods
+	ListTemplates(context.Context, *emptypb.Empty) (*ListTemplatesResponse, error)
+	GetTemplate(context.Context, *GetTemplateRequest) (*TemplateResponse, error)
+	InstallTemplate(context.Context, *InstallTemplateRequest) (*InstallTemplateResponse, error)
 	// Secret methods
 	ListSecrets(context.Context, *emptypb.Empty) (*ListSecretsResponse, error)
 	CreateSecret(context.Context, *SecretRequest) (*CommonResponse, error)
@@ -1000,6 +1041,15 @@ func (UnimplementedCoordinatorServer) ValidateFlow(context.Context, *ValidateFlo
 }
 func (UnimplementedCoordinatorServer) TryFlow(context.Context, *TryFlowRequest) (*TryFlowResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TryFlow not implemented")
+}
+func (UnimplementedCoordinatorServer) ListTemplates(context.Context, *emptypb.Empty) (*ListTemplatesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTemplates not implemented")
+}
+func (UnimplementedCoordinatorServer) GetTemplate(context.Context, *GetTemplateRequest) (*TemplateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTemplate not implemented")
+}
+func (UnimplementedCoordinatorServer) InstallTemplate(context.Context, *InstallTemplateRequest) (*InstallTemplateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstallTemplate not implemented")
 }
 func (UnimplementedCoordinatorServer) ListSecrets(context.Context, *emptypb.Empty) (*ListSecretsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListSecrets not implemented")
@@ -1402,6 +1452,60 @@ func _Coordinator_TryFlow_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CoordinatorServer).TryFlow(ctx, req.(*TryFlowRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_ListTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ListTemplates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListTemplates(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_GetTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).GetTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_GetTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).GetTemplate(ctx, req.(*GetTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_InstallTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InstallTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).InstallTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_InstallTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).InstallTemplate(ctx, req.(*InstallTemplateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2457,6 +2561,18 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TryFlow",
 			Handler:    _Coordinator_TryFlow_Handler,
+		},
+		{
+			MethodName: "ListTemplates",
+			Handler:    _Coordinator_ListTemplates_Handler,
+		},
+		{
+			MethodName: "GetTemplate",
+			Handler:    _Coordinator_GetTemplate_Handler,
+		},
+		{
+			MethodName: "InstallTemplate",
+			Handler:    _Coordinator_InstallTemplate_Handler,
 		},
 		{
 			MethodName: "ListSecrets",

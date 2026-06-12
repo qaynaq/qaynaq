@@ -931,6 +931,90 @@ func (x *RateLimitCheckResponse) GetResetAt() int64 {
 	return 0
 }
 
+type Template struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Id            string                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                  `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Version       string                  `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	Variables     []*Template_Variable    `protobuf:"bytes,5,rep,name=variables,proto3" json:"variables,omitempty"`
+	Flows         []*Template_FlowSummary `protobuf:"bytes,6,rep,name=flows,proto3" json:"flows,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Template) Reset() {
+	*x = Template{}
+	mi := &file_common_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Template) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Template) ProtoMessage() {}
+
+func (x *Template) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Template.ProtoReflect.Descriptor instead.
+func (*Template) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *Template) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Template) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Template) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Template) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *Template) GetVariables() []*Template_Variable {
+	if x != nil {
+		return x.Variables
+	}
+	return nil
+}
+
+func (x *Template) GetFlows() []*Template_FlowSummary {
+	if x != nil {
+		return x.Flows
+	}
+	return nil
+}
+
 type Flow_Processor struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
@@ -942,7 +1026,7 @@ type Flow_Processor struct {
 
 func (x *Flow_Processor) Reset() {
 	*x = Flow_Processor{}
-	mi := &file_common_proto_msgTypes[9]
+	mi := &file_common_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -954,7 +1038,7 @@ func (x *Flow_Processor) String() string {
 func (*Flow_Processor) ProtoMessage() {}
 
 func (x *Flow_Processor) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[9]
+	mi := &file_common_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -989,6 +1073,166 @@ func (x *Flow_Processor) GetConfig() string {
 		return x.Config
 	}
 	return ""
+}
+
+type Template_Variable struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Required      bool                   `protobuf:"varint,5,opt,name=required,proto3" json:"required,omitempty"`
+	Placeholder   string                 `protobuf:"bytes,6,opt,name=placeholder,proto3" json:"placeholder,omitempty"`
+	Default       string                 `protobuf:"bytes,7,opt,name=default,proto3" json:"default,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Template_Variable) Reset() {
+	*x = Template_Variable{}
+	mi := &file_common_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Template_Variable) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Template_Variable) ProtoMessage() {}
+
+func (x *Template_Variable) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Template_Variable.ProtoReflect.Descriptor instead.
+func (*Template_Variable) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{9, 0}
+}
+
+func (x *Template_Variable) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *Template_Variable) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Template_Variable) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Template_Variable) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *Template_Variable) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+func (x *Template_Variable) GetPlaceholder() string {
+	if x != nil {
+		return x.Placeholder
+	}
+	return ""
+}
+
+func (x *Template_Variable) GetDefault() string {
+	if x != nil {
+		return x.Default
+	}
+	return ""
+}
+
+type Template_FlowSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Installed     bool                   `protobuf:"varint,4,opt,name=installed,proto3" json:"installed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Template_FlowSummary) Reset() {
+	*x = Template_FlowSummary{}
+	mi := &file_common_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Template_FlowSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Template_FlowSummary) ProtoMessage() {}
+
+func (x *Template_FlowSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Template_FlowSummary.ProtoReflect.Descriptor instead.
+func (*Template_FlowSummary) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{9, 1}
+}
+
+func (x *Template_FlowSummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Template_FlowSummary) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Template_FlowSummary) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Template_FlowSummary) GetInstalled() bool {
+	if x != nil {
+		return x.Installed
+	}
+	return false
 }
 
 var file_common_proto_extTypes = []protoimpl.ExtensionInfo{
@@ -1150,7 +1394,27 @@ const file_common_proto_rawDesc = "" +
 	"\x0eretry_after_ms\x18\x02 \x01(\x03R\fretryAfterMs\x12\x1c\n" +
 	"\tremaining\x18\x03 \x01(\x03R\tremaining\x12\x14\n" +
 	"\x05limit\x18\x04 \x01(\x03R\x05limit\x12\x19\n" +
-	"\breset_at\x18\x05 \x01(\x03R\aresetAt*\x96\x01\n" +
+	"\breset_at\x18\x05 \x01(\x03R\aresetAt\"\x9b\x04\n" +
+	"\bTemplate\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x18\n" +
+	"\aversion\x18\x04 \x01(\tR\aversion\x12<\n" +
+	"\tvariables\x18\x05 \x03(\v2\x1e.protorender.Template.VariableR\tvariables\x127\n" +
+	"\x05flows\x18\x06 \x03(\v2!.protorender.Template.FlowSummaryR\x05flows\x1a\xc0\x01\n" +
+	"\bVariable\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1a\n" +
+	"\brequired\x18\x05 \x01(\bR\brequired\x12 \n" +
+	"\vplaceholder\x18\x06 \x01(\tR\vplaceholder\x12\x18\n" +
+	"\adefault\x18\a \x01(\tR\adefault\x1au\n" +
+	"\vFlowSummary\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1c\n" +
+	"\tinstalled\x18\x04 \x01(\bR\tinstalled*\x96\x01\n" +
 	"\x10WorkerFlowStatus\x12\x18\n" +
 	"\awaiting\x10\x00\x1a\v\x92\x82\x19\awaiting\x12\x18\n" +
 	"\arunning\x10\x01\x1a\v\x92\x82\x19\arunning\x12\x18\n" +
@@ -1173,7 +1437,7 @@ func file_common_proto_rawDescGZIP() []byte {
 }
 
 var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_common_proto_goTypes = []any{
 	(WorkerFlowStatus)(0),                 // 0: protorender.WorkerFlowStatus
 	(*CommonResponse)(nil),                // 1: protorender.CommonResponse
@@ -1185,30 +1449,35 @@ var file_common_proto_goTypes = []any{
 	(*File)(nil),                          // 7: protorender.File
 	(*RateLimitCheckRequest)(nil),         // 8: protorender.RateLimitCheckRequest
 	(*RateLimitCheckResponse)(nil),        // 9: protorender.RateLimitCheckResponse
-	(*Flow_Processor)(nil),                // 10: protorender.Flow.Processor
-	(*timestamppb.Timestamp)(nil),         // 11: google.protobuf.Timestamp
-	(*descriptorpb.EnumValueOptions)(nil), // 12: google.protobuf.EnumValueOptions
+	(*Template)(nil),                      // 10: protorender.Template
+	(*Flow_Processor)(nil),                // 11: protorender.Flow.Processor
+	(*Template_Variable)(nil),             // 12: protorender.Template.Variable
+	(*Template_FlowSummary)(nil),          // 13: protorender.Template.FlowSummary
+	(*timestamppb.Timestamp)(nil),         // 14: google.protobuf.Timestamp
+	(*descriptorpb.EnumValueOptions)(nil), // 15: google.protobuf.EnumValueOptions
 }
 var file_common_proto_depIdxs = []int32{
-	11, // 0: protorender.Flow.created_at:type_name -> google.protobuf.Timestamp
-	11, // 1: protorender.Flow.updated_at:type_name -> google.protobuf.Timestamp
-	10, // 2: protorender.Flow.processors:type_name -> protorender.Flow.Processor
-	11, // 3: protorender.Flow.last_error_at:type_name -> google.protobuf.Timestamp
-	11, // 4: protorender.Secret.created_at:type_name -> google.protobuf.Timestamp
-	11, // 5: protorender.Cache.created_at:type_name -> google.protobuf.Timestamp
-	11, // 6: protorender.Cache.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 7: protorender.Buffer.created_at:type_name -> google.protobuf.Timestamp
-	11, // 8: protorender.Buffer.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 9: protorender.RateLimit.created_at:type_name -> google.protobuf.Timestamp
-	11, // 10: protorender.RateLimit.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 11: protorender.File.created_at:type_name -> google.protobuf.Timestamp
-	11, // 12: protorender.File.updated_at:type_name -> google.protobuf.Timestamp
-	12, // 13: protorender.string_value:extendee -> google.protobuf.EnumValueOptions
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	13, // [13:14] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	14, // 0: protorender.Flow.created_at:type_name -> google.protobuf.Timestamp
+	14, // 1: protorender.Flow.updated_at:type_name -> google.protobuf.Timestamp
+	11, // 2: protorender.Flow.processors:type_name -> protorender.Flow.Processor
+	14, // 3: protorender.Flow.last_error_at:type_name -> google.protobuf.Timestamp
+	14, // 4: protorender.Secret.created_at:type_name -> google.protobuf.Timestamp
+	14, // 5: protorender.Cache.created_at:type_name -> google.protobuf.Timestamp
+	14, // 6: protorender.Cache.updated_at:type_name -> google.protobuf.Timestamp
+	14, // 7: protorender.Buffer.created_at:type_name -> google.protobuf.Timestamp
+	14, // 8: protorender.Buffer.updated_at:type_name -> google.protobuf.Timestamp
+	14, // 9: protorender.RateLimit.created_at:type_name -> google.protobuf.Timestamp
+	14, // 10: protorender.RateLimit.updated_at:type_name -> google.protobuf.Timestamp
+	14, // 11: protorender.File.created_at:type_name -> google.protobuf.Timestamp
+	14, // 12: protorender.File.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 13: protorender.Template.variables:type_name -> protorender.Template.Variable
+	13, // 14: protorender.Template.flows:type_name -> protorender.Template.FlowSummary
+	15, // 15: protorender.string_value:extendee -> google.protobuf.EnumValueOptions
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	15, // [15:16] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_init() }
@@ -1227,7 +1496,7 @@ func file_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 1,
 			NumServices:   0,
 		},
