@@ -16,6 +16,8 @@ import {
   OAuthClients,
   OAuthSessions,
   OAuthConsentRequest,
+  Template,
+  TemplateInstallResult,
 } from "./entities";
 import * as yaml from "js-yaml";
 
@@ -558,6 +560,31 @@ export async function createSecret(secretData: {
     };
   } catch (error) {
     console.error("Error creating secret:", error);
+    throw error;
+  }
+}
+
+export async function updateSecret(secretData: {
+  key: string;
+  value: string;
+}): Promise<void> {
+  try {
+    const response = await handleResponse(
+      await fetch(`${API_BASE_URL}/secrets/${secretData.key}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          key: secretData.key,
+          value: secretData.value,
+        }),
+      }),
+    );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Error updating secret:", error);
     throw error;
   }
 }
@@ -1737,4 +1764,79 @@ export async function fetchMCPCatalog(): Promise<MCPCatalogEntry[]> {
   }
   const data = await response.json();
   return data.data || [];
+}
+
+export async function fetchTemplates(): Promise<Template[]> {
+  try {
+    const response = await handleResponse(
+      await fetch(`${API_BASE_URL}/templates`, {
+        headers: getAuthHeaders(),
+      }),
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    return (data.data || []).map((tmpl: any) => ({
+      id: tmpl.id,
+      name: tmpl.name,
+      description: tmpl.description,
+      version: tmpl.version,
+      variables: (tmpl.variables || []).map((v: any) => ({
+        key: v.key,
+        title: v.title,
+        description: v.description || "",
+        type: v.type,
+        required: v.required || false,
+        placeholder: v.placeholder || "",
+        default: v.default || "",
+      })),
+      flows: (tmpl.flows || []).map((f: any) => ({
+        name: f.name,
+        kind: f.kind,
+        description: f.description || "",
+        installed: f.installed || false,
+      })),
+    }));
+  } catch (error) {
+    console.error("Error fetching templates:", error);
+    throw error;
+  }
+}
+
+export async function installTemplate(install: {
+  id: string;
+  variables: Record<string, string>;
+  flow_names?: string[];
+  override?: boolean;
+}): Promise<TemplateInstallResult[]> {
+  try {
+    const response = await handleResponse(
+      await fetch(`${API_BASE_URL}/templates/${install.id}/install`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          variables: install.variables,
+          flow_names: install.flow_names || [],
+          override: install.override || false,
+        }),
+      }),
+    );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    return (data.results || []).map((result: any) => ({
+      name: result.name,
+      success: result.success || false,
+      skipped: result.skipped || false,
+      error: result.error || "",
+    }));
+  } catch (error) {
+    console.error("Error installing template:", error);
+    throw error;
+  }
 }
