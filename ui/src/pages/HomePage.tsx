@@ -421,7 +421,7 @@ export default function Home() {
 
   const handleGoogleComplete = (result: GoogleWorkspaceResult) => {
     setToolInfo({
-      name: result.packName,
+      name: result.templateName,
       type: "google-workspace",
       toolCount: result.toolCount,
     });

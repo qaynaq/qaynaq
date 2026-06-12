@@ -19,28 +19,24 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Check,
 } from "lucide-react";
-import { fetchConnections, createFlow } from "@/lib/api";
-import { templatePacks } from "@/lib/mcp-tool-templates";
-import { buildFlowFromTemplate } from "@/lib/flow-builder-utils";
-import type { Connection } from "@/lib/entities";
+import {
+  fetchConnections,
+  fetchTemplates,
+  installTemplate,
+} from "@/lib/api";
+import type { Connection, Template } from "@/lib/entities";
 
-const PACK_ICONS: Record<string, React.ReactNode> = {
-  "google-calendar": <Calendar className="h-6 w-6" />,
-  "google-drive": <HardDrive className="h-6 w-6" />,
-  "google-sheets": <Table2 className="h-6 w-6" />,
+const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
+  google_calendar: <Calendar className="h-6 w-6" />,
+  google_drive: <HardDrive className="h-6 w-6" />,
+  google_sheets: <Table2 className="h-6 w-6" />,
 };
 
-const googlePacks = templatePacks.filter(
-  (p) =>
-    p.id === "google-calendar" ||
-    p.id === "google-drive" ||
-    p.id === "google-sheets",
-);
+const GOOGLE_TEMPLATE_IDS = ["google_calendar", "google_drive", "google_sheets"];
 
 export type GoogleWorkspaceResult = {
-  packName: string;
+  templateName: string;
   toolCount: number;
 };
 
@@ -56,11 +52,13 @@ export function GoogleWorkspaceWizard({
   const [connections, setConnections] = useState<Connection[]>([]);
   const [selectedConnection, setSelectedConnection] = useState("");
   const [connectionsLoaded, setConnectionsLoaded] = useState(false);
+  const [googleTemplates, setGoogleTemplates] = useState<Template[]>([]);
+  const [templatesLoaded, setTemplatesLoaded] = useState(false);
 
-  const [selectedPack, setSelectedPack] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [deploying, setDeploying] = useState(false);
-  const [deployProgress, setDeployProgress] = useState({ current: 0, total: 0 });
+  const [deployError, setDeployError] = useState("");
 
   useEffect(() => {
     fetchConnections()
@@ -69,67 +67,68 @@ export function GoogleWorkspaceWizard({
         setConnectionsLoaded(true);
       })
       .catch(() => setConnectionsLoaded(true));
+    fetchTemplates()
+      .then((data) => {
+        setGoogleTemplates(data.filter((p) => GOOGLE_TEMPLATE_IDS.includes(p.id)));
+        setTemplatesLoaded(true);
+      })
+      .catch(() => setTemplatesLoaded(true));
   }, []);
 
-  const pack = googlePacks.find((p) => p.id === selectedPack);
+  const tmpl = googleTemplates.find((p) => p.id === selectedTemplate);
 
-  const handleSelectPack = (packId: string) => {
-    setSelectedPack(packId);
-    const p = googlePacks.find((p) => p.id === packId);
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    const p = googleTemplates.find((p) => p.id === templateId);
     if (p) {
-      setSelectedTools(new Set(p.templates.map((t) => t.id)));
+      setSelectedTools(new Set(p.flows.map((f) => f.name)));
     }
   };
 
-  const toggleTool = (toolId: string) => {
+  const toggleTool = (name: string) => {
     setSelectedTools((prev) => {
       const next = new Set(prev);
-      if (next.has(toolId)) {
-        next.delete(toolId);
+      if (next.has(name)) {
+        next.delete(name);
       } else {
-        next.add(toolId);
+        next.add(name);
       }
       return next;
     });
   };
 
   const toggleAll = () => {
-    if (!pack) return;
-    if (selectedTools.size === pack.templates.length) {
+    if (!tmpl) return;
+    if (selectedTools.size === tmpl.flows.length) {
       setSelectedTools(new Set());
     } else {
-      setSelectedTools(new Set(pack.templates.map((t) => t.id)));
+      setSelectedTools(new Set(tmpl.flows.map((f) => f.name)));
     }
   };
 
   const handleDeploy = async () => {
-    if (!pack) return;
-
-    const tools = pack.templates.filter((t) => selectedTools.has(t.id));
+    if (!tmpl) return;
     setDeploying(true);
-    setDeployProgress({ current: 0, total: tools.length });
+    setDeployError("");
 
-    const sharedConfig: Record<string, string> = {
-      oauth_connection: selectedConnection,
-    };
-
-    for (let i = 0; i < tools.length; i++) {
-      setDeployProgress({ current: i + 1, total: tools.length });
-      const flow = buildFlowFromTemplate(
-        tools[i],
-        sharedConfig,
-        pack.sharedConfig,
-        pack.id,
+    try {
+      const results = await installTemplate({
+        id: tmpl.id,
+        variables: { oauth_connection: selectedConnection },
+        flow_names: [...selectedTools],
+        override: true,
+      });
+      setDeploying(false);
+      onComplete({
+        templateName: tmpl.name,
+        toolCount: results.filter((r) => r.success).length,
+      });
+    } catch (error) {
+      setDeploying(false);
+      setDeployError(
+        error instanceof Error ? error.message : "Failed to deploy tools",
       );
-      try {
-        await createFlow(flow);
-      } catch {
-        // continue deploying remaining tools
-      }
     }
-
-    setDeploying(false);
-    onComplete({ packName: pack.name, toolCount: tools.length });
   };
 
   return (
@@ -232,25 +231,31 @@ export function GoogleWorkspaceWizard({
                 Select tools to deploy
               </h2>
               <p className="text-sm text-muted-foreground">
-                Pick a pack and choose which tools to enable
+                Pick a template and choose which tools to enable
               </p>
             </div>
 
-            {!selectedPack && (
+            {!templatesLoaded && (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
+            {templatesLoaded && !selectedTemplate && (
               <div className="grid grid-cols-3 gap-3">
-                {googlePacks.map((p) => (
+                {googleTemplates.map((p) => (
                   <Card
                     key={p.id}
                     className="cursor-pointer hover:border-primary transition-colors duration-200"
-                    onClick={() => handleSelectPack(p.id)}
+                    onClick={() => handleSelectTemplate(p.id)}
                   >
                     <CardContent className="pt-5 pb-4 text-center">
                       <div className="mx-auto mb-2 text-muted-foreground">
-                        {PACK_ICONS[p.id]}
+                        {TEMPLATE_ICONS[p.id]}
                       </div>
                       <p className="font-medium text-sm mb-1">{p.name}</p>
                       <Badge variant="secondary" className="text-xs">
-                        {p.templates.length} tools
+                        {p.flows.length} tools
                       </Badge>
                     </CardContent>
                   </Card>
@@ -258,43 +263,43 @@ export function GoogleWorkspaceWizard({
               </div>
             )}
 
-            {selectedPack && pack && (
+            {selectedTemplate && tmpl && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSelectedPack(null)}
+                    onClick={() => setSelectedTemplate(null)}
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
-                    {pack.name}
+                    {tmpl.name}
                   </Button>
                   <button
                     onClick={toggleAll}
                     className="text-xs text-muted-foreground hover:text-foreground"
                   >
-                    {selectedTools.size === pack.templates.length
+                    {selectedTools.size === tmpl.flows.length
                       ? "Deselect all"
                       : "Select all"}
                   </button>
                 </div>
 
                 <div className="max-h-[280px] overflow-y-auto space-y-1">
-                  {pack.templates.map((t) => (
+                  {tmpl.flows.map((f) => (
                     <label
-                      key={t.id}
+                      key={f.name}
                       className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/50 cursor-pointer"
                     >
                       <Checkbox
-                        checked={selectedTools.has(t.id)}
-                        onCheckedChange={() => toggleTool(t.id)}
+                        checked={selectedTools.has(f.name)}
+                        onCheckedChange={() => toggleTool(f.name)}
                       />
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {t.name}
+                          {f.name}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {t.description}
+                          {f.description}
                         </p>
                       </div>
                     </label>
@@ -307,9 +312,14 @@ export function GoogleWorkspaceWizard({
               <div className="flex items-center gap-3">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm">
-                  Deploying {deployProgress.current}/{deployProgress.total}...
+                  Deploying {selectedTools.size} tool
+                  {selectedTools.size !== 1 ? "s" : ""}...
                 </span>
               </div>
+            )}
+
+            {deployError && (
+              <p className="text-sm text-destructive">{deployError}</p>
             )}
 
             <div className="flex justify-between pt-2">
@@ -319,7 +329,7 @@ export function GoogleWorkspaceWizard({
               </Button>
               <Button
                 onClick={handleDeploy}
-                disabled={deploying || !selectedPack || selectedTools.size === 0}
+                disabled={deploying || !selectedTemplate || selectedTools.size === 0}
               >
                 {deploying ? (
                   <>
