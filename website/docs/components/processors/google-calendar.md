@@ -2,8 +2,8 @@
 
 Performs Google Calendar operations - create, read, update, and delete events and calendars.
 
-:::tip MCP Tool Pack Available
-Want to expose Google Calendar actions as MCP tools for AI assistants? Use the [Google Calendar MCP Tool Pack](/docs/guides/mcp-tool-packs/google-calendar) to deploy all 13 tools in one step - no manual configuration needed.
+:::tip Template Available
+Want to expose Google Calendar actions as MCP tools for AI assistants? Use the [Google Calendar template](/docs/guides/templates/google-calendar) to deploy all 13 tools in one step - no manual configuration needed.
 :::
 
 ## Configuration

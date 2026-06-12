@@ -2,8 +2,8 @@
 
 Performs on-demand Shopify Admin API operations for MCP tools - list and retrieve orders, products, customers, and inventory.
 
-:::tip MCP Tool Pack Available
-Want to expose Shopify actions as MCP tools for AI assistants? Use the Shopify wizard in the first-run setup to deploy all 7 tools in one step - no manual configuration needed.
+:::tip Template Available
+Want to expose Shopify actions as MCP tools for AI assistants? Use the [Shopify template](/docs/guides/templates/shopify) to deploy all 7 tools in one step - no manual configuration needed.
 :::
 
 ## Configuration
