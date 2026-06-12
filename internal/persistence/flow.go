@@ -129,6 +129,7 @@ type FlowRepository interface {
 	Update(flow *Flow) error
 	FindByID(id int64) (*Flow, error)
 	FindByNameAndManagedBy(name string, managedBy string) (*Flow, error)
+	ListAllByManagedBy(managedBy string) ([]Flow, error)
 	UpdateStatus(id int64, status FlowStatus) error
 	RecordFailure(id int64, reason string) error
 	Delete(id int64) error
@@ -155,6 +156,18 @@ func (r *flowRepository) FindByNameAndManagedBy(name string, managedBy string) (
 		return nil, err
 	}
 	return &flow, nil
+}
+
+func (r *flowRepository) ListAllByManagedBy(managedBy string) ([]Flow, error) {
+	var flows []Flow
+	err := r.db.
+		Where("managed_by = ? AND is_current = ?", managedBy, true).
+		Find(&flows).
+		Error
+	if err != nil {
+		return nil, err
+	}
+	return flows, nil
 }
 
 func (r *flowRepository) Create(flow *Flow) error {

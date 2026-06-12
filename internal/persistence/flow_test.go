@@ -116,3 +116,43 @@ func TestUpdateStatusToFailedPreservesError(t *testing.T) {
 		t.Error("last_error_at = nil, want preserved")
 	}
 }
+
+func TestListAllByManagedBy(t *testing.T) {
+	_, repo := setupFlowTestDB(t)
+
+	managed := "shopify"
+	for _, name := range []string{"tool_a", "tool_b"} {
+		flow := &Flow{
+			Name:            name,
+			InputComponent:  "mcp_tool",
+			InputConfig:     []byte("{}"),
+			OutputComponent: "sync_response",
+			OutputConfig:    []byte("{}"),
+			Status:          FlowStatusActive,
+			IsCurrent:       true,
+			ManagedBy:       &managed,
+		}
+		if err := repo.Create(flow); err != nil {
+			t.Fatalf("seed managed flow: %v", err)
+		}
+	}
+	if _, err := repo.FindByID(seedFlow(t, repo).ID); err != nil {
+		t.Fatalf("seed unmanaged flow: %v", err)
+	}
+
+	flows, err := repo.ListAllByManagedBy(managed)
+	if err != nil {
+		t.Fatalf("ListAllByManagedBy: %v", err)
+	}
+	if len(flows) != 2 {
+		t.Errorf("flows = %d, want 2", len(flows))
+	}
+
+	flows, err = repo.ListAllByManagedBy("missing_pack")
+	if err != nil {
+		t.Fatalf("ListAllByManagedBy empty: %v", err)
+	}
+	if len(flows) != 0 {
+		t.Errorf("flows = %d, want 0 for unknown pack", len(flows))
+	}
+}
