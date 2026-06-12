@@ -73,8 +73,10 @@ func TestParseManifestErrors(t *testing.T) {
 			wantErr: "field bogus not found",
 		},
 		{
-			name:    "file reference rejected",
-			mutate:  func(s string) string { return strings.Replace(s, "kind: tool", "kind: tool\n    file: flows/x.yaml", 1) },
+			name: "file reference rejected",
+			mutate: func(s string) string {
+				return strings.Replace(s, "kind: tool", "kind: tool\n    file: flows/x.yaml", 1)
+			},
 			wantErr: "not supported yet",
 		},
 		{

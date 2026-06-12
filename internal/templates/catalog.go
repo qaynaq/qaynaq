@@ -11,7 +11,7 @@ import (
 
 type Catalog struct {
 	templates map[string]*Manifest
-	order []string
+	order     []string
 }
 
 var (
