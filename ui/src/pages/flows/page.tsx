@@ -49,13 +49,14 @@ const FlowPreview = lazy(
 );
 
 const MANAGED_BY_LABELS: Record<string, string> = {
-  google_calendar: "Google Calendar Pack",
-  google_drive: "Google Drive Pack",
-  google_sheets: "Google Sheets Pack",
+  google_calendar: "Google Calendar Template",
+  google_drive: "Google Drive Template",
+  google_sheets: "Google Sheets Template",
+  shopify: "Shopify Template",
 };
 
-interface PackGroup {
-  packId: string;
+interface TemplateGroup {
+  templateId: string;
   label: string;
   flows: Flow[];
 }
@@ -63,28 +64,28 @@ interface PackGroup {
 function useGroupedFlows(flows: Flow[]) {
   return useMemo(() => {
     const standalone: Flow[] = [];
-    const packMap = new Map<string, Flow[]>();
+    const templateMap = new Map<string, Flow[]>();
 
     for (const flow of flows) {
       if (flow.managed_by) {
-        const existing = packMap.get(flow.managed_by) || [];
+        const existing = templateMap.get(flow.managed_by) || [];
         existing.push(flow);
-        packMap.set(flow.managed_by, existing);
+        templateMap.set(flow.managed_by, existing);
       } else {
         standalone.push(flow);
       }
     }
 
-    const packs: PackGroup[] = [];
-    for (const [packId, packFlows] of packMap) {
-      packs.push({
-        packId,
-        label: MANAGED_BY_LABELS[packId] || packId,
-        flows: packFlows,
+    const templateGroups: TemplateGroup[] = [];
+    for (const [templateId, templateFlows] of templateMap) {
+      templateGroups.push({
+        templateId,
+        label: MANAGED_BY_LABELS[templateId] || templateId,
+        flows: templateFlows,
       });
     }
 
-    return { standalone, packs };
+    return { standalone, templateGroups };
   }, [flows]);
 }
 
@@ -125,21 +126,21 @@ export default function FlowsPage() {
   const [previewFlow, setPreviewFlow] = useState<Flow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedPacks, setExpandedPacks] = useState<Set<string>>(new Set());
-  const [packToDelete, setPackToDelete] = useState<PackGroup | null>(null);
-  const [isDeletingPack, setIsDeletingPack] = useState(false);
+  const [expandedTemplates, setExpandedPacks] = useState<Set<string>>(new Set());
+  const [packToDelete, setPackToDelete] = useState<TemplateGroup | null>(null);
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState(false);
 
-  const { standalone, packs } = useGroupedFlows(flows);
+  const { standalone, templateGroups } = useGroupedFlows(flows);
   const cols = useMemo(() => getColumns(), []);
   const colCount = cols.length + 1;
 
-  const togglePack = (packId: string) => {
+  const toggleTemplate = (templateId: string) => {
     setExpandedPacks((prev) => {
       const next = new Set(prev);
-      if (next.has(packId)) {
-        next.delete(packId);
+      if (next.has(templateId)) {
+        next.delete(templateId);
       } else {
-        next.add(packId);
+        next.add(templateId);
       }
       return next;
     });
@@ -174,11 +175,11 @@ export default function FlowsPage() {
     }
   };
 
-  const handleDeletePack = async (pack: PackGroup) => {
-    setIsDeletingPack(true);
+  const handleDeletePack = async (tmpl: TemplateGroup) => {
+    setIsDeletingTemplate(true);
     const deletedIds = new Set<string>();
 
-    for (const flow of pack.flows) {
+    for (const flow of tmpl.flows) {
       try {
         await deleteFlow(String(flow.id));
         deletedIds.add(flow.id);
@@ -189,24 +190,24 @@ export default function FlowsPage() {
 
     setFlows((prev) => prev.filter((f) => !deletedIds.has(f.id)));
 
-    const failed = pack.flows.length - deletedIds.size;
+    const failed = tmpl.flows.length - deletedIds.size;
     if (failed === 0) {
       addToast({
-        id: "pack-deleted",
-        title: "Pack Deleted",
-        description: `All ${deletedIds.size} flows from ${pack.label} have been deleted.`,
+        id: "tmpl-deleted",
+        title: "Template Deleted",
+        description: `All ${deletedIds.size} flows from ${tmpl.label} have been deleted.`,
         variant: "success",
       });
     } else {
       addToast({
-        id: "pack-delete-partial",
+        id: "tmpl-delete-partial",
         title: "Partial Deletion",
-        description: `${deletedIds.size} deleted, ${failed} failed from ${pack.label}.`,
+        description: `${deletedIds.size} deleted, ${failed} failed from ${tmpl.label}.`,
         variant: "warning",
       });
     }
 
-    setIsDeletingPack(false);
+    setIsDeletingTemplate(false);
     setPackToDelete(null);
   };
 
@@ -356,10 +357,19 @@ export default function FlowsPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Flows</h1>
-        <Button onClick={handleAddNew}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add New
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/flows/templates")}
+          >
+            <Package className="mr-2 h-4 w-4" />
+            Install Template
+          </Button>
+          <Button onClick={handleAddNew}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add New
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -383,24 +393,24 @@ export default function FlowsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {packs.map((pack) => {
-            const isExpanded = expandedPacks.has(pack.packId);
+          {templateGroups.map((tmpl) => {
+            const isExpanded = expandedTemplates.has(tmpl.templateId);
             return (
-              <div key={`pack-${pack.packId}`} className="rounded-md border">
+              <div key={`tmpl-${tmpl.templateId}`} className="rounded-md border">
                 <div
                   className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => togglePack(pack.packId)}
+                  onClick={() => toggleTemplate(tmpl.templateId)}
                 >
                   <div className="flex items-center gap-3">
                     <ChevronRight
                       className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`}
                     />
                     <Package className="h-4 w-4 text-indigo-500" />
-                    <span className="font-semibold">{pack.label}</span>
+                    <span className="font-semibold">{tmpl.label}</span>
                     <Badge variant="outline">
-                      {pack.flows.length} tools
+                      {tmpl.flows.length} tools
                     </Badge>
-                    <PackStatusSummary flows={pack.flows} />
+                    <PackStatusSummary flows={tmpl.flows} />
                   </div>
                   <div
                     className="flex items-center gap-1"
@@ -410,7 +420,7 @@ export default function FlowsPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        navigate(`/flows/new?pack=${pack.packId}`)
+                        navigate(`/flows/templates?template=${tmpl.templateId}`)
                       }
                       title="Redeploy from Template"
                     >
@@ -420,7 +430,7 @@ export default function FlowsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setPackToDelete(pack)}
+                      onClick={() => setPackToDelete(tmpl)}
                       title="Delete All"
                       className="text-destructive hover:text-destructive"
                     >
@@ -441,7 +451,7 @@ export default function FlowsPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {pack.flows.map((flow) => renderFlowRow(flow))}
+                        {tmpl.flows.map((flow) => renderFlowRow(flow))}
                       </TableBody>
                     </Table>
                   </div>
@@ -476,7 +486,7 @@ export default function FlowsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete entire pack?</AlertDialogTitle>
+            <AlertDialogTitle>Delete entire tmpl?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete all{" "}
               <strong>{packToDelete?.flows.length}</strong> flows from{" "}
@@ -485,18 +495,18 @@ export default function FlowsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeletingPack}>
+            <AlertDialogCancel disabled={isDeletingTemplate}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={isDeletingPack}
+              disabled={isDeletingTemplate}
               onClick={(e) => {
                 e.preventDefault();
                 if (packToDelete) handleDeletePack(packToDelete);
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeletingPack ? "Deleting..." : "Delete All"}
+              {isDeletingTemplate ? "Deleting..." : "Delete All"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
