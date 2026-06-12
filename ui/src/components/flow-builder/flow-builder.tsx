@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect, useMemo, type CSSProperties } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -525,7 +525,7 @@ function insertCaseBeforeDefault(existing: Node[], newCase: Node): Node[] {
 function resolveFlowNodeType(
   baseType: "input" | "processor" | "output",
   componentId: string
-): { nodeType: string; style?: Record<string, unknown>; extraData: Record<string, unknown>; yOffset: number } {
+): { nodeType: string; style?: CSSProperties; extraData: Record<string, unknown>; yOffset: number } {
   if (componentId === "branch" && baseType === "processor") {
     return { nodeType: "branchGroupNode", style: { width: GROUP_WIDTH, height: CATCH_GROUP_MIN_HEIGHT }, extraData: { isGroup: true, childCount: 0 }, yOffset: -25 };
   }
@@ -1755,7 +1755,7 @@ function FlowBuilderContent({
   // handleAddCaseProcessor is no longer needed — case processors are added via handleAddAndConnect from case start nodes
 
   const handleChildDragStart = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: MouseEvent | TouchEvent, node: Node) => {
       if (!node.parentId) return;
       const groupId = node.parentId;
       setNodes((nds) => nds.map((n) =>
@@ -1774,7 +1774,7 @@ function FlowBuilderContent({
   );
 
   const handleChildDrag = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: MouseEvent | TouchEvent, node: Node) => {
       if (!node.parentId) return;
       const groupId = node.parentId;
       const groupNode = nodes.find((n) => n.id === groupId);
@@ -1820,7 +1820,7 @@ function FlowBuilderContent({
   );
 
   const handleChildDragStop = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: MouseEvent | TouchEvent, node: Node) => {
       if (!node.parentId) return;
       const groupId = node.parentId;
       const groupNode = nodes.find((n) => n.id === groupId);
