@@ -6,9 +6,9 @@ FROM node:20-slim AS ui
 WORKDIR /app
 
 RUN --mount=type=cache,target=/root/.npm \
-    npm install -g pnpm@8.15.4
+    npm install -g pnpm@11.6.0
 
-COPY ui/package.json ui/pnpm-lock.yaml ./ui/
+COPY ui/package.json ui/pnpm-lock.yaml ui/pnpm-workspace.yaml ./ui/
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm --prefix ui install --frozen-lockfile
 
