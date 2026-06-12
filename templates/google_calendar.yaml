@@ -1,0 +1,444 @@
+id: google_calendar
+name: Google Calendar
+description: 13 MCP tools for managing Google Calendar events, calendars, and scheduling.
+version: 0.1.0
+variables:
+  - key: oauth_connection
+    title: OAuth Connection
+    description: Google OAuth connection. Set up in Connections page first.
+    type: connection
+    required: true
+flows:
+  - name: google_calendar_create_event
+    kind: tool
+    description: Create a new event on Google Calendar with title, time, location, and attendees.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_create_event
+        description: Create a new event on Google Calendar with title, time, location, and attendees.
+        input_schema:
+          - { name: summary, type: string, required: true, description: Event title }
+          - { name: start_time, type: string, required: true, description: Start time in RFC3339 format (e.g. 2025-01-15T09:00:00-05:00) }
+          - { name: end_time, type: string, required: true, description: End time in RFC3339 format (e.g. 2025-01-15T10:00:00-05:00) }
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+          - { name: description, type: string, required: false, description: Event description text }
+          - { name: location, type: string, required: false, description: Event location }
+          - { name: attendees, type: string, required: false, description: Comma-separated attendee email addresses }
+          - { name: time_zone, type: string, required: false, description: IANA time zone (e.g. America/New_York) }
+          - { name: visibility, type: string, required: false, description: "Event visibility: default, public, private, confidential" }
+          - { name: send_updates, type: string, required: false, description: "Notification policy: all, externalOnly, none" }
+          - { name: recurrence, type: string, required: false, description: Comma-separated RRULE recurrence rules }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: create_event
+          oauth_connection: "{{ oauth_connection }}"
+          calendar_id: ${!this.calendar_id.or("")}
+          summary: ${!this.summary}
+          start_time: ${!this.start_time}
+          end_time: ${!this.end_time}
+          description: ${!this.description.or("")}
+          location: ${!this.location.or("")}
+          attendees: ${!this.attendees.or("")}
+          time_zone: ${!this.time_zone.or("")}
+          visibility: ${!this.visibility.or("default")}
+          send_updates: ${!this.send_updates.or("none")}
+          recurrence: ${!this.recurrence.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_find_events
+    kind: tool
+    description: Search for events on Google Calendar by text query or time range.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_find_events
+        description: Search for events on Google Calendar by text query or time range.
+        input_schema:
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+          - { name: query, type: string, required: false, description: Free text search terms to filter events }
+          - { name: start_time, type: string, required: false, description: Filter events starting after this time (RFC3339) }
+          - { name: end_time, type: string, required: false, description: Filter events ending before this time (RFC3339) }
+          - { name: max_results, type: number, required: false, description: Maximum number of events to return }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: find_events
+          oauth_connection: "{{ oauth_connection }}"
+          calendar_id: ${!this.calendar_id.or("")}
+          query: ${!this.query.or("")}
+          start_time: ${!this.start_time.or("")}
+          end_time: ${!this.end_time.or("")}
+          max_results: 25
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_get_event
+    kind: tool
+    description: Get detailed information about a specific Google Calendar event.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_get_event
+        description: Get detailed information about a specific Google Calendar event.
+        input_schema:
+          - { name: event_id, type: string, required: true, description: The event identifier }
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: get_event
+          oauth_connection: "{{ oauth_connection }}"
+          event_id: ${!this.event_id}
+          calendar_id: ${!this.calendar_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_update_event
+    kind: tool
+    description: Update an existing Google Calendar event's details, time, or attendees.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_update_event
+        description: Update an existing Google Calendar event's details, time, or attendees.
+        input_schema:
+          - { name: event_id, type: string, required: true, description: The event identifier }
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+          - { name: summary, type: string, required: false, description: New event title }
+          - { name: description, type: string, required: false, description: New event description }
+          - { name: location, type: string, required: false, description: New event location }
+          - { name: start_time, type: string, required: false, description: New start time in RFC3339 format }
+          - { name: end_time, type: string, required: false, description: New end time in RFC3339 format }
+          - { name: attendees, type: string, required: false, description: Comma-separated attendee email addresses }
+          - { name: time_zone, type: string, required: false, description: IANA time zone }
+          - { name: visibility, type: string, required: false, description: "Event visibility: default, public, private, confidential" }
+          - { name: send_updates, type: string, required: false, description: "Notification policy: all, externalOnly, none" }
+          - { name: recurrence, type: string, required: false, description: Comma-separated RRULE recurrence rules }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: update_event
+          oauth_connection: "{{ oauth_connection }}"
+          event_id: ${!this.event_id}
+          calendar_id: ${!this.calendar_id.or("")}
+          summary: ${!this.summary.or("")}
+          description: ${!this.description.or("")}
+          location: ${!this.location.or("")}
+          start_time: ${!this.start_time.or("")}
+          end_time: ${!this.end_time.or("")}
+          attendees: ${!this.attendees.or("")}
+          time_zone: ${!this.time_zone.or("")}
+          visibility: ${!this.visibility.or("default")}
+          send_updates: ${!this.send_updates.or("none")}
+          recurrence: ${!this.recurrence.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_delete_event
+    kind: tool
+    description: Delete an event from Google Calendar.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_delete_event
+        description: Delete an event from Google Calendar.
+        input_schema:
+          - { name: event_id, type: string, required: true, description: The event identifier }
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+          - { name: send_updates, type: string, required: false, description: "Notification policy: all, externalOnly, none" }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: delete_event
+          oauth_connection: "{{ oauth_connection }}"
+          event_id: ${!this.event_id}
+          calendar_id: ${!this.calendar_id.or("")}
+          send_updates: ${!this.send_updates.or("none")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_quick_add_event
+    kind: tool
+    description: Create a Google Calendar event from a natural language description (e.g. 'Meeting with John tomorrow at 3pm').
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_quick_add_event
+        description: Create a Google Calendar event from a natural language description (e.g. 'Meeting with John tomorrow at 3pm').
+        input_schema:
+          - { name: quick_add_text, type: string, required: true, description: Natural language event description that Google will parse }
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: quick_add_event
+          oauth_connection: "{{ oauth_connection }}"
+          quick_add_text: ${!this.quick_add_text}
+          calendar_id: ${!this.calendar_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_find_busy_periods
+    kind: tool
+    description: Find busy and free time periods on Google Calendar for scheduling.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_find_busy_periods
+        description: Find busy and free time periods on Google Calendar for scheduling.
+        input_schema:
+          - { name: start_time, type: string, required: true, description: Start of the time range to check (RFC3339) }
+          - { name: end_time, type: string, required: true, description: End of the time range to check (RFC3339) }
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: find_busy_periods
+          oauth_connection: "{{ oauth_connection }}"
+          start_time: ${!this.start_time}
+          end_time: ${!this.end_time}
+          calendar_id: ${!this.calendar_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_add_attendees
+    kind: tool
+    description: Add attendees to an existing Google Calendar event.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_add_attendees
+        description: Add attendees to an existing Google Calendar event.
+        input_schema:
+          - { name: event_id, type: string, required: true, description: The event identifier }
+          - { name: attendees, type: string, required: true, description: Comma-separated attendee email addresses to add }
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+          - { name: send_updates, type: string, required: false, description: "Notification policy: all, externalOnly, none" }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: add_attendees
+          oauth_connection: "{{ oauth_connection }}"
+          event_id: ${!this.event_id}
+          attendees: ${!this.attendees}
+          calendar_id: ${!this.calendar_id.or("")}
+          send_updates: ${!this.send_updates.or("none")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_move_event
+    kind: tool
+    description: Move a Google Calendar event to a different calendar.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_move_event
+        description: Move a Google Calendar event to a different calendar.
+        input_schema:
+          - { name: event_id, type: string, required: true, description: The event identifier }
+          - { name: destination_calendar_id, type: string, required: true, description: Target calendar to move the event to }
+          - { name: calendar_id, type: string, required: false, description: Source calendar ID. Use 'primary' for the main calendar. }
+          - { name: send_updates, type: string, required: false, description: "Notification policy: all, externalOnly, none" }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: move_event
+          oauth_connection: "{{ oauth_connection }}"
+          event_id: ${!this.event_id}
+          destination_calendar_id: ${!this.destination_calendar_id}
+          calendar_id: ${!this.calendar_id.or("")}
+          send_updates: ${!this.send_updates.or("none")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_find_calendars
+    kind: tool
+    description: List all available Google Calendars for the authenticated user.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_find_calendars
+        description: List all available Google Calendars for the authenticated user.
+        input_schema:
+          - { name: max_results, type: number, required: false, description: Maximum number of calendars to return }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: find_calendars
+          oauth_connection: "{{ oauth_connection }}"
+          max_results: 250
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_get_calendar
+    kind: tool
+    description: Get detailed information about a specific Google Calendar.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_get_calendar
+        description: Get detailed information about a specific Google Calendar.
+        input_schema:
+          - { name: calendar_id, type: string, required: true, description: Calendar ID to retrieve details for }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: get_calendar
+          oauth_connection: "{{ oauth_connection }}"
+          calendar_id: ${!this.calendar_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_create_calendar
+    kind: tool
+    description: Create a new Google Calendar.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_create_calendar
+        description: Create a new Google Calendar.
+        input_schema:
+          - { name: calendar_summary, type: string, required: true, description: Name for the new calendar }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: create_calendar
+          oauth_connection: "{{ oauth_connection }}"
+          calendar_summary: ${!this.calendar_summary}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_calendar_find_or_create_event
+    kind: tool
+    description: Find an existing Google Calendar event matching the criteria, or create a new one if not found.
+    input:
+      component: mcp_tool
+      config:
+        name: google_calendar_find_or_create_event
+        description: Find an existing Google Calendar event matching the criteria, or create a new one if not found.
+        input_schema:
+          - { name: summary, type: string, required: true, description: Event title to search for or create with }
+          - { name: start_time, type: string, required: true, description: Start time in RFC3339 format }
+          - { name: end_time, type: string, required: true, description: End time in RFC3339 format }
+          - { name: calendar_id, type: string, required: false, description: Calendar ID. Defaults to the configured calendar if not provided. }
+          - { name: description, type: string, required: false, description: Event description text }
+          - { name: location, type: string, required: false, description: Event location }
+          - { name: attendees, type: string, required: false, description: Comma-separated attendee email addresses }
+          - { name: query, type: string, required: false, description: Additional search terms to help find existing event }
+          - { name: time_zone, type: string, required: false, description: IANA time zone }
+          - { name: visibility, type: string, required: false, description: "Event visibility: default, public, private, confidential" }
+          - { name: send_updates, type: string, required: false, description: "Notification policy: all, externalOnly, none" }
+          - { name: recurrence, type: string, required: false, description: Comma-separated RRULE recurrence rules }
+    processors:
+      - label: google_calendar
+        component: google_calendar
+        config:
+          action: find_or_create_event
+          oauth_connection: "{{ oauth_connection }}"
+          calendar_id: ${!this.calendar_id.or("")}
+          summary: ${!this.summary}
+          start_time: ${!this.start_time}
+          end_time: ${!this.end_time}
+          description: ${!this.description.or("")}
+          location: ${!this.location.or("")}
+          attendees: ${!this.attendees.or("")}
+          query: ${!this.query.or("")}
+          time_zone: ${!this.time_zone.or("")}
+          visibility: ${!this.visibility.or("default")}
+          send_updates: ${!this.send_updates.or("none")}
+          recurrence: ${!this.recurrence.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response

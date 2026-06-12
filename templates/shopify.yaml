@@ -1,0 +1,216 @@
+id: shopify
+name: Shopify
+description: MCP tools for accessing your Shopify store data
+version: 0.1.0
+variables:
+  - key: shop_name
+    title: Store Name
+    description: Your store name (without .myshopify.com)
+    type: string
+    required: true
+    placeholder: mystore
+  - key: api_access_token
+    title: Admin API Access Token
+    description: From Settings > Apps > Develop apps > your app > API credentials
+    type: secret
+    required: true
+    placeholder: shpat_xxxxxxxxxxxxx
+flows:
+  - name: shopify_list_orders
+    kind: tool
+    description: List recent orders from your Shopify store
+    input:
+      component: mcp_tool
+      config:
+        name: shopify_list_orders
+        description: List recent orders from your Shopify store
+        input_schema:
+          - { name: limit, type: string, required: false, description: "Max orders to return (default 50, max 250)" }
+          - { name: status, type: string, required: false, description: "Filter: open, closed, cancelled, any" }
+          - { name: since_id, type: string, required: false, description: Return orders after this ID for pagination }
+    processors:
+      - label: shopify
+        component: shopify
+        config:
+          action: list_orders
+          shop_name: "{{ shop_name }}"
+          api_access_token: "{{ api_access_token }}"
+          limit: ${!this.limit.or("50")}
+          status: ${!this.status.or("")}
+          since_id: ${!this.since_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: shopify_list_products
+    kind: tool
+    description: List products from your Shopify store
+    input:
+      component: mcp_tool
+      config:
+        name: shopify_list_products
+        description: List products from your Shopify store
+        input_schema:
+          - { name: limit, type: string, required: false, description: "Max products to return (default 50, max 250)" }
+          - { name: since_id, type: string, required: false, description: Return products after this ID for pagination }
+    processors:
+      - label: shopify
+        component: shopify
+        config:
+          action: list_products
+          shop_name: "{{ shop_name }}"
+          api_access_token: "{{ api_access_token }}"
+          limit: ${!this.limit.or("50")}
+          since_id: ${!this.since_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: shopify_list_customers
+    kind: tool
+    description: List customers from your Shopify store
+    input:
+      component: mcp_tool
+      config:
+        name: shopify_list_customers
+        description: List customers from your Shopify store
+        input_schema:
+          - { name: limit, type: string, required: false, description: "Max customers to return (default 50, max 250)" }
+          - { name: since_id, type: string, required: false, description: Return customers after this ID for pagination }
+    processors:
+      - label: shopify
+        component: shopify
+        config:
+          action: list_customers
+          shop_name: "{{ shop_name }}"
+          api_access_token: "{{ api_access_token }}"
+          limit: ${!this.limit.or("50")}
+          since_id: ${!this.since_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: shopify_list_inventory_items
+    kind: tool
+    description: List inventory items from your Shopify store
+    input:
+      component: mcp_tool
+      config:
+        name: shopify_list_inventory_items
+        description: List inventory items from your Shopify store
+        input_schema:
+          - { name: limit, type: string, required: false, description: "Max items to return (default 50, max 250)" }
+          - { name: since_id, type: string, required: false, description: Return items after this ID for pagination }
+    processors:
+      - label: shopify
+        component: shopify
+        config:
+          action: list_inventory_items
+          shop_name: "{{ shop_name }}"
+          api_access_token: "{{ api_access_token }}"
+          limit: ${!this.limit.or("50")}
+          since_id: ${!this.since_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: shopify_get_order
+    kind: tool
+    description: Get a specific order by ID from your Shopify store
+    input:
+      component: mcp_tool
+      config:
+        name: shopify_get_order
+        description: Get a specific order by ID from your Shopify store
+        input_schema:
+          - { name: order_id, type: string, required: true, description: The Shopify order ID }
+    processors:
+      - label: shopify
+        component: shopify
+        config:
+          action: get_order
+          shop_name: "{{ shop_name }}"
+          api_access_token: "{{ api_access_token }}"
+          order_id: ${!this.order_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: shopify_get_product
+    kind: tool
+    description: Get a specific product by ID from your Shopify store
+    input:
+      component: mcp_tool
+      config:
+        name: shopify_get_product
+        description: Get a specific product by ID from your Shopify store
+        input_schema:
+          - { name: product_id, type: string, required: true, description: The Shopify product ID }
+    processors:
+      - label: shopify
+        component: shopify
+        config:
+          action: get_product
+          shop_name: "{{ shop_name }}"
+          api_access_token: "{{ api_access_token }}"
+          product_id: ${!this.product_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: shopify_get_customer
+    kind: tool
+    description: Get a specific customer by ID from your Shopify store
+    input:
+      component: mcp_tool
+      config:
+        name: shopify_get_customer
+        description: Get a specific customer by ID from your Shopify store
+        input_schema:
+          - { name: customer_id, type: string, required: true, description: The Shopify customer ID }
+    processors:
+      - label: shopify
+        component: shopify
+        config:
+          action: get_customer
+          shop_name: "{{ shop_name }}"
+          api_access_token: "{{ api_access_token }}"
+          customer_id: ${!this.customer_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
