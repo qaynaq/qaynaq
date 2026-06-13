@@ -67,6 +67,13 @@ func (c *coordinatorConnection) monitorConnection(ctx context.Context) {
 				c.mu.Lock()
 				c.joined = false
 				c.mu.Unlock()
+				// Force an immediate reconnect attempt. Without this the channel
+				// stays in TransientFailure under gRPC's exponential backoff (up
+				// to ~120s between dials), so the worker can remain unreachable
+				// long after the coordinator is back. Resetting the backoff and
+				// nudging the channel makes recovery happen within the tick.
+				c.grpcConn.ResetConnectBackoff()
+				c.grpcConn.Connect()
 			}
 		}
 	}
