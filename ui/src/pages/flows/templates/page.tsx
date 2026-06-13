@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Loader2,
@@ -57,16 +57,26 @@ function TemplateVariableField({
 
   if (variable.type === "connection") {
     return (
-      <ConnectionPickerField
-        label={variable.title}
-        description={variable.description}
-        required={variable.required}
-        source="connections"
-        value={value ? `\${QAYNAQ_CONN_${value}}` : ""}
-        onChange={(next) =>
-          onChange(next.replace(/^\$\{QAYNAQ_CONN_(.+)\}$/, "$1"))
-        }
-      />
+      <div className="space-y-2">
+        <ConnectionPickerField
+          label={variable.title}
+          description={variable.description}
+          required={variable.required}
+          source="connections"
+          value={value ? `\${QAYNAQ_CONN_${value}}` : ""}
+          onChange={(next) =>
+            onChange(next.replace(/^\$\{QAYNAQ_CONN_(.+)\}$/, "$1"))
+          }
+        />
+        <Link
+          to="/connections"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-primary hover:underline"
+        >
+          + Set up a new connection
+        </Link>
+      </div>
     );
   }
 
