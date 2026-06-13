@@ -4,11 +4,13 @@ import (
 	"context"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 
 	"github.com/qaynaq/qaynaq/internal/analytics"
 	"github.com/qaynaq/qaynaq/internal/api"
@@ -153,7 +155,17 @@ func InitializeWorkerCommand(appCtx context.Context, ctx *cli.Context) *intcli.W
 	secretConfig := buildSecretConfig(ctx)
 
 	discoveryURI := ctx.String("discovery-uri")
-	grpcConn, err := grpc.NewClient(discoveryURI, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcConn, err := grpc.NewClient(
+		discoveryURI,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		// Time must stay above the coordinator's EnforcementPolicy MinTime, or
+		// the server drops the connection with GoAway ENHANCE_YOUR_CALM.
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                20 * time.Second,
+			Timeout:             10 * time.Second,
+			PermitWithoutStream: true,
+		}),
+	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create grpc client")
 	}
