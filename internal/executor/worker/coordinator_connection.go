@@ -67,11 +67,9 @@ func (c *coordinatorConnection) monitorConnection(ctx context.Context) {
 				c.mu.Lock()
 				c.joined = false
 				c.mu.Unlock()
-				// Force an immediate reconnect attempt. Without this the channel
-				// stays in TransientFailure under gRPC's exponential backoff (up
-				// to ~120s between dials), so the worker can remain unreachable
-				// long after the coordinator is back. Resetting the backoff and
-				// nudging the channel makes recovery happen within the tick.
+				// Force a redial now; otherwise gRPC's exponential backoff can
+				// leave the channel down for up to ~120s after the coordinator
+				// is back.
 				c.grpcConn.ResetConnectBackoff()
 				c.grpcConn.Connect()
 			}
@@ -144,12 +142,18 @@ func (c *coordinatorConnection) SendHeartbeat(ctx context.Context) error {
 	}
 
 	c.mu.Lock()
-	if !c.joined {
-		log.Debug().Str("worker_id", hostname).Msg("Worker not joined, skipping heartbeat")
-		c.mu.Unlock()
-		return nil
+	joined := c.joined
+	c.mu.Unlock()
+
+	// Re-register instead of skipping; otherwise a worker whose connection
+	// dropped stays unregistered forever, since this tick is what drives
+	// recovery after the channel reconnects.
+	if !joined {
+		log.Debug().Str("worker_id", hostname).Msg("Worker not joined, attempting to re-register")
+		return c.JoinToCoordinator(ctx)
 	}
 
+	c.mu.Lock()
 	var runningFlowIDs []int64
 	if c.flowManager != nil {
 		runningFlowIDs = c.flowManager.GetRunningFlowIDs()

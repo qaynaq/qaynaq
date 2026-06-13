@@ -22,6 +22,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -168,7 +169,14 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 		log.Fatal().Err(err).Uint32("port", c.grpcPort).Msg("failed to listen GRPC port")
 	}
 
-	grpcServer := grpc.NewServer()
+	// Permit the worker's keepalive cadence; the default policy (MinTime 5m,
+	// no streamless pings) would reject it with GoAway ENHANCE_YOUR_CALM.
+	grpcServer := grpc.NewServer(
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             10 * time.Second,
+			PermitWithoutStream: true,
+		}),
+	)
 	pb.RegisterCoordinatorServer(grpcServer, c.api)
 
 	g.Go(func() error {

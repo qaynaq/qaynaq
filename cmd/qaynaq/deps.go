@@ -158,9 +158,11 @@ func InitializeWorkerCommand(appCtx context.Context, ctx *cli.Context) *intcli.W
 	grpcConn, err := grpc.NewClient(
 		discoveryURI,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		// Time must stay above the coordinator's EnforcementPolicy MinTime, or
+		// the server drops the connection with GoAway ENHANCE_YOUR_CALM.
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                10 * time.Second,
-			Timeout:             5 * time.Second,
+			Time:                20 * time.Second,
+			Timeout:             10 * time.Second,
 			PermitWithoutStream: true,
 		}),
 	)
