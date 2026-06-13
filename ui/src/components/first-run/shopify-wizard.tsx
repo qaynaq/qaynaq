@@ -220,7 +220,7 @@ export function ShopifyWizard({
 
             {helpExpanded && (
               <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 rounded-lg p-4">
-                <p>1. In your Shopify admin, go to <strong>Settings</strong> &gt; <strong>Apps and sales channels</strong></p>
+                <p>1. In your Shopify admin, go to <strong>Settings</strong> &gt; <strong>Apps</strong></p>
                 <p>2. Click <strong>Develop apps</strong> (you may need to enable developer mode first)</p>
                 <p>3. Click <strong>Create an app</strong> and give it a name</p>
                 <p>4. Go to <strong>Configuration</strong> &gt; <strong>Admin API integration</strong></p>

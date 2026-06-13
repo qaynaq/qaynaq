@@ -27,7 +27,7 @@ This processor uses **Custom App** authentication (Private Apps were deprecated 
 
 ### Creating a Custom App
 
-1. In your Shopify admin, go to **Settings** > **Apps and sales channels**
+1. In your Shopify admin, go to **Settings** > **Apps**
 2. Click **Develop apps** (enable developer mode if prompted)
 3. Click **Create an app** and give it a name
 4. Go to **Configuration** > **Admin API integration**
@@ -36,8 +36,8 @@ This processor uses **Custom App** authentication (Private Apps were deprecated 
    - `read_products` - for product operations
    - `read_customers` - for customer operations
    - `read_inventory` - for inventory operations
-6. Click **Install app**
-7. Copy the **Admin API access token** (starts with `shpat_`)
+6. Click **Install app** (the button activates once scopes are selected)
+7. On the **API credentials** tab, reveal and copy the **Admin API access token** (starts with `shpat_`) immediately - it can only be revealed once at install time. If you lose it, uninstall and reinstall the app to generate a new one.
 
 Store the access token as a secret in **Secrets**, then select it in the **Admin API Access Token** field when configuring the processor.
 
