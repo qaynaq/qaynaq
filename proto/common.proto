@@ -204,3 +204,29 @@ message RateLimitCheckResponse {
   int64 limit = 4;
   int64 reset_at = 5;
 }
+
+message Template {
+  message Variable {
+    string key = 1 [json_name = "key"];
+    string title = 2 [json_name = "title"];
+    string description = 3 [json_name = "description"];
+    string type = 4 [json_name = "type"];
+    bool required = 5 [json_name = "required"];
+    string placeholder = 6 [json_name = "placeholder"];
+    string default = 7 [json_name = "default"];
+  }
+
+  message FlowSummary {
+    string name = 1 [json_name = "name"];
+    string kind = 2 [json_name = "kind"];
+    string description = 3 [json_name = "description"];
+    bool installed = 4 [json_name = "installed"];
+  }
+
+  string id = 1 [json_name = "id"];
+  string name = 2 [json_name = "name"];
+  string description = 3 [json_name = "description"];
+  string version = 4 [json_name = "version"];
+  repeated Variable variables = 5 [json_name = "variables"];
+  repeated FlowSummary flows = 6 [json_name = "flows"];
+}

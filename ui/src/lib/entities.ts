@@ -246,3 +246,36 @@ export type Analytics = {
   top_input_components: ComponentCount[];
   top_output_components: ComponentCount[];
 };
+
+export type TemplateVariable = {
+  key: string;
+  title: string;
+  description: string;
+  type: "string" | "secret" | "connection";
+  required: boolean;
+  placeholder: string;
+  default: string;
+};
+
+export type TemplateFlow = {
+  name: string;
+  kind: "tool" | "automation";
+  description: string;
+  installed: boolean;
+};
+
+export type Template = {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  variables: TemplateVariable[];
+  flows: TemplateFlow[];
+};
+
+export type TemplateInstallResult = {
+  name: string;
+  success: boolean;
+  skipped: boolean;
+  error: string;
+};

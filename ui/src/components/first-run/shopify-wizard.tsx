@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +12,21 @@ import {
   Check,
   ShoppingBag,
 } from "lucide-react";
-import { testShopifyConnection, createFlow } from "@/lib/api";
-import { shopifyPack } from "@/lib/mcp-tool-templates/shopify";
-import { buildFlowFromTemplate } from "@/lib/flow-builder-utils";
+import {
+  testShopifyConnection,
+  fetchTemplates,
+  installTemplate,
+  createSecret,
+  updateSecret,
+} from "@/lib/api";
+import type { Template } from "@/lib/entities";
 
 export type ShopifyWizardResult = {
   toolCount: number;
 };
+
+const SHOPIFY_TEMPLATE_ID = "shopify";
+const SHOPIFY_TOKEN_SECRET_KEY = "SHOPIFY_API_ACCESS_TOKEN";
 
 const TOOL_GROUPS = [
   { label: "Orders", ids: ["shopify_list_orders", "shopify_get_order"] },
@@ -35,6 +43,7 @@ export function ShopifyWizard({
   onBack: () => void;
 }) {
   const [step, setStep] = useState(1);
+  const [tmpl, setPack] = useState<Template | null>(null);
 
   // Step 1 state
   const [shopName, setShopName] = useState("");
@@ -46,13 +55,23 @@ export function ShopifyWizard({
   const [helpExpanded, setHelpExpanded] = useState(false);
 
   // Step 2 state
-  const [selectedTools, setSelectedTools] = useState<Set<string>>(
-    new Set(shopifyPack.templates.map((t) => t.id)),
-  );
+  const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
 
   // Step 3 state
   const [deploying, setDeploying] = useState(false);
-  const [deployProgress, setDeployProgress] = useState({ current: 0, total: 0 });
+  const [deployError, setDeployError] = useState("");
+
+  useEffect(() => {
+    fetchTemplates()
+      .then((data) => {
+        const shopify = data.find((p) => p.id === SHOPIFY_TEMPLATE_ID) || null;
+        setPack(shopify);
+        if (shopify) {
+          setSelectedTools(new Set(shopify.flows.map((f) => f.name)));
+        }
+      })
+      .catch(() => setPack(null));
+  }, []);
 
   const handleTestConnection = async () => {
     setTesting(true);
@@ -87,40 +106,43 @@ export function ShopifyWizard({
   };
 
   const toggleAll = () => {
-    if (selectedTools.size === shopifyPack.templates.length) {
+    if (!tmpl) return;
+    if (selectedTools.size === tmpl.flows.length) {
       setSelectedTools(new Set());
     } else {
-      setSelectedTools(new Set(shopifyPack.templates.map((t) => t.id)));
+      setSelectedTools(new Set(tmpl.flows.map((f) => f.name)));
     }
   };
 
   const handleDeploy = async () => {
-    const tools = shopifyPack.templates.filter((t) => selectedTools.has(t.id));
     setDeploying(true);
-    setDeployProgress({ current: 0, total: tools.length });
+    setDeployError("");
 
-    const sharedConfig: Record<string, string> = {
-      shop_name: shopName,
-      api_access_token: accessToken,
-    };
-
-    for (let i = 0; i < tools.length; i++) {
-      setDeployProgress({ current: i + 1, total: tools.length });
-      const flow = buildFlowFromTemplate(
-        tools[i],
-        sharedConfig,
-        shopifyPack.sharedConfig,
-        shopifyPack.id,
-      );
+    try {
       try {
-        await createFlow(flow);
+        await createSecret({ key: SHOPIFY_TOKEN_SECRET_KEY, value: accessToken });
       } catch {
-        // continue deploying remaining tools
+        await updateSecret({ key: SHOPIFY_TOKEN_SECRET_KEY, value: accessToken });
       }
-    }
 
-    setDeploying(false);
-    onComplete({ toolCount: tools.length });
+      const results = await installTemplate({
+        id: SHOPIFY_TEMPLATE_ID,
+        variables: {
+          shop_name: shopName,
+          api_access_token: SHOPIFY_TOKEN_SECRET_KEY,
+        },
+        flow_names: [...selectedTools],
+        override: true,
+      });
+
+      setDeploying(false);
+      onComplete({ toolCount: results.filter((r) => r.success).length });
+    } catch (error) {
+      setDeploying(false);
+      setDeployError(
+        error instanceof Error ? error.message : "Failed to deploy tools",
+      );
+    }
   };
 
   return (
@@ -198,7 +220,7 @@ export function ShopifyWizard({
 
             {helpExpanded && (
               <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 rounded-lg p-4">
-                <p>1. In your Shopify admin, go to <strong>Settings</strong> &gt; <strong>Apps and sales channels</strong></p>
+                <p>1. In your Shopify admin, go to <strong>Settings</strong> &gt; <strong>Apps</strong></p>
                 <p>2. Click <strong>Develop apps</strong> (you may need to enable developer mode first)</p>
                 <p>3. Click <strong>Create an app</strong> and give it a name</p>
                 <p>4. Go to <strong>Configuration</strong> &gt; <strong>Admin API integration</strong></p>
@@ -270,44 +292,53 @@ export function ShopifyWizard({
                 onClick={toggleAll}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                {selectedTools.size === shopifyPack.templates.length
+                {tmpl && selectedTools.size === tmpl.flows.length
                   ? "Deselect all"
                   : "Select all"}
               </button>
             </div>
 
-            <div className="space-y-4">
-              {TOOL_GROUPS.map((group) => (
-                <div key={group.label}>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                    {group.label}
-                  </p>
-                  <div className="space-y-1">
-                    {shopifyPack.templates
-                      .filter((t) => group.ids.includes(t.id))
-                      .map((t) => (
-                        <label
-                          key={t.id}
-                          className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/50 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={selectedTools.has(t.id)}
-                            onCheckedChange={() => toggleTool(t.id)}
-                          />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {t.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {t.description}
-                            </p>
-                          </div>
-                        </label>
-                      ))}
+            {!tmpl ? (
+              <div className="flex items-center gap-3 py-6 justify-center">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">
+                  Loading tools...
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {TOOL_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      {group.label}
+                    </p>
+                    <div className="space-y-1">
+                      {tmpl.flows
+                        .filter((f) => group.ids.includes(f.name))
+                        .map((f) => (
+                          <label
+                            key={f.name}
+                            className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={selectedTools.has(f.name)}
+                              onCheckedChange={() => toggleTool(f.name)}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {f.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {f.description}
+                              </p>
+                            </div>
+                          </label>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex justify-between pt-2">
               <Button variant="ghost" onClick={() => setStep(1)}>
@@ -349,9 +380,14 @@ export function ShopifyWizard({
               <div className="flex items-center gap-3">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm">
-                  Deploying {deployProgress.current}/{deployProgress.total}...
+                  Deploying {selectedTools.size} tool
+                  {selectedTools.size !== 1 ? "s" : ""}...
                 </span>
               </div>
+            )}
+
+            {deployError && (
+              <p className="text-sm text-destructive">{deployError}</p>
             )}
 
             <div className="flex justify-between pt-2">

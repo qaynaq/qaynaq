@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -6,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import {
   fetchCaches,
   fetchConnections,
@@ -69,7 +71,7 @@ export function ConnectionPickerField({
   const [options, setOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     let cancelled = false;
     setLoading(true);
     loadOptions(source)
@@ -87,7 +89,9 @@ export function ConnectionPickerField({
     };
   }, [source]);
 
-  if (loading) {
+  useEffect(() => refresh(), [refresh]);
+
+  if (loading && options.length === 0) {
     return (
       <FieldWrapper size={size} {...wrapper}>
         <div className="text-sm text-muted-foreground">Loading...</div>
@@ -99,32 +103,50 @@ export function ConnectionPickerField({
 
   return (
     <FieldWrapper size={size} {...wrapper}>
-      <Select
-        value={displayValue}
-        onValueChange={(v) => onChange(wrap(v, source))}
-        disabled={disabled}
-      >
-        <SelectTrigger className={size === "sm" ? "h-8 text-sm" : "h-9 text-sm"}>
-          <SelectValue
-            placeholder={
-              options.length === 0 ? `No ${source.replace("_", " ")} available` : "Select..."
-            }
-          />
-        </SelectTrigger>
-        <SelectContent>
-          {options.length === 0 ? (
-            <div className="px-2 py-1.5 text-sm text-muted-foreground">
-              No {source.replace("_", " ")} available
-            </div>
-          ) : (
-            options.map((opt) => (
-              <SelectItem key={opt} value={opt}>
-                {opt}
-              </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-1.5">
+        <Select
+          value={displayValue}
+          onValueChange={(v) => onChange(wrap(v, source))}
+          disabled={disabled}
+          onOpenChange={(open) => {
+            if (open) refresh();
+          }}
+        >
+          <SelectTrigger
+            className={`flex-1 ${size === "sm" ? "h-8 text-sm" : "h-9 text-sm"}`}
+          >
+            <SelectValue
+              placeholder={
+                options.length === 0 ? `No ${source.replace("_", " ")} available` : "Select..."
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {options.length === 0 ? (
+              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                No {source.replace("_", " ")} available
+              </div>
+            ) : (
+              options.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={size === "sm" ? "h-8 w-8 shrink-0" : "h-9 w-9 shrink-0"}
+          onClick={refresh}
+          disabled={disabled || loading}
+          title={`Refresh ${source.replace("_", " ")}`}
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+        </Button>
+      </div>
     </FieldWrapper>
   );
 }

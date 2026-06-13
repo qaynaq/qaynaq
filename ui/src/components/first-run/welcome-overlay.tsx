@@ -47,7 +47,7 @@ export function WelcomeOverlay({
               <Mail className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium mb-2">Google Workspace</p>
               <Badge variant="secondary" className="text-xs">
-                Tool pack
+                Template
               </Badge>
             </CardContent>
           </Card>
@@ -60,7 +60,7 @@ export function WelcomeOverlay({
               <ShoppingBag className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium mb-2">Shopify</p>
               <Badge variant="secondary" className="text-xs">
-                Tool pack
+                Template
               </Badge>
             </CardContent>
           </Card>

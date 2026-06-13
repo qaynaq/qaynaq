@@ -2,8 +2,8 @@
 
 Performs Google Drive operations - manage files, folders, permissions, and shared drives.
 
-:::tip MCP Tool Pack Available
-Want to expose Google Drive actions as MCP tools for AI assistants? Use the [Google Drive MCP Tool Pack](/docs/guides/mcp-tool-packs/google-drive) to deploy all 22 tools in one step - no manual configuration needed.
+:::tip Template Available
+Want to expose Google Drive actions as MCP tools for AI assistants? Use the [Google Drive template](/docs/guides/templates/google-drive) to deploy all 22 tools in one step - no manual configuration needed.
 :::
 
 ## Configuration

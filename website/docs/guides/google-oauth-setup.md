@@ -119,7 +119,7 @@ The redirect URI must exactly match your Qaynaq instance URL including the port 
 
 In any Google component (Calendar, Sheets, Drive), select your connection from the **OAuth Connection** dropdown. The component will use your Google account for all API calls.
 
-For MCP Tool Packs, select the connection in the shared configuration when deploying the pack.
+For templates, select the connection in the shared configuration when deploying the pack.
 
 ## Re-authorizing
 

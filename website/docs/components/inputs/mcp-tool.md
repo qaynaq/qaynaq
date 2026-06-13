@@ -53,4 +53,4 @@ Write clear, specific descriptions for both the tool and its parameters. AI assi
 
 ## Tool Packs
 
-For supported services, you can skip manual tool creation entirely. [MCP Tool Packs](/docs/guides/mcp-tool-packs) let you deploy a full set of pre-built tools in one step - configure shared credentials, select the tools you need, and deploy them all at once.
+For supported services, you can skip manual tool creation entirely. [Templates](/docs/guides/templates) let you deploy a full set of pre-built tools in one step - configure shared credentials, select the tools you need, and deploy them all at once.

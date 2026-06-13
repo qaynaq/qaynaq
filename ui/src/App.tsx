@@ -36,6 +36,7 @@ const RateLimitEditPage = lazy(
 const FlowEditPage = lazy(() => import("./pages/flows/[id]/edit/page.tsx"));
 const FlowEventsPage = lazy(() => import("./pages/flows/[id]/events/page.tsx"));
 const FlowNewPage = lazy(() => import("./pages/flows/new/page.tsx"));
+const FlowTemplatesPage = lazy(() => import("./pages/flows/templates/page.tsx"));
 const FilesPage = lazy(() => import("./pages/files/page.tsx"));
 const SettingsLayout = lazy(() => import("./pages/settings/layout.tsx"));
 const AuthenticationSettings = lazy(
@@ -142,6 +143,7 @@ function App() {
               <Route index element={<HomePage />} />
               <Route path="flows" element={<FlowsPage />} />
               <Route path="flows/new" element={<FlowNewPage />} />
+              <Route path="flows/templates" element={<FlowTemplatesPage />} />
               <Route path="flows/:id/edit" element={<FlowEditPage />} />
               <Route path="flows/:id/events" element={<FlowEventsPage />} />
               <Route path="workers" element={<WorkersPage />} />

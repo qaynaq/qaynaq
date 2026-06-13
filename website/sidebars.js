@@ -120,12 +120,13 @@ const sidebars = {
         "guides/mcp-oauth",
         {
           type: "category",
-          label: "MCP Tool Packs",
-          link: { type: "doc", id: "guides/mcp-tool-packs/index" },
+          label: "Templates",
+          link: { type: "doc", id: "guides/templates/index" },
           items: [
-            "guides/mcp-tool-packs/google-calendar",
-            "guides/mcp-tool-packs/google-drive",
-            "guides/mcp-tool-packs/google-sheets",
+            "guides/templates/google-calendar",
+            "guides/templates/google-drive",
+            "guides/templates/google-sheets",
+            "guides/templates/shopify",
           ],
         },
         "guides/scaling-workers",

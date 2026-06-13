@@ -2,8 +2,8 @@
 
 Performs Google Sheets operations - create, read, update, and format spreadsheets, worksheets, rows, and cells.
 
-:::tip MCP Tool Pack Available
-Want to expose Google Sheets actions as MCP tools for AI assistants? Use the [Google Sheets MCP Tool Pack](/docs/guides/mcp-tool-packs/google-sheets) to deploy all 28 tools in one step - no manual configuration needed.
+:::tip Template Available
+Want to expose Google Sheets actions as MCP tools for AI assistants? Use the [Google Sheets template](/docs/guides/templates/google-sheets) to deploy all 28 tools in one step - no manual configuration needed.
 :::
 
 ## Configuration

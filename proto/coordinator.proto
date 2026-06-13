@@ -512,6 +512,42 @@ message ListProvidersResponse {
   repeated Provider data = 1;
 }
 
+message ListTemplatesResponse {
+  repeated Template data = 1;
+}
+
+message GetTemplateRequest {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+}
+
+message TemplateResponse {
+  Template data = 1;
+}
+
+message InstallTemplateRequest {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  map<string, string> variables = 2 [json_name = "variables"];
+  repeated string flow_names = 3 [json_name = "flow_names"];
+  bool override = 4 [json_name = "override"];
+}
+
+message InstallTemplateResponse {
+  message Result {
+    string name = 1 [json_name = "name"];
+    bool success = 2 [json_name = "success"];
+    bool skipped = 3 [json_name = "skipped"];
+    string error = 4 [json_name = "error"];
+    int64 flow_id = 5 [json_name = "flow_id"];
+  }
+  repeated Result results = 1 [json_name = "results"];
+}
+
 service Coordinator {
   // Worker flow methods
   rpc UpdateWorkerFlowStatus(WorkerFlowStatusRequest) returns (CommonResponse) {}
@@ -555,6 +591,20 @@ service Coordinator {
   rpc TryFlow(TryFlowRequest) returns (TryFlowResponse) {
     option (google.api.http) = {
       post: "/v0/flows/try"
+      body: "*"
+    };
+  }
+
+  // Template methods
+  rpc ListTemplates(google.protobuf.Empty) returns (ListTemplatesResponse) {
+    option (google.api.http) = {get: "/v0/templates"};
+  }
+  rpc GetTemplate(GetTemplateRequest) returns (TemplateResponse) {
+    option (google.api.http) = {get: "/v0/templates/{id}"};
+  }
+  rpc InstallTemplate(InstallTemplateRequest) returns (InstallTemplateResponse) {
+    option (google.api.http) = {
+      post: "/v0/templates/{id}/install"
       body: "*"
     };
   }

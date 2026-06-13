@@ -118,6 +118,6 @@ curl -X POST "http://localhost:8080/mcp?token=at_your_token_here" \
 
 Each MCP Tool flow becomes a separate tool on the same `/mcp` endpoint. Create as many flows as needed - they all appear together when a client connects.
 
-To quickly deploy a full set of tools for a supported service, use [MCP Tool Packs](/docs/guides/mcp-tool-packs). Packs let you configure shared credentials once and create multiple tools at once.
+To quickly deploy a full set of tools for a supported service, use [Templates](/docs/guides/templates). Templates let you configure shared credentials once and create multiple tools at once.
 
 For step-by-step examples, see the [Build a Weather Tool for AI Assistants](/playbooks/mcp-weather-tool) and [RAG Knowledge Base for AI Assistants](/playbooks/rag-knowledge-base) playbooks.

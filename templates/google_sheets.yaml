@@ -1,0 +1,904 @@
+id: google_sheets
+name: Google Sheets
+description: 28 MCP tools for managing Google Sheets spreadsheets, worksheets, rows, and formatting.
+version: 0.1.0
+variables:
+  - key: oauth_connection
+    title: OAuth Connection
+    description: Google OAuth connection. Set up in Connections page first.
+    type: connection
+    required: true
+flows:
+  - name: google_sheets_create_spreadsheet
+    kind: tool
+    description: Create a new Google Sheets spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_create_spreadsheet
+        description: Create a new Google Sheets spreadsheet.
+        input_schema:
+          - { name: title, type: string, required: true, description: Title for the new spreadsheet }
+          - { name: sheet_name, type: string, required: false, description: Name for the first worksheet. Defaults to Sheet1. }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: create_spreadsheet
+          oauth_connection: "{{ oauth_connection }}"
+          title: ${!this.title}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_create_column
+    kind: tool
+    description: Create a new column in a specific spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_create_column
+        description: Create a new column in a specific spreadsheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: column_name, type: string, required: true, description: Header name for the new column }
+          - { name: values, type: string, required: false, description: JSON array of values to populate the column }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: create_column
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          column_name: ${!this.column_name}
+          values: ${!this.values.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_create_row
+    kind: tool
+    description: Create a new row in a specific spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_create_row
+        description: Create a new row in a specific spreadsheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: values, type: string, required: true, description: "JSON array of values for the row, e.g. [\"val1\",\"val2\"]" }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: create_row
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          values: ${!this.values}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_create_rows
+    kind: tool
+    description: Create one or more new rows in a specific spreadsheet (with line item support).
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_create_rows
+        description: Create one or more new rows in a specific spreadsheet (with line item support).
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: rows, type: string, required: true, description: "JSON array of arrays, e.g. [[\"a\",\"b\"],[\"c\",\"d\"]]" }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: create_rows
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          rows: ${!this.rows}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_create_row_at_top
+    kind: tool
+    description: Creates a new spreadsheet row at the top of a spreadsheet (after the header row).
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_create_row_at_top
+        description: Creates a new spreadsheet row at the top of a spreadsheet (after the header row).
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: values, type: string, required: true, description: JSON array of values for the row }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: create_row_at_top
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          values: ${!this.values}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_change_sheet_properties
+    kind: tool
+    description: Update Google Sheets properties like frozen rows/columns, sheet position, and visibility settings.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_change_sheet_properties
+        description: Update Google Sheets properties like frozen rows/columns, sheet position, and visibility settings.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: frozen_rows, type: number, required: false, description: Number of rows to freeze at the top }
+          - { name: frozen_columns, type: number, required: false, description: Number of columns to freeze on the left }
+          - { name: hidden, type: string, required: false, description: true or false }
+          - { name: sheet_position, type: number, required: false, description: Position index of the sheet }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: change_sheet_properties
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          frozen_rows: ${!this.frozen_rows.or("0")}
+          frozen_columns: ${!this.frozen_columns.or("0")}
+          hidden: ${!this.hidden.or("false")}
+          sheet_position: ${!this.sheet_position.or("0")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_create_conditional_formatting
+    kind: tool
+    description: Apply conditional formatting to cells in a Google Sheets spreadsheet based on their values.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_create_conditional_formatting
+        description: Apply conditional formatting to cells in a Google Sheets spreadsheet based on their values.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: range, type: string, required: true, description: A1 notation range }
+          - { name: condition_type, type: string, required: true, description: "Condition type: NUMBER_GREATER, TEXT_CONTAINS, CUSTOM_FORMULA, etc." }
+          - { name: condition_value, type: string, required: true, description: The value to compare against }
+          - { name: condition_background_color, type: string, required: false, description: "Background color in hex format, e.g. #FF0000" }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: create_conditional_formatting
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          range: ${!this.range}
+          condition_type: ${!this.condition_type}
+          condition_value: ${!this.condition_value}
+          condition_background_color: ${!this.condition_background_color.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_copy_range
+    kind: tool
+    description: Copy data from one range to another within a Google Sheets spreadsheet, with options for what to paste (values, formatting, etc.).
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_copy_range
+        description: Copy data from one range to another within a Google Sheets spreadsheet, with options for what to paste (values, formatting, etc.).
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: source_range, type: string, required: true, description: Source range in A1 notation }
+          - { name: destination_range, type: string, required: true, description: Destination range in A1 notation }
+          - { name: paste_type, type: string, required: false, description: "What to paste: PASTE_NORMAL, PASTE_VALUES, PASTE_FORMAT, PASTE_NO_BORDERS, PASTE_FORMULA" }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: copy_range
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          source_range: ${!this.source_range}
+          destination_range: ${!this.destination_range}
+          paste_type: ${!this.paste_type.or("PASTE_NORMAL")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_copy_worksheet
+    kind: tool
+    description: Creates a new worksheet by copying an existing worksheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_copy_worksheet
+        description: Creates a new worksheet by copying an existing worksheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: true, description: Name of the worksheet to copy }
+          - { name: destination_spreadsheet_id, type: string, required: false, description: Target spreadsheet ID. Defaults to same spreadsheet if not provided. }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: copy_worksheet
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name}
+          destination_spreadsheet_id: ${!this.destination_spreadsheet_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_create_worksheet
+    kind: tool
+    description: Creates a new worksheet in a Google Sheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_create_worksheet
+        description: Creates a new worksheet in a Google Sheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: title, type: string, required: true, description: Title for the new worksheet }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: create_worksheet
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          title: ${!this.title}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_clear_rows
+    kind: tool
+    description: Clears the contents of the selected row(s) while keeping the row(s) intact in the spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_clear_rows
+        description: Clears the contents of the selected row(s) while keeping the row(s) intact in the spreadsheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: row_number, type: number, required: true, description: Starting row number }
+          - { name: end_row_number, type: number, required: false, description: "Ending row number. If not set, only the starting row is cleared." }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: clear_rows
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          row_number: ${!this.row_number}
+          end_row_number: ${!this.end_row_number.or("0")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_delete_worksheet
+    kind: tool
+    description: Permanently delete a worksheet from a Google Sheets spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_delete_worksheet
+        description: Permanently delete a worksheet from a Google Sheets spreadsheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: true, description: Name of the worksheet to delete }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: delete_worksheet
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_delete_rows
+    kind: tool
+    description: Deletes the selected row(s) from the spreadsheet. This action removes the row(s) and all associated data.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_delete_rows
+        description: Deletes the selected row(s) from the spreadsheet. This action removes the row(s) and all associated data.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: row_number, type: number, required: true, description: Starting row number }
+          - { name: end_row_number, type: number, required: false, description: "Ending row number. If not set, only the starting row is deleted." }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: delete_rows
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          row_number: ${!this.row_number}
+          end_row_number: ${!this.end_row_number.or("0")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_format_cells
+    kind: tool
+    description: Apply date, number, or style formatting (colors, bold, italic, strikethrough) to a range of cells in a Google Sheets spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_format_cells
+        description: Apply date, number, or style formatting (colors, bold, italic, strikethrough) to a range of cells in a Google Sheets spreadsheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: range, type: string, required: true, description: A1 notation range to format }
+          - { name: bold, type: string, required: false, description: true or false }
+          - { name: italic, type: string, required: false, description: true or false }
+          - { name: strikethrough, type: string, required: false, description: true or false }
+          - { name: background_color, type: string, required: false, description: "Hex color, e.g. #FF0000" }
+          - { name: foreground_color, type: string, required: false, description: "Hex color, e.g. #000000" }
+          - { name: number_format, type: string, required: false, description: "Number format pattern, e.g. #,##0.00" }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: format_cells
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          range: ${!this.range}
+          bold: ${!this.bold.or("false")}
+          italic: ${!this.italic.or("false")}
+          strikethrough: ${!this.strikethrough.or("false")}
+          background_color: ${!this.background_color.or("")}
+          foreground_color: ${!this.foreground_color.or("")}
+          number_format: ${!this.number_format.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_format_row
+    kind: tool
+    description: Format a row in a specific spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_format_row
+        description: Format a row in a specific spreadsheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: row_number, type: number, required: true, description: Row number to format }
+          - { name: bold, type: string, required: false, description: true or false }
+          - { name: italic, type: string, required: false, description: true or false }
+          - { name: strikethrough, type: string, required: false, description: true or false }
+          - { name: background_color, type: string, required: false, description: "Hex color, e.g. #FF0000" }
+          - { name: foreground_color, type: string, required: false, description: "Hex color, e.g. #000000" }
+          - { name: number_format, type: string, required: false, description: "Number format pattern, e.g. #,##0.00" }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: format_row
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          row_number: ${!this.row_number}
+          bold: ${!this.bold.or("false")}
+          italic: ${!this.italic.or("false")}
+          strikethrough: ${!this.strikethrough.or("false")}
+          background_color: ${!this.background_color.or("")}
+          foreground_color: ${!this.foreground_color.or("")}
+          number_format: ${!this.number_format.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_rename_worksheet
+    kind: tool
+    description: Rename a worksheet in a Google Sheets spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_rename_worksheet
+        description: Rename a worksheet in a Google Sheets spreadsheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: true, description: Current name of the worksheet }
+          - { name: new_name, type: string, required: true, description: New name for the worksheet }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: rename_worksheet
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name}
+          new_name: ${!this.new_name}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_set_data_validation
+    kind: tool
+    description: Set data validation rules on a range of cells in Google Sheets to control what data can be entered.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_set_data_validation
+        description: Set data validation rules on a range of cells in Google Sheets to control what data can be entered.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: range, type: string, required: true, description: A1 notation range }
+          - { name: validation_type, type: string, required: true, description: "Type: ONE_OF_LIST, ONE_OF_RANGE, NUMBER_BETWEEN, TEXT_CONTAINS, DATE_IS_VALID, CUSTOM_FORMULA" }
+          - { name: validation_values, type: string, required: true, description: Comma-separated values for the validation rule }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: set_data_validation
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          range: ${!this.range}
+          validation_type: ${!this.validation_type}
+          validation_values: ${!this.validation_values}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_sort_range
+    kind: tool
+    description: Sort data within a specified range in Google Sheets by a chosen column in ascending or descending order.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_sort_range
+        description: Sort data within a specified range in Google Sheets by a chosen column in ascending or descending order.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: range, type: string, required: true, description: A1 notation range to sort }
+          - { name: sort_column_index, type: number, required: false, description: 0-based column index to sort by }
+          - { name: sort_order, type: string, required: false, description: ASCENDING or DESCENDING }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: sort_range
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          range: ${!this.range}
+          sort_column_index: ${!this.sort_column_index.or("0")}
+          sort_order: ${!this.sort_order.or("ASCENDING")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_update_row
+    kind: tool
+    description: Update a row in a specific spreadsheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_update_row
+        description: Update a row in a specific spreadsheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: row_number, type: number, required: true, description: Row number to update }
+          - { name: values, type: string, required: true, description: JSON array of new values for the row }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: update_row
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          row_number: ${!this.row_number}
+          values: ${!this.values}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_update_rows
+    kind: tool
+    description: Update one or more rows in a specific spreadsheet (with line item support).
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_update_rows
+        description: Update one or more rows in a specific spreadsheet (with line item support).
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: row_number, type: number, required: true, description: Starting row number }
+          - { name: rows, type: string, required: true, description: JSON array of arrays with new values }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: update_rows
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          row_number: ${!this.row_number}
+          rows: ${!this.rows}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_lookup_rows
+    kind: tool
+    description: Find up to 500 rows based on a column and value as line items.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_lookup_rows
+        description: Find up to 500 rows based on a column and value as line items.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: column_name, type: string, required: true, description: Column header to search in }
+          - { name: lookup_value, type: string, required: true, description: Value to search for }
+          - { name: max_results, type: number, required: false, description: "Maximum rows to return, default 500" }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: lookup_rows
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          column_name: ${!this.column_name}
+          lookup_value: ${!this.lookup_value}
+          max_results: ${!this.max_results.or("500")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_find_worksheet
+    kind: tool
+    description: Finds a worksheet by title.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_find_worksheet
+        description: Finds a worksheet by title.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: true, description: Title of the worksheet to find }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: find_worksheet
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_get_data_range
+    kind: tool
+    description: Get data from a specific range in a Google Spreadsheet using A1 notation (e.g., "A1:D10", "B2:E5").
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_get_data_range
+        description: Get data from a specific range in a Google Spreadsheet using A1 notation (e.g., "A1:D10", "B2:E5").
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: range, type: string, required: true, description: "Range in A1 notation, e.g. A1:D10" }
+          - { name: include_headers, type: string, required: false, description: "true or false, default true" }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: get_data_range
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          range: ${!this.range}
+          include_headers: ${!this.include_headers.or("true")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_get_rows
+    kind: tool
+    description: Return up to 1,500 rows as a single JSON value or as line items.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_get_rows
+        description: Return up to 1,500 rows as a single JSON value or as line items.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: max_results, type: number, required: false, description: "Maximum rows to return, default 1500" }
+          - { name: include_headers, type: string, required: false, description: true or false }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: get_rows
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          max_results: ${!this.max_results.or("1500")}
+          include_headers: ${!this.include_headers.or("true")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_get_row
+    kind: tool
+    description: Get a specific spreadsheet row by its row number (ID). Row 1 is typically the header row.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_get_row
+        description: Get a specific spreadsheet row by its row number (ID). Row 1 is typically the header row.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: row_number, type: number, required: true, description: Row number to retrieve (1-based) }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: get_row
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          row_number: ${!this.row_number}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_get_spreadsheet
+    kind: tool
+    description: Get a specific Google Spreadsheet by its ID. Returns the raw spreadsheet data from the Google Sheets API.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_get_spreadsheet
+        description: Get a specific Google Spreadsheet by its ID. Returns the raw spreadsheet data from the Google Sheets API.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID to retrieve }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: get_spreadsheet
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_lookup_row
+    kind: tool
+    description: Find a specific spreadsheet row based on a column and value. If found, it returns the entire row.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_lookup_row
+        description: Find a specific spreadsheet row based on a column and value. If found, it returns the entire row.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: false, description: Name of the worksheet. Defaults to Sheet1. }
+          - { name: column_name, type: string, required: true, description: Column header to search in }
+          - { name: lookup_value, type: string, required: true, description: Value to search for }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: lookup_row
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name.or("Sheet1")}
+          column_name: ${!this.column_name}
+          lookup_value: ${!this.lookup_value}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_sheets_find_or_create_worksheet
+    kind: tool
+    description: Finds or creates a specific worksheet.
+    input:
+      component: mcp_tool
+      config:
+        name: google_sheets_find_or_create_worksheet
+        description: Finds or creates a specific worksheet.
+        input_schema:
+          - { name: spreadsheet_id, type: string, required: false, description: Spreadsheet ID. Defaults to the configured spreadsheet if not provided. }
+          - { name: sheet_name, type: string, required: true, description: Title of the worksheet to find or create }
+    processors:
+      - label: google_sheets
+        component: google_sheets
+        config:
+          action: find_or_create_worksheet
+          oauth_connection: "{{ oauth_connection }}"
+          spreadsheet_id: ${!this.spreadsheet_id.or("")}
+          sheet_name: ${!this.sheet_name}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response

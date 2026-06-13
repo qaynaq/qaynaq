@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Loader2,
@@ -8,30 +8,15 @@ import {
   Plus,
   Trash2,
   Workflow,
-  Package,
-  Check,
-  CircleAlert,
 } from "lucide-react";
 import { useToast } from "@/components/toast";
 import { FlowBuilder } from "@/components/flow-builder/flow-builder";
-import {
-  createFlow,
-  deleteFlow,
-  validateFlow,
-  tryFlow,
-  fetchSecrets,
-  fetchConnections,
-  fetchFlows,
-} from "@/lib/api";
+import { createFlow, validateFlow, tryFlow } from "@/lib/api";
 import {
   getComponent,
   getFlowCatalog,
   type FlowCatalog,
 } from "@/components/flow-components/registry";
-import {
-  ConnectionPickerField,
-  TextField,
-} from "@/components/form-primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,13 +29,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  templatePacks,
-  type TemplatePack,
-  type McpToolTemplate,
-  type SharedConfigField,
-} from "@/lib/mcp-tool-templates";
-import { buildFlowFromTemplate } from "@/lib/flow-builder-utils";
 
 export interface StreamNodeData {
   label: string;
@@ -61,7 +39,7 @@ export interface StreamNodeData {
   status?: string;
 }
 
-type FlowType = null | "mcp_tool" | "automation" | "template_pack";
+type FlowType = null | "mcp_tool" | "automation";
 
 interface McpParameter {
   name: string;
@@ -101,7 +79,7 @@ function FlowTypeSelector({
           What would you like to build?
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full px-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl w-full px-6">
         <button
           onClick={() => onSelect("mcp_tool")}
           className="group relative flex flex-col items-start p-8 rounded-xl border-2 border-border bg-card hover:border-primary hover:shadow-lg transition-all duration-200 text-left"
@@ -114,22 +92,6 @@ function FlowTypeSelector({
             Build a tool for AI assistants. Define parameters and connect to any
             API, database, or service - instantly callable by Claude, Cursor,
             and AI agents.
-          </p>
-          <ArrowRight className="absolute top-8 right-6 h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-        </button>
-
-        <button
-          onClick={() => onSelect("template_pack")}
-          className="group relative flex flex-col items-start p-8 rounded-xl border-2 border-border bg-card hover:border-primary hover:shadow-lg transition-all duration-200 text-left"
-        >
-          <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-            <Package className="h-6 w-6" />
-          </div>
-          <h2 className="text-lg font-semibold mb-2">MCP Tool Pack</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Deploy a pre-built set of MCP tools for a service. Configure once
-            and create multiple tools at once - Google Calendar, and more coming
-            soon.
           </p>
           <ArrowRight className="absolute top-8 right-6 h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
         </button>
@@ -150,6 +112,12 @@ function FlowTypeSelector({
           <ArrowRight className="absolute top-8 right-6 h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
         </button>
       </div>
+      <p className="text-sm text-muted-foreground mt-8">
+        Looking for ready-made flows?{" "}
+        <Link to="/flows/templates" className="text-primary hover:underline">
+          Browse Templates
+        </Link>
+      </p>
     </div>
   );
 }
@@ -487,549 +455,13 @@ function McpToolForm({
     </div>
   );
 }
-
-function TemplatePackWizard({
-  onBack,
-  initialPackId,
-}: {
-  onBack: () => void;
-  initialPackId?: string;
-}) {
-  const navigate = useNavigate();
-  const { addToast } = useToast();
-  const [selectedPack, setSelectedPack] = useState<TemplatePack | null>(null);
-  const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
-  const [sharedConfig, setSharedConfig] = useState<Record<string, string>>({});
-  const [secrets, setSecrets] = useState<string[]>([]);
-  const [connections, setConnections] = useState<string[]>([]);
-  const [secretsLoading, setSecretsLoading] = useState(false);
-  const [isDeploying, setIsDeploying] = useState(false);
-  const [deployResults, setDeployResults] = useState<Array<{
-    name: string;
-    success: boolean;
-    error?: string;
-  }> | null>(null);
-  const [existingManagedFlows, setExistingManagedFlows] = useState<
-    Map<string, Map<string, string>>
-  >(new Map());
-  const [overrideMode, setOverrideMode] = useState(false);
-
-  useEffect(() => {
-    const loadData = async () => {
-      setSecretsLoading(true);
-      try {
-        const [secretsData, connectionsData, flowsData] = await Promise.all([
-          fetchSecrets().catch(() => []),
-          fetchConnections().catch(() => []),
-          fetchFlows().catch(() => []),
-        ]);
-        setSecrets(secretsData.map((s) => s.key));
-        setConnections(connectionsData.map((c) => c.name));
-        const managed = new Map<string, Map<string, string>>();
-        for (const flow of flowsData) {
-          if (flow.managed_by) {
-            if (!managed.has(flow.managed_by)) {
-              managed.set(flow.managed_by, new Map());
-            }
-            managed.get(flow.managed_by)!.set(flow.name, flow.id);
-          }
-        }
-        setExistingManagedFlows(managed);
-      } finally {
-        setSecretsLoading(false);
-      }
-    };
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (initialPackId && !secretsLoading && !selectedPack) {
-      const pack = templatePacks.find((p) => p.id === initialPackId);
-      if (pack) handleSelectPack(pack);
-    }
-  }, [initialPackId, secretsLoading]);
-
-  const handleSelectPack = (pack: TemplatePack) => {
-    setSelectedPack(pack);
-    const packFlows = existingManagedFlows.get(pack.id);
-    const deployable = pack.templates.filter((t) => !packFlows?.has(t.name));
-    setSelectedTools(new Set(deployable.map((t) => t.id)));
-    const defaults: Record<string, string> = {};
-    for (const field of pack.sharedConfig) {
-      defaults[field.key] = field.default || "";
-    }
-    setSharedConfig(defaults);
-  };
-
-  const isAlreadyDeployed = (template: McpToolTemplate) => {
-    if (!selectedPack) return false;
-    return (
-      existingManagedFlows.get(selectedPack.id)?.has(template.name) ?? false
-    );
-  };
-
-  const deployableTemplates = selectedPack
-    ? selectedPack.templates.filter(
-        (t) => overrideMode || !isAlreadyDeployed(t),
-      )
-    : [];
-
-  const toggleTool = (id: string) => {
-    setSelectedTools((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (!selectedPack) return;
-    if (selectedTools.size === deployableTemplates.length) {
-      setSelectedTools(new Set());
-    } else {
-      setSelectedTools(new Set(deployableTemplates.map((t) => t.id)));
-    }
-  };
-
-  const canDeploy = () => {
-    if (!selectedPack || selectedTools.size === 0) return false;
-    for (const field of selectedPack.sharedConfig) {
-      if (field.required && !sharedConfig[field.key]) return false;
-    }
-    return true;
-  };
-
-  const handleDeploy = async () => {
-    if (!selectedPack) return;
-    setIsDeploying(true);
-    const results: Array<{ name: string; success: boolean; error?: string }> =
-      [];
-
-    const templates = selectedPack.templates.filter((t) =>
-      selectedTools.has(t.id),
-    );
-
-    const packFlowMap = existingManagedFlows.get(selectedPack.id);
-
-    for (const template of templates) {
-      try {
-        const existingFlowId = packFlowMap?.get(template.name);
-        if (existingFlowId && !overrideMode) {
-          continue;
-        }
-        if (existingFlowId && overrideMode) {
-          await deleteFlow(existingFlowId);
-        }
-        const flowData = buildFlowFromTemplate(
-          template,
-          sharedConfig,
-          selectedPack.sharedConfig,
-          selectedPack.id,
-        );
-        await createFlow(flowData);
-        results.push({ name: template.name, success: true });
-      } catch (error) {
-        results.push({
-          name: template.name,
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
-    }
-
-    setDeployResults(results);
-    setIsDeploying(false);
-
-    const newNames = results.filter((r) => r.success).map((r) => r.name);
-    if (newNames.length > 0 && selectedPack) {
-      setExistingManagedFlows((prev) => {
-        const next = new Map(prev);
-        const existing = next.get(selectedPack.id) ?? new Map<string, string>();
-        const updated = new Map(existing);
-        for (const name of newNames) updated.set(name, "");
-        next.set(selectedPack.id, updated);
-        return next;
-      });
-    }
-
-    const successCount = results.filter((r) => r.success).length;
-    const failCount = results.filter((r) => !r.success).length;
-
-    if (failCount === 0) {
-      addToast({
-        id: "template-deploy-success",
-        title: "Tools Deployed",
-        description: `${successCount} MCP tool${successCount > 1 ? "s" : ""} created successfully.`,
-        variant: "success",
-      });
-    } else {
-      addToast({
-        id: "template-deploy-partial",
-        title: "Deployment Completed",
-        description: `${successCount} succeeded, ${failCount} failed.`,
-        variant: failCount === results.length ? "error" : "warning",
-      });
-    }
-  };
-
-  if (deployResults) {
-    const successCount = deployResults.filter((r) => r.success).length;
-    const failCount = deployResults.filter((r) => !r.success).length;
-
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="w-full max-w-xl px-6">
-          <div className="mb-8 text-center">
-            <div
-              className={`flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-4 ${failCount === 0 ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}
-            >
-              {failCount === 0 ? (
-                <Check className="h-8 w-8" />
-              ) : (
-                <CircleAlert className="h-8 w-8" />
-              )}
-            </div>
-            <h1 className="text-2xl font-bold">
-              {failCount === 0 ? "All Tools Deployed" : "Deployment Complete"}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {successCount} tool{successCount !== 1 ? "s" : ""} created
-              {failCount > 0 ? `, ${failCount} failed` : ""}
-            </p>
-          </div>
-
-          <div className="space-y-2 mb-8">
-            {deployResults.map((result) => (
-              <div
-                key={result.name}
-                className={`flex items-center justify-between p-3 rounded-lg border ${result.success ? "bg-green-500/5 border-green-500/20" : "bg-destructive/5 border-destructive/20"}`}
-              >
-                <span className="text-sm font-mono">{result.name}</span>
-                {result.success ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <span className="text-xs text-destructive">
-                    {result.error}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => {
-                setDeployResults(null);
-                setSelectedPack(null);
-                setSelectedTools(new Set());
-              }}
-            >
-              Deploy Another Pack
-            </Button>
-            <Button className="flex-1" onClick={() => navigate("/flows")}>
-              Go to Flows
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isDeploying) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="text-muted-foreground">Deploying MCP tools...</p>
-      </div>
-    );
-  }
-
-  if (!selectedPack) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="w-full max-w-2xl px-6">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
-
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold">MCP Tool Packs</h1>
-            <p className="text-muted-foreground mt-1">
-              Select a pack to deploy pre-built MCP tools for a service
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {templatePacks.map((pack) => (
-              <button
-                key={pack.id}
-                onClick={() => handleSelectPack(pack)}
-                className="group relative flex items-start gap-4 p-6 rounded-xl border-2 border-border bg-card hover:border-primary hover:shadow-lg transition-all duration-200 text-left"
-              >
-                <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary shrink-0 transition-transform duration-300 group-hover:scale-110">
-                  <Package className="h-6 w-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-semibold mb-1">{pack.name}</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {pack.description}
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors mt-1 shrink-0" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <div className="w-full max-w-2xl px-6">
-        <button
-          onClick={() => {
-            setSelectedPack(null);
-            setSelectedTools(new Set());
-          }}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Packs
-        </button>
-
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold">
-            Deploy {selectedPack.name} Tools
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Configure shared settings and select which tools to create
-          </p>
-        </div>
-
-        <div className="space-y-8">
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Configuration
-            </h2>
-            {selectedPack.sharedConfig.map((field) => {
-              const setValue = (val: string) =>
-                setSharedConfig((prev) => ({ ...prev, [field.key]: val }));
-              if (field.type === "dynamic_select" && field.dataSource === "secrets") {
-                return (
-                  <ConnectionPickerField
-                    key={field.key}
-                    label={field.title}
-                    description={field.description}
-                    required={field.required}
-                    source="secrets"
-                    value={sharedConfig[field.key] || ""}
-                    onChange={setValue}
-                  />
-                );
-              }
-              if (field.type === "dynamic_select" && field.dataSource === "connections") {
-                return (
-                  <ConnectionPickerField
-                    key={field.key}
-                    label={field.title}
-                    description={field.description}
-                    required={field.required}
-                    source="connections"
-                    value={sharedConfig[field.key] || ""}
-                    onChange={setValue}
-                  />
-                );
-              }
-              return (
-                <TextField
-                  key={field.key}
-                  label={field.title}
-                  description={field.description}
-                  required={field.required}
-                  value={sharedConfig[field.key] || ""}
-                  onChange={setValue}
-                  placeholder={field.description}
-                />
-              );
-            })}
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Tools ({selectedTools.size} of {deployableTemplates.length}{" "}
-                available)
-              </h2>
-              <div className="flex items-center gap-3">
-                {(existingManagedFlows.get(selectedPack.id)?.size ?? 0) > 0 && (
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox
-                      checked={overrideMode}
-                      onCheckedChange={(checked) => {
-                        setOverrideMode(!!checked);
-                        if (!checked) {
-                          setSelectedTools((prev) => {
-                            const next = new Set(prev);
-                            for (const t of selectedPack!.templates) {
-                              if (isAlreadyDeployed(t)) next.delete(t.id);
-                            }
-                            return next;
-                          });
-                        }
-                      }}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      Override existing
-                    </span>
-                  </label>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleAll}
-                  className="h-7 text-xs"
-                >
-                  {selectedTools.size === deployableTemplates.length
-                    ? "Deselect All"
-                    : "Select All"}
-                </Button>
-              </div>
-            </div>
-
-            {overrideMode && (
-              <div className="flex items-start gap-2 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5 text-sm">
-                <CircleAlert className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-                <span className="text-yellow-700 dark:text-yellow-400">
-                  Override mode will delete existing tools and recreate them
-                  with the current configuration. Any manual edits to those
-                  tools will be lost.
-                </span>
-              </div>
-            )}
-
-            {deployableTemplates.length === 0 &&
-              selectedPack.templates.length > 0 && (
-                <div className="text-sm text-muted-foreground py-6 text-center border border-dashed rounded-lg">
-                  All tools from this pack are already deployed. Enable
-                  "Override existing" to redeploy them.
-                </div>
-              )}
-
-            <div className="space-y-2">
-              {selectedPack.templates.map((template) => {
-                const deployed = isAlreadyDeployed(template);
-                const selectable = overrideMode || !deployed;
-                return (
-                  <label
-                    key={template.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                      !selectable
-                        ? "border-border bg-muted/50 cursor-default opacity-60"
-                        : selectedTools.has(template.id)
-                          ? "border-primary/50 bg-primary/5 cursor-pointer"
-                          : "border-border bg-card hover:border-border/80 cursor-pointer"
-                    }`}
-                  >
-                    <Checkbox
-                      checked={selectedTools.has(template.id)}
-                      onCheckedChange={() =>
-                        selectable && toggleTool(template.id)
-                      }
-                      disabled={!selectable}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono font-medium">
-                          {template.name}
-                        </span>
-                        {deployed && (
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                              overrideMode && selectedTools.has(template.id)
-                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {overrideMode && selectedTools.has(template.id)
-                              ? "Will override"
-                              : "Already deployed"}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {template.description}
-                      </div>
-                      {selectable && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {template.parameters
-                            .filter((p) => p.required)
-                            .map((p) => (
-                              <span
-                                key={p.name}
-                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted text-muted-foreground"
-                              >
-                                {p.name}
-                              </span>
-                            ))}
-                          {template.parameters.filter((p) => !p.required)
-                            .length > 0 && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-muted-foreground/60">
-                              +
-                              {
-                                template.parameters.filter((p) => !p.required)
-                                  .length
-                              }{" "}
-                              optional
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          <Button
-            onClick={handleDeploy}
-            disabled={!canDeploy()}
-            className="w-full"
-            size="lg"
-          >
-            Deploy {selectedTools.size} Tool
-            {selectedTools.size !== 1 ? "s" : ""}
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function NewStreamPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const packParam = searchParams.get("pack");
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [catalog, setCatalog] =
     useState<FlowCatalog | null>(null);
-  const [flowType, setFlowType] = useState<FlowType>(
-    packParam ? "template_pack" : null,
-  );
+  const [flowType, setFlowType] = useState<FlowType>(null);
   const [mcpInitialData, setMcpInitialData] = useState<{
     name: string;
     status: string;
@@ -1256,15 +688,6 @@ export default function NewStreamPage() {
 
   if (flowType === null) {
     return <FlowTypeSelector onSelect={setFlowType} />;
-  }
-
-  if (flowType === "template_pack") {
-    return (
-      <TemplatePackWizard
-        onBack={() => setFlowType(null)}
-        initialPackId={packParam || undefined}
-      />
-    );
   }
 
   if (flowType === "mcp_tool" && !mcpInitialData) {

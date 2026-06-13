@@ -1,0 +1,662 @@
+id: google_drive
+name: Google Drive
+description: 22 MCP tools for managing Google Drive files, folders, permissions, and shared drives.
+version: 0.1.0
+variables:
+  - key: oauth_connection
+    title: OAuth Connection
+    description: Google OAuth connection. Set up in Connections page first.
+    type: connection
+    required: true
+flows:
+  - name: google_drive_copy_file
+    kind: tool
+    description: Create a copy of the specified file in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_copy_file
+        description: Create a copy of the specified file in Google Drive.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file to copy }
+          - { name: file_name, type: string, required: false, description: Name for the copy. Defaults to 'Copy of <original name>' if not provided. }
+          - { name: folder_id, type: string, required: false, description: Destination folder ID. Defaults to the configured folder if not provided. }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: copy_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+          file_name: ${!this.file_name.or("")}
+          folder_id: ${!this.folder_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_delete_file_permanent
+    kind: tool
+    description: Permanently delete a file from Google Drive. This action cannot be undone.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_delete_file_permanent
+        description: Permanently delete a file from Google Drive. This action cannot be undone.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file to permanently delete }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: delete_file_permanent
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_export_file
+    kind: tool
+    description: Export Google Workspace files (Docs, Sheets, Slides) to different formats like PDF, Word, Excel, etc.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_export_file
+        description: Export Google Workspace files (Docs, Sheets, Slides) to different formats like PDF, Word, Excel, etc.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the Google Workspace file to export }
+          - { name: mime_type, type: string, required: true, description: "Target format MIME type (e.g. application/pdf, text/csv, application/vnd.openxmlformats-officedocument.wordprocessingml.document)" }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: export_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+          mime_type: ${!this.mime_type}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_upload_file
+    kind: tool
+    description: Upload a file to Google Drive from a URL or content.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_upload_file
+        description: Upload a file to Google Drive from a URL or content.
+        input_schema:
+          - { name: file_name, type: string, required: true, description: Name for the uploaded file }
+          - { name: file_url, type: string, required: false, description: URL to download the file from }
+          - { name: content, type: string, required: false, description: File content (text or base64 encoded) }
+          - { name: folder_id, type: string, required: false, description: Destination folder ID. Defaults to the configured folder if not provided. }
+          - { name: mime_type, type: string, required: false, description: MIME type of the file }
+          - { name: description, type: string, required: false, description: File description }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: upload_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_name: ${!this.file_name}
+          file_url: ${!this.file_url.or("")}
+          content: ${!this.content.or("")}
+          folder_id: ${!this.folder_id.or("")}
+          mime_type: ${!this.mime_type.or("")}
+          description: ${!this.description.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_create_folder
+    kind: tool
+    description: Create a new, empty folder in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_create_folder
+        description: Create a new, empty folder in Google Drive.
+        input_schema:
+          - { name: file_name, type: string, required: true, description: Name for the new folder }
+          - { name: folder_id, type: string, required: false, description: Parent folder ID. Defaults to the configured folder if not provided. }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: create_folder
+          oauth_connection: "{{ oauth_connection }}"
+          file_name: ${!this.file_name}
+          folder_id: ${!this.folder_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_move_file
+    kind: tool
+    description: Move a file from one folder to another in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_move_file
+        description: Move a file from one folder to another in Google Drive.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file to move }
+          - { name: destination_folder_id, type: string, required: true, description: The ID of the destination folder }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: move_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+          destination_folder_id: ${!this.destination_folder_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_create_file_from_text
+    kind: tool
+    description: Create a new file from plain text content in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_create_file_from_text
+        description: Create a new file from plain text content in Google Drive.
+        input_schema:
+          - { name: file_name, type: string, required: true, description: Name for the new file }
+          - { name: content, type: string, required: true, description: Text content for the file }
+          - { name: folder_id, type: string, required: false, description: Parent folder ID. Defaults to the configured folder if not provided. }
+          - { name: mime_type, type: string, required: false, description: MIME type (defaults to text/plain) }
+          - { name: description, type: string, required: false, description: File description }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: create_file_from_text
+          oauth_connection: "{{ oauth_connection }}"
+          file_name: ${!this.file_name}
+          content: ${!this.content}
+          folder_id: ${!this.folder_id.or("")}
+          mime_type: ${!this.mime_type.or("text/plain")}
+          description: ${!this.description.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_remove_file_permission
+    kind: tool
+    description: Remove specific user access to a file in Google Drive. Requires either email address or permission ID.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_remove_file_permission
+        description: Remove specific user access to a file in Google Drive. Requires either email address or permission ID.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file }
+          - { name: email, type: string, required: false, description: Email address of the user to remove }
+          - { name: permission_id, type: string, required: false, description: Permission ID to remove (alternative to email) }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: remove_file_permission
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+          email: ${!this.email.or("")}
+          permission_id: ${!this.permission_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_replace_file
+    kind: tool
+    description: Upload new content to replace an existing file in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_replace_file
+        description: Upload new content to replace an existing file in Google Drive.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file to replace }
+          - { name: file_url, type: string, required: false, description: URL to download the replacement file from }
+          - { name: content, type: string, required: false, description: Replacement content (text or base64 encoded) }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: replace_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+          file_url: ${!this.file_url.or("")}
+          content: ${!this.content.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_create_shared_drive
+    kind: tool
+    description: Create a new shared drive (also known as Team Drive) in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_create_shared_drive
+        description: Create a new shared drive (also known as Team Drive) in Google Drive.
+        input_schema:
+          - { name: shared_drive_name, type: string, required: true, description: Name for the new shared drive }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: create_shared_drive
+          oauth_connection: "{{ oauth_connection }}"
+          shared_drive_name: ${!this.shared_drive_name}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_add_file_sharing
+    kind: tool
+    description: Add a sharing permission to a file in Google Drive. Provides a sharing URL.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_add_file_sharing
+        description: Add a sharing permission to a file in Google Drive. Provides a sharing URL.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file to share }
+          - { name: email, type: string, required: false, description: Email address to share with (for user/group type) }
+          - { name: role, type: string, required: false, description: "Permission role: reader, writer, commenter, owner" }
+          - { name: permission_type, type: string, required: false, description: "Permission type: user, group, domain, anyone" }
+          - { name: send_notification, type: string, required: false, description: Send notification email (true/false) }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: add_file_sharing
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+          email: ${!this.email.or("")}
+          role: ${!this.role.or("reader")}
+          permission_type: ${!this.permission_type.or("user")}
+          send_notification: ${!this.send_notification.or("true")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_create_shortcut
+    kind: tool
+    description: Create a shortcut to a file in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_create_shortcut
+        description: Create a shortcut to a file in Google Drive.
+        input_schema:
+          - { name: target_file_id, type: string, required: true, description: The ID of the file to create a shortcut to }
+          - { name: file_name, type: string, required: false, description: Name for the shortcut }
+          - { name: folder_id, type: string, required: false, description: Folder to create the shortcut in. Defaults to the configured folder if not provided. }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: create_shortcut
+          oauth_connection: "{{ oauth_connection }}"
+          target_file_id: ${!this.target_file_id}
+          file_name: ${!this.file_name.or("")}
+          folder_id: ${!this.folder_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_update_metadata
+    kind: tool
+    description: Update file or folder metadata including name, description, starred status, folder color, and custom properties.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_update_metadata
+        description: Update file or folder metadata including name, description, starred status, folder color, and custom properties.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file or folder to update }
+          - { name: file_name, type: string, required: false, description: New name for the file or folder }
+          - { name: description, type: string, required: false, description: New description }
+          - { name: starred, type: string, required: false, description: Whether the file is starred (true/false) }
+          - { name: folder_color, type: string, required: false, description: "Folder color as hex (e.g. #FF0000)" }
+          - { name: custom_properties, type: string, required: false, description: "JSON object of custom properties (e.g. {\"key\":\"value\"})" }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: update_metadata
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+          file_name: ${!this.file_name.or("")}
+          description: ${!this.description.or("")}
+          starred: ${!this.starred.or("false")}
+          folder_color: ${!this.folder_color.or("")}
+          custom_properties: ${!this.custom_properties.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_rename
+    kind: tool
+    description: Update the name of a file or folder in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_rename
+        description: Update the name of a file or folder in Google Drive.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file or folder to rename }
+          - { name: file_name, type: string, required: true, description: The new name }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: rename
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+          file_name: ${!this.file_name}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_delete_file
+    kind: tool
+    description: Move a file to the trash in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_delete_file
+        description: Move a file to the trash in Google Drive.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file to trash }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: delete_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_list_files
+    kind: tool
+    description: Retrieve a list of files from Google Drive based on query parameters.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_list_files
+        description: Retrieve a list of files from Google Drive based on query parameters.
+        input_schema:
+          - { name: query, type: string, required: false, description: Search query using Drive query syntax (e.g. name contains 'report') }
+          - { name: folder_id, type: string, required: false, description: List files in a specific folder. Defaults to the configured folder if not provided. }
+          - { name: max_results, type: number, required: false, description: Maximum number of files to return }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: list_files
+          oauth_connection: "{{ oauth_connection }}"
+          query: ${!this.query.or("")}
+          folder_id: ${!this.folder_id.or("")}
+          max_results: ${!this.max_results.or("100")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_get_file
+    kind: tool
+    description: Get a file or folder by its ID from Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_get_file
+        description: Get a file or folder by its ID from Google Drive.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file or folder to retrieve }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: get_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_get_permissions
+    kind: tool
+    description: List all users who have access to a file in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_get_permissions
+        description: List all users who have access to a file in Google Drive.
+        input_schema:
+          - { name: file_id, type: string, required: true, description: The ID of the file to check permissions for }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: get_permissions
+          oauth_connection: "{{ oauth_connection }}"
+          file_id: ${!this.file_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_find_file
+    kind: tool
+    description: Search for a specific file by name in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_find_file
+        description: Search for a specific file by name in Google Drive.
+        input_schema:
+          - { name: file_name, type: string, required: true, description: The file name to search for }
+          - { name: folder_id, type: string, required: false, description: Search within a specific folder. Defaults to the configured folder if not provided. }
+          - { name: max_results, type: number, required: false, description: Maximum number of results }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: find_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_name: ${!this.file_name}
+          folder_id: ${!this.folder_id.or("")}
+          max_results: ${!this.max_results.or("100")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_find_folder
+    kind: tool
+    description: Search for a specific folder by name in Google Drive.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_find_folder
+        description: Search for a specific folder by name in Google Drive.
+        input_schema:
+          - { name: file_name, type: string, required: true, description: The folder name to search for }
+          - { name: folder_id, type: string, required: false, description: Search within a specific parent folder. Defaults to the configured folder if not provided. }
+          - { name: max_results, type: number, required: false, description: Maximum number of results }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: find_folder
+          oauth_connection: "{{ oauth_connection }}"
+          file_name: ${!this.file_name}
+          folder_id: ${!this.folder_id.or("")}
+          max_results: ${!this.max_results.or("100")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_find_or_create_file
+    kind: tool
+    description: Find an existing file by name, or create a new one if not found.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_find_or_create_file
+        description: Find an existing file by name, or create a new one if not found.
+        input_schema:
+          - { name: file_name, type: string, required: true, description: The file name to search for or create }
+          - { name: folder_id, type: string, required: false, description: Folder to search in and create within. Defaults to the configured folder if not provided. }
+          - { name: content, type: string, required: false, description: Text content if creating a new file }
+          - { name: mime_type, type: string, required: false, description: MIME type if creating a new file }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: find_or_create_file
+          oauth_connection: "{{ oauth_connection }}"
+          file_name: ${!this.file_name}
+          folder_id: ${!this.folder_id.or("")}
+          content: ${!this.content.or("")}
+          mime_type: ${!this.mime_type.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: google_drive_find_or_create_folder
+    kind: tool
+    description: Find an existing folder by name, or create a new one if not found.
+    input:
+      component: mcp_tool
+      config:
+        name: google_drive_find_or_create_folder
+        description: Find an existing folder by name, or create a new one if not found.
+        input_schema:
+          - { name: file_name, type: string, required: true, description: The folder name to search for or create }
+          - { name: folder_id, type: string, required: false, description: Parent folder to search in and create within. Defaults to the configured folder if not provided. }
+    processors:
+      - label: google_drive
+        component: google_drive
+        config:
+          action: find_or_create_folder
+          oauth_connection: "{{ oauth_connection }}"
+          file_name: ${!this.file_name}
+          folder_id: ${!this.folder_id.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
