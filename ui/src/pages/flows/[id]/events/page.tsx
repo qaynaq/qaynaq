@@ -15,11 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { fetchFlowEvents, fetchStream } from "@/lib/api";
 import { FlowEvent } from "@/lib/entities";
@@ -236,6 +231,7 @@ export default function FlowEventsPage() {
   const [customOpen, setCustomOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const customRef = useRef<HTMLDivElement>(null);
 
   const toLocalISO = (d: Date): string => {
     const pad = (n: number, len = 2) => n.toString().padStart(len, "0");
@@ -367,6 +363,17 @@ export default function FlowEventsPage() {
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  useEffect(() => {
+    if (!customOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!customRef.current?.contains(e.target as Node)) {
+        setCustomOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [customOpen]);
+
   const flowGroups = groupByTraceId(events);
 
   return (
@@ -391,65 +398,61 @@ export default function FlowEventsPage() {
           <span className="text-sm text-muted-foreground">
             {totalFlows} flows
           </span>
-          <Popover open={customOpen} onOpenChange={setCustomOpen}>
-            <PopoverTrigger asChild>
-              <div>
-                <Select
-                  value={timeRange === "custom" ? "custom" : timeRange}
-                  onValueChange={handleTimeRangeChange}
-                >
-                  <SelectTrigger className={timeRange === "custom" ? "w-[320px]" : "w-[180px]"}>
-                    {timeRange === "custom" ? (
-                      <span className="truncate">
-                        {formatCustomLabel()}
-                      </span>
-                    ) : (
-                      <SelectValue />
-                    )}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIME_RANGES.map((range) => (
-                      <SelectItem key={range.value} value={range.value}>
-                        {range.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4" align="end">
-              <div className="flex flex-col gap-3">
-                <p className="text-sm font-medium">Custom time range</p>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs text-muted-foreground">
-                    Start
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={customStart}
-                    onChange={(e) => setCustomStart(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  />
+          <div className="relative" ref={customRef}>
+            <Select
+              value={timeRange === "custom" ? "custom" : timeRange}
+              onValueChange={handleTimeRangeChange}
+            >
+              <SelectTrigger className={timeRange === "custom" ? "w-[320px]" : "w-[180px]"}>
+                {timeRange === "custom" ? (
+                  <span className="truncate">{formatCustomLabel()}</span>
+                ) : (
+                  <SelectValue />
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                {TIME_RANGES.map((range) => (
+                  <SelectItem key={range.value} value={range.value}>
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {customOpen && (
+              <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-md border bg-popover p-4 text-popover-foreground shadow-md">
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm font-medium">Custom time range</p>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs text-muted-foreground">
+                      Start
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={customStart}
+                      onChange={(e) => setCustomStart(e.target.value)}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs text-muted-foreground">End</label>
+                    <input
+                      type="datetime-local"
+                      value={customEnd}
+                      onChange={(e) => setCustomEnd(e.target.value)}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={applyCustomRange}
+                    disabled={!customStart || !customEnd}
+                  >
+                    Apply
+                  </Button>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs text-muted-foreground">End</label>
-                  <input
-                    type="datetime-local"
-                    value={customEnd}
-                    onChange={(e) => setCustomEnd(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  onClick={applyCustomRange}
-                  disabled={!customStart || !customEnd}
-                >
-                  Apply
-                </Button>
               </div>
-            </PopoverContent>
-          </Popover>
+            )}
+          </div>
         </div>
       </div>
 
