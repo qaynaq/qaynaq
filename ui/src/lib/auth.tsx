@@ -33,18 +33,24 @@ async function exchangeSessionCookie(token: string): Promise<void> {
   }
 }
 
-async function fetchSession(): Promise<{ authenticated: boolean; role: UserRole; email: string }> {
+type SessionResult =
+  | { status: "authenticated"; role: UserRole; email: string }
+  | { status: "unauthenticated" }
+  | { status: "unknown" };
+
+async function fetchSession(): Promise<SessionResult> {
   try {
     const resp = await fetch("/auth/session", { credentials: "include" });
-    if (!resp.ok) return { authenticated: false, role: "", email: "" };
+    if (!resp.ok) return { status: "unknown" };
     const data = await resp.json();
+    if (!data.authenticated) return { status: "unauthenticated" };
     return {
-      authenticated: !!data.authenticated,
+      status: "authenticated",
       role: (data.role || "") as UserRole,
       email: data.email || "",
     };
   } catch {
-    return { authenticated: false, role: "", email: "" };
+    return { status: "unknown" };
   }
 }
 
@@ -80,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setRole("admin");
         } else {
           const session = await fetchSession();
-          if (session.authenticated) {
+          if (session.status === "authenticated") {
             setIsAuthenticated(true);
             setRole(session.role);
             setEmail(session.email);
@@ -88,9 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (savedToken) {
               setToken(savedToken);
             }
-          } else {
+          } else if (session.status === "unauthenticated") {
             setIsAuthenticated(false);
             localStorage.removeItem("qaynaq_token");
+          } else {
+            // Request never completed (aborted by a reload, network blip, 5xx).
+            // Not a real logout - keep the token and stay put.
+            setIsAuthenticated(false);
           }
         }
       } else {
@@ -111,8 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(true);
     await exchangeSessionCookie(newToken);
     const session = await fetchSession();
-    setRole(session.role);
-    setEmail(session.email);
+    if (session.status === "authenticated") {
+      setRole(session.role);
+      setEmail(session.email);
+    }
   };
 
   const logout = async () => {
