@@ -1,0 +1,842 @@
+id: hubspot
+name: HubSpot
+description: MCP tools for reading contacts, companies, deals, and tickets from your HubSpot CRM
+version: 0.1.0
+variables:
+  - key: oauth_connection
+    title: OAuth Connection
+    description: HubSpot OAuth connection. Set up in Connections page first.
+    type: connection
+    required: true
+flows:
+  - name: hubspot_list_contacts
+    kind: tool
+    description: List contacts from your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_list_contacts
+        description: List contacts from your HubSpot CRM
+        input_schema:
+          - { name: limit, type: string, required: false, description: "Max contacts to return (default 10, max 100)" }
+          - { name: after, type: string, required: false, description: Pagination cursor from a previous response }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: list_contacts
+          oauth_connection: "{{ oauth_connection }}"
+          limit: ${!this.limit.or("10")}
+          after: ${!this.after.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_get_contact
+    kind: tool
+    description: Get a specific contact by ID from your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_get_contact
+        description: Get a specific contact by ID from your HubSpot CRM
+        input_schema:
+          - { name: contact_id, type: string, required: true, description: The HubSpot contact ID }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: get_contact
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.contact_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_search_contacts
+    kind: tool
+    description: Search contacts in your HubSpot CRM by free text or property filters
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_search_contacts
+        description: Search contacts in your HubSpot CRM by free text or property filters
+        input_schema:
+          - { name: query, type: string, required: false, description: Free-text search across default contact properties (e.g. name, email) }
+          - { name: filters, type: string, required: false, description: "JSON filter groups for precise matching, e.g. [{\"filters\":[{\"propertyName\":\"email\",\"operator\":\"EQ\",\"value\":\"x@y.com\"}]}]" }
+          - { name: limit, type: string, required: false, description: "Max contacts to return (default 10, max 200)" }
+          - { name: after, type: string, required: false, description: Pagination cursor from a previous response }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: search_contacts
+          oauth_connection: "{{ oauth_connection }}"
+          query: ${!this.query.or("")}
+          filters: ${!this.filters.or("")}
+          limit: ${!this.limit.or("10")}
+          after: ${!this.after.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_list_companies
+    kind: tool
+    description: List companies from your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_list_companies
+        description: List companies from your HubSpot CRM
+        input_schema:
+          - { name: limit, type: string, required: false, description: "Max companies to return (default 10, max 100)" }
+          - { name: after, type: string, required: false, description: Pagination cursor from a previous response }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: list_companies
+          oauth_connection: "{{ oauth_connection }}"
+          limit: ${!this.limit.or("10")}
+          after: ${!this.after.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_get_company
+    kind: tool
+    description: Get a specific company by ID from your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_get_company
+        description: Get a specific company by ID from your HubSpot CRM
+        input_schema:
+          - { name: company_id, type: string, required: true, description: The HubSpot company ID }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: get_company
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.company_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_search_companies
+    kind: tool
+    description: Search companies in your HubSpot CRM by free text or property filters
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_search_companies
+        description: Search companies in your HubSpot CRM by free text or property filters
+        input_schema:
+          - { name: query, type: string, required: false, description: Free-text search across default company properties (e.g. name, domain) }
+          - { name: filters, type: string, required: false, description: "JSON filter groups for precise matching, e.g. [{\"filters\":[{\"propertyName\":\"domain\",\"operator\":\"EQ\",\"value\":\"acme.com\"}]}]" }
+          - { name: limit, type: string, required: false, description: "Max companies to return (default 10, max 200)" }
+          - { name: after, type: string, required: false, description: Pagination cursor from a previous response }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: search_companies
+          oauth_connection: "{{ oauth_connection }}"
+          query: ${!this.query.or("")}
+          filters: ${!this.filters.or("")}
+          limit: ${!this.limit.or("10")}
+          after: ${!this.after.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_list_deals
+    kind: tool
+    description: List deals from your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_list_deals
+        description: List deals from your HubSpot CRM
+        input_schema:
+          - { name: limit, type: string, required: false, description: "Max deals to return (default 10, max 100)" }
+          - { name: after, type: string, required: false, description: Pagination cursor from a previous response }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: list_deals
+          oauth_connection: "{{ oauth_connection }}"
+          limit: ${!this.limit.or("10")}
+          after: ${!this.after.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_get_deal
+    kind: tool
+    description: Get a specific deal by ID from your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_get_deal
+        description: Get a specific deal by ID from your HubSpot CRM
+        input_schema:
+          - { name: deal_id, type: string, required: true, description: The HubSpot deal ID }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: get_deal
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.deal_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_search_deals
+    kind: tool
+    description: Search deals in your HubSpot CRM by free text or property filters
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_search_deals
+        description: Search deals in your HubSpot CRM by free text or property filters
+        input_schema:
+          - { name: query, type: string, required: false, description: Free-text search across default deal properties (e.g. deal name) }
+          - { name: filters, type: string, required: false, description: "JSON filter groups for precise matching, e.g. [{\"filters\":[{\"propertyName\":\"dealstage\",\"operator\":\"EQ\",\"value\":\"closedwon\"}]}]" }
+          - { name: limit, type: string, required: false, description: "Max deals to return (default 10, max 200)" }
+          - { name: after, type: string, required: false, description: Pagination cursor from a previous response }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: search_deals
+          oauth_connection: "{{ oauth_connection }}"
+          query: ${!this.query.or("")}
+          filters: ${!this.filters.or("")}
+          limit: ${!this.limit.or("10")}
+          after: ${!this.after.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_list_tickets
+    kind: tool
+    description: List support tickets from your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_list_tickets
+        description: List support tickets from your HubSpot CRM
+        input_schema:
+          - { name: limit, type: string, required: false, description: "Max tickets to return (default 10, max 100)" }
+          - { name: after, type: string, required: false, description: Pagination cursor from a previous response }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: list_tickets
+          oauth_connection: "{{ oauth_connection }}"
+          limit: ${!this.limit.or("10")}
+          after: ${!this.after.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_get_ticket
+    kind: tool
+    description: Get a specific support ticket by ID from your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_get_ticket
+        description: Get a specific support ticket by ID from your HubSpot CRM
+        input_schema:
+          - { name: ticket_id, type: string, required: true, description: The HubSpot ticket ID }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: get_ticket
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.ticket_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_search_tickets
+    kind: tool
+    description: Search support tickets in your HubSpot CRM by free text or property filters
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_search_tickets
+        description: Search support tickets in your HubSpot CRM by free text or property filters
+        input_schema:
+          - { name: query, type: string, required: false, description: Free-text search across default ticket properties (e.g. subject) }
+          - { name: filters, type: string, required: false, description: "JSON filter groups for precise matching, e.g. [{\"filters\":[{\"propertyName\":\"hs_pipeline_stage\",\"operator\":\"EQ\",\"value\":\"1\"}]}]" }
+          - { name: limit, type: string, required: false, description: "Max tickets to return (default 10, max 200)" }
+          - { name: after, type: string, required: false, description: Pagination cursor from a previous response }
+        annotations:
+          read_only_hint: true
+          destructive_hint: false
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: search_tickets
+          oauth_connection: "{{ oauth_connection }}"
+          query: ${!this.query.or("")}
+          filters: ${!this.filters.or("")}
+          limit: ${!this.limit.or("10")}
+          after: ${!this.after.or("")}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_create_contact
+    kind: tool
+    description: Create a new contact in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_create_contact
+        description: Create a new contact in your HubSpot CRM
+        input_schema:
+          - name: properties_json
+            type: string
+            required: true
+            description: "JSON object of property values for the new contact, e.g. {\"email\":\"sarah@acme.com\",\"firstname\":\"Sarah\",\"lastname\":\"Lee\"}"
+        annotations:
+          read_only_hint: false
+          destructive_hint: false
+          idempotent_hint: false
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: create_contact
+          oauth_connection: "{{ oauth_connection }}"
+          properties_json: ${!this.properties_json}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_update_contact
+    kind: tool
+    description: Update an existing contact in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_update_contact
+        description: Update an existing contact in your HubSpot CRM
+        input_schema:
+          - name: contact_id
+            type: string
+            required: true
+            description: The HubSpot contact ID to update
+          - name: properties_json
+            type: string
+            required: true
+            description: "JSON object of property values to change, e.g. {\"email\":\"sarah@acme.com\",\"firstname\":\"Sarah\",\"lastname\":\"Lee\"}"
+        annotations:
+          read_only_hint: false
+          destructive_hint: true
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: update_contact
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.contact_id}
+          properties_json: ${!this.properties_json}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_delete_contact
+    kind: tool
+    description: Delete (archive) a contact in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_delete_contact
+        description: Delete (archive) a contact in your HubSpot CRM. The record is archived and recoverable from the HubSpot UI for a limited window.
+        input_schema:
+          - name: contact_id
+            type: string
+            required: true
+            description: The HubSpot contact ID to delete
+        annotations:
+          read_only_hint: false
+          destructive_hint: true
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: delete_contact
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.contact_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_create_company
+    kind: tool
+    description: Create a new company in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_create_company
+        description: Create a new company in your HubSpot CRM
+        input_schema:
+          - name: properties_json
+            type: string
+            required: true
+            description: "JSON object of property values for the new company, e.g. {\"name\":\"Acme Inc\",\"domain\":\"acme.com\"}"
+        annotations:
+          read_only_hint: false
+          destructive_hint: false
+          idempotent_hint: false
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: create_company
+          oauth_connection: "{{ oauth_connection }}"
+          properties_json: ${!this.properties_json}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_update_company
+    kind: tool
+    description: Update an existing company in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_update_company
+        description: Update an existing company in your HubSpot CRM
+        input_schema:
+          - name: company_id
+            type: string
+            required: true
+            description: The HubSpot company ID to update
+          - name: properties_json
+            type: string
+            required: true
+            description: "JSON object of property values to change, e.g. {\"name\":\"Acme Inc\",\"domain\":\"acme.com\"}"
+        annotations:
+          read_only_hint: false
+          destructive_hint: true
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: update_company
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.company_id}
+          properties_json: ${!this.properties_json}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_delete_company
+    kind: tool
+    description: Delete (archive) a company in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_delete_company
+        description: Delete (archive) a company in your HubSpot CRM. The record is archived and recoverable from the HubSpot UI for a limited window.
+        input_schema:
+          - name: company_id
+            type: string
+            required: true
+            description: The HubSpot company ID to delete
+        annotations:
+          read_only_hint: false
+          destructive_hint: true
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: delete_company
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.company_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_create_deal
+    kind: tool
+    description: Create a new deal in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_create_deal
+        description: Create a new deal in your HubSpot CRM
+        input_schema:
+          - name: properties_json
+            type: string
+            required: true
+            description: "JSON object of property values for the new deal, e.g. {\"dealname\":\"Acme renewal\",\"amount\":\"5000\",\"dealstage\":\"appointmentscheduled\"}"
+        annotations:
+          read_only_hint: false
+          destructive_hint: false
+          idempotent_hint: false
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: create_deal
+          oauth_connection: "{{ oauth_connection }}"
+          properties_json: ${!this.properties_json}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_update_deal
+    kind: tool
+    description: Update an existing deal in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_update_deal
+        description: Update an existing deal in your HubSpot CRM
+        input_schema:
+          - name: deal_id
+            type: string
+            required: true
+            description: The HubSpot deal ID to update
+          - name: properties_json
+            type: string
+            required: true
+            description: "JSON object of property values to change, e.g. {\"dealname\":\"Acme renewal\",\"amount\":\"5000\",\"dealstage\":\"appointmentscheduled\"}"
+        annotations:
+          read_only_hint: false
+          destructive_hint: true
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: update_deal
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.deal_id}
+          properties_json: ${!this.properties_json}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_delete_deal
+    kind: tool
+    description: Delete (archive) a deal in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_delete_deal
+        description: Delete (archive) a deal in your HubSpot CRM. The record is archived and recoverable from the HubSpot UI for a limited window.
+        input_schema:
+          - name: deal_id
+            type: string
+            required: true
+            description: The HubSpot deal ID to delete
+        annotations:
+          read_only_hint: false
+          destructive_hint: true
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: delete_deal
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.deal_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_create_ticket
+    kind: tool
+    description: Create a new support ticket in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_create_ticket
+        description: Create a new support ticket in your HubSpot CRM
+        input_schema:
+          - name: properties_json
+            type: string
+            required: true
+            description: "JSON object of property values for the new support ticket, e.g. {\"subject\":\"Login issue\",\"hs_pipeline_stage\":\"1\"}"
+        annotations:
+          read_only_hint: false
+          destructive_hint: false
+          idempotent_hint: false
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: create_ticket
+          oauth_connection: "{{ oauth_connection }}"
+          properties_json: ${!this.properties_json}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_update_ticket
+    kind: tool
+    description: Update an existing support ticket in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_update_ticket
+        description: Update an existing support ticket in your HubSpot CRM
+        input_schema:
+          - name: ticket_id
+            type: string
+            required: true
+            description: The HubSpot support ticket ID to update
+          - name: properties_json
+            type: string
+            required: true
+            description: "JSON object of property values to change, e.g. {\"subject\":\"Login issue\",\"hs_pipeline_stage\":\"1\"}"
+        annotations:
+          read_only_hint: false
+          destructive_hint: true
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: update_ticket
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.ticket_id}
+          properties_json: ${!this.properties_json}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
+
+  - name: hubspot_delete_ticket
+    kind: tool
+    description: Delete (archive) a support ticket in your HubSpot CRM
+    input:
+      component: mcp_tool
+      config:
+        name: hubspot_delete_ticket
+        description: Delete (archive) a support ticket in your HubSpot CRM. The record is archived and recoverable from the HubSpot UI for a limited window.
+        input_schema:
+          - name: ticket_id
+            type: string
+            required: true
+            description: The HubSpot support ticket ID to delete
+        annotations:
+          read_only_hint: false
+          destructive_hint: true
+          idempotent_hint: true
+          open_world_hint: true
+    processors:
+      - label: hubspot
+        component: hubspot
+        config:
+          action: delete_ticket
+          oauth_connection: "{{ oauth_connection }}"
+          object_id: ${!this.ticket_id}
+      - label: error_handler
+        component: catch
+        config:
+          - mapping: |-
+              meta status_code = error().re_find_all("^\\[[0-9]+\\]").index(0).trim("[]").or("500")
+              root.error = error().re_replace_all("^\\[[0-9]+\\] ", "")
+    output:
+      component: sync_response
