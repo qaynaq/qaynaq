@@ -18,6 +18,43 @@ const (
 	WorkerFilesDir = "/tmp/qaynaq/files"
 )
 
+const oauthConnectionField = "oauth_connection"
+
+var connectionRefPattern = regexp.MustCompile(`^\$\{QAYNAQ_CONN_(.+)\}$`)
+
+// Stock Bento HTTP components that accept the Qaynaq-only oauth_connection
+// field. Bento would reject the unknown field, so it is stripped here and
+// turned into an Authorization header before Bento ever parses the config.
+var httpConnectionComponents = map[string]bool{
+	"http_client": true,
+	"http":        true,
+}
+
+func injectConnectionAuth(component string, config any) {
+	if !httpConnectionComponents[component] {
+		return
+	}
+	configMap, ok := config.(map[string]any)
+	if !ok {
+		return
+	}
+	raw, _ := configMap[oauthConnectionField].(string)
+	delete(configMap, oauthConnectionField)
+	if raw == "" {
+		return
+	}
+	name := raw
+	if m := connectionRefPattern.FindStringSubmatch(raw); m != nil {
+		name = m[1]
+	}
+	headers, _ := configMap["headers"].(map[string]any)
+	if headers == nil {
+		headers = make(map[string]any)
+		configMap["headers"] = headers
+	}
+	headers["Authorization"] = fmt.Sprintf("Bearer ${! qaynaq_connection_token(%q) }", name)
+}
+
 type BuildResult struct {
 	Config string
 	Files  []persistence.File
@@ -201,6 +238,7 @@ func (b *configBuilder) buildInputConfig(flow persistence.Flow) (map[string]any,
 		if err := yaml.Unmarshal(flow.InputConfig, input[flow.InputComponent]); err != nil {
 			return nil, err
 		}
+		injectConnectionAuth(flow.InputComponent, input[flow.InputComponent])
 	}
 
 	input["label"] = flow.InputLabel
@@ -214,6 +252,7 @@ func (b *configBuilder) buildOutputConfig(flow persistence.Flow) (map[string]any
 	if err := yaml.Unmarshal(flow.OutputConfig, output[flow.OutputComponent]); err != nil {
 		return nil, err
 	}
+	injectConnectionAuth(flow.OutputComponent, output[flow.OutputComponent])
 
 	output["label"] = flow.OutputLabel
 	return output, nil
@@ -252,6 +291,7 @@ func (b *configBuilder) buildProcessorConfig(processor persistence.FlowProcessor
 		if err := yaml.Unmarshal(processor.Config, processorConfig[processor.Component]); err != nil {
 			return nil, err
 		}
+		injectConnectionAuth(processor.Component, processorConfig[processor.Component])
 	}
 
 	processorConfig["label"] = processor.Label
