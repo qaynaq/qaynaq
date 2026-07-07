@@ -40,6 +40,12 @@ refresh tokens.
 The redirect URI to register in your OAuth app is shown in the form:
 `https://YOUR-QAYNAQ-HOST/connections/oauth/callback`
 
+## Using a connection in a flow
+
+Components that talk to a provider directly (Google Calendar, Google Sheets, Google Drive) offer an **OAuth Connection** dropdown in their configuration.
+
+The generic **HTTP Client** input and output and the **HTTP** processor also accept a connection: pick one in the **OAuth Connection** dropdown and every request carries a fresh `Authorization: Bearer` token for that connection, refreshed automatically before it expires. This lets you call any provider API endpoint without wiring tokens by hand, and the connection takes precedence over a manually set `Authorization` header.
+
 ## Per-provider setup notes
 
 ### Google
