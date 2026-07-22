@@ -2,6 +2,7 @@ package all
 
 import (
 	_ "github.com/qaynaq/qaynaq/internal/components/ai_gateway"
+	_ "github.com/qaynaq/qaynaq/internal/components/bloblang"
 	_ "github.com/qaynaq/qaynaq/internal/components/cdc_mysql"
 	_ "github.com/qaynaq/qaynaq/internal/components/coordinator_ratelimit"
 	_ "github.com/qaynaq/qaynaq/internal/components/google_calendar"

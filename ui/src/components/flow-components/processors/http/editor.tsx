@@ -6,6 +6,7 @@ import {
   ArrayField,
   KeyValueField,
   CodeField,
+  ConnectionPickerField,
 } from "@/components/form-primitives";
 import {
   BasicAuthEditor,
@@ -28,6 +29,7 @@ interface Meta {
 interface Config {
   url: string;
   verb: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD";
+  oauth_connection: string;
   headers: Record<string, string>;
   metadata: Meta;
   oauth: OAuth;
@@ -60,6 +62,7 @@ export default function HttpProcessorEditor({
     <div className="space-y-4">
       <TextField label="URL" required value={value.url} onChange={(v) => set("url", v)} error={errors?.url} />
       <SelectField label="HTTP Verb" value={value.verb} onChange={(v) => set("verb", v as Config["verb"])} options={["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"]} />
+      <ConnectionPickerField label="OAuth Connection" source="connections" value={value.oauth_connection} onChange={(v) => set("oauth_connection", v)} />
       <KeyValueField label="Headers" value={value.headers} onChange={(v) => set("headers", v)} />
       <CodeField label="Payload" description="Optional Bloblang mapping to create the request payload. Empty = raw message payload." value={value.payload} onChange={(v) => set("payload", v)} />
       <TextField label="Rate Limit" value={value.rate_limit} onChange={(v) => set("rate_limit", v)} />

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
@@ -11,6 +12,19 @@ interface Props extends Omit<FieldWrapperProps, "children"> {
   valuePlaceholder?: string;
 }
 
+interface Row {
+  id: number;
+  key: string;
+  value: string;
+}
+
+const toRecord = (rows: Row[]) =>
+  Object.fromEntries(rows.map((r) => [r.key, r.value]));
+
+const sameRecord = (a: Record<string, string>, b: Record<string, string>) =>
+  Object.keys(a).length === Object.keys(b).length &&
+  Object.keys(a).every((k) => b[k] === a[k]);
+
 export function KeyValueField({
   value,
   onChange,
@@ -19,46 +33,52 @@ export function KeyValueField({
   valuePlaceholder = "Value",
   ...wrapper
 }: Props) {
-  const entries = Object.entries(value);
+  const idRef = useRef(0);
+  const toRows = (record: Record<string, string>): Row[] =>
+    Object.entries(record).map(([k, v]) => ({ id: ++idRef.current, key: k, value: v }));
 
-  const updateKey = (oldKey: string, newKey: string) => {
-    if (newKey === oldKey) return;
-    const next: Record<string, string> = {};
-    for (const [k, v] of entries) next[k === oldKey ? newKey : k] = v;
-    onChange(next);
+  const [rows, setRows] = useState(() => toRows(value));
+
+  // Parents round-trip changes through YAML, which drops ""-valued entries;
+  // rebuild rows only on genuine external changes, not echoes of our onChange.
+  useEffect(() => {
+    setRows((current) => {
+      const full = toRecord(current);
+      const committed = Object.fromEntries(
+        Object.entries(full).filter(([, v]) => v !== ""),
+      );
+      return sameRecord(value, full) || sameRecord(value, committed)
+        ? current
+        : toRows(value);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const commit = (next: Row[]) => {
+    setRows(next);
+    onChange(toRecord(next));
   };
-  const updateValue = (k: string, v: string) => {
-    onChange({ ...value, [k]: v });
-  };
-  const remove = (k: string) => {
-    const next = { ...value };
-    delete next[k];
-    onChange(next);
-  };
-  const add = () => {
-    let i = 1;
-    let key = "key";
-    while (key in value) {
-      key = `key_${i++}`;
-    }
-    onChange({ ...value, [key]: "" });
-  };
+
+  const update = (id: number, patch: Partial<Row>) =>
+    commit(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const remove = (id: number) => commit(rows.filter((r) => r.id !== id));
+  const add = () => commit([...rows, { id: ++idRef.current, key: "", value: "" }]);
 
   return (
     <FieldWrapper {...wrapper}>
       <div className="space-y-2">
-        {entries.map(([k, v]) => (
-          <div key={k} className="flex items-center gap-2">
+        {rows.map((row) => (
+          <div key={row.id} className="flex items-center gap-2">
             <Input
-              value={k}
-              onChange={(e) => updateKey(k, e.target.value)}
+              value={row.key}
+              onChange={(e) => update(row.id, { key: e.target.value })}
               placeholder={keyPlaceholder}
               className="h-8 text-sm flex-1"
               disabled={disabled}
             />
             <Input
-              value={v}
-              onChange={(e) => updateValue(k, e.target.value)}
+              value={row.value}
+              onChange={(e) => update(row.id, { value: e.target.value })}
               placeholder={valuePlaceholder}
               className="h-8 text-sm flex-1"
               disabled={disabled}
@@ -67,7 +87,7 @@ export function KeyValueField({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => remove(k)}
+              onClick={() => remove(row.id)}
               disabled={disabled}
               className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
             >

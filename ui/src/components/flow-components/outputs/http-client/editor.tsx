@@ -5,6 +5,7 @@ import {
   CheckboxField,
   ArrayField,
   KeyValueField,
+  ConnectionPickerField,
 } from "@/components/form-primitives";
 import {
   BasicAuthEditor,
@@ -36,6 +37,7 @@ interface Batching {
 interface Config {
   url: string;
   verb: "GET" | "POST" | "PUT" | "DELETE";
+  oauth_connection: string;
   headers: Record<string, string>;
   metadata: Meta;
   dump_request_log_level: string;
@@ -72,6 +74,7 @@ export default function HttpClientOutputEditor({
     <div className="space-y-4">
       <TextField label="URL" required value={value.url} onChange={(v) => set("url", v)} error={errors?.url} />
       <SelectField label="HTTP Verb" value={value.verb} onChange={(v) => set("verb", v as Config["verb"])} options={["GET", "POST", "PUT", "DELETE"]} />
+      <ConnectionPickerField label="OAuth Connection" source="connections" value={value.oauth_connection} onChange={(v) => set("oauth_connection", v)} />
       <KeyValueField label="Headers" value={value.headers} onChange={(v) => set("headers", v)} />
       <TextField label="Dump Request Log Level" value={value.dump_request_log_level} onChange={(v) => set("dump_request_log_level", v)} />
       <TextField label="Rate Limit" value={value.rate_limit} onChange={(v) => set("rate_limit", v)} />

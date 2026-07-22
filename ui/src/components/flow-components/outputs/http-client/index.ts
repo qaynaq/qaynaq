@@ -30,6 +30,7 @@ const batchingSchema = z.object({
 const configSchema = z.object({
   url: z.string().min(1, "Required"),
   verb: z.enum(["GET", "POST", "PUT", "DELETE"]),
+  oauth_connection: z.string(),
   headers: z.record(z.string(), z.string()),
   metadata: metaSchema,
   dump_request_log_level: z.string(),
@@ -59,6 +60,7 @@ type Config = z.infer<typeof configSchema>;
 const defaultConfig: Config = {
   url: "",
   verb: "POST",
+  oauth_connection: "",
   headers: {},
   metadata: { include_prefixes: [], include_patterns: [] },
   dump_request_log_level: "",

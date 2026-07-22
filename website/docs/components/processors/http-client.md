@@ -6,6 +6,7 @@ Performs an HTTP request using the message as the request body, and replaces the
 |-------|------|---------|-------------|
 | URL | string | — | The URL to send requests to (required) |
 | Verb | select | `POST` | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD` |
+| OAuth Connection | connection | | Authenticate requests with a connection from Settings > Connections |
 | Headers | map | — | HTTP headers to include in the request |
 | Payload | bloblang | — | Optional Bloblang mapping to construct the request body. When empty, the raw message payload is sent |
 | Timeout | string | `5s` | Request timeout |
@@ -26,7 +27,9 @@ Performs an HTTP request using the message as the request body, and replaces the
 
 ## Authentication
 
-The HTTP Client processor supports four authentication methods. Enable at most one per processor.
+The recommended way to authenticate is with an **OAuth Connection**: pick a connection created in [Settings > Connections](/docs/guides/connections) and Qaynaq attaches a fresh access token to every request, refreshing it automatically before it expires. The connection takes precedence over a manually set `Authorization` header.
+
+The processor also supports four manual authentication methods. Enable at most one per processor.
 
 **Basic Auth** — Sends a username and password via the HTTP `Authorization` header.
 
