@@ -15,6 +15,17 @@ import {
 } from "@/lib/api";
 import { OAuthConsentRequest } from "@/lib/entities";
 
+// CIMD clients use an HTTPS URL as client_id; show its domain since the
+// display name is self-asserted.
+function clientDomain(clientId: string): string | null {
+  if (!clientId.startsWith("https://")) return null;
+  try {
+    return new URL(clientId).host;
+  } catch {
+    return null;
+  }
+}
+
 export default function OAuthConsentPage() {
   const [searchParams] = useSearchParams();
   const requestID = searchParams.get("request_id") || "";
@@ -75,6 +86,11 @@ export default function OAuthConsentPage() {
               <div className="rounded-lg bg-muted p-4 space-y-1">
                 <p className="font-medium">
                   {request.client_name || request.client_id}
+                  {clientDomain(request.client_id) && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      {clientDomain(request.client_id)}
+                    </span>
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground break-all">
                   Redirect:{" "}

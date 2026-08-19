@@ -131,9 +131,12 @@ func (s *Server) Shutdown(ctx context.Context) {
 }
 
 // MountRoutes registers the public OAuth AS endpoints (no Qaynaq auth middleware).
+// The trailing-slash variants serve RFC 9728 path-suffixed discovery.
 func (s *Server) MountRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/.well-known/oauth-authorization-server", s.HandleAuthorizationServerMetadata)
+	mux.HandleFunc("/.well-known/oauth-authorization-server/", s.HandleAuthorizationServerMetadata)
 	mux.HandleFunc("/.well-known/oauth-protected-resource", s.HandleProtectedResourceMetadata)
+	mux.HandleFunc("/.well-known/oauth-protected-resource/", s.HandleProtectedResourceMetadata)
 	mux.HandleFunc("/mcp/oauth/register", s.HandleRegister)
 	mux.HandleFunc("/mcp/oauth/authorize", s.HandleAuthorize)
 	mux.HandleFunc("/mcp/oauth/token", s.HandleToken)
@@ -192,14 +195,25 @@ func (s *Server) HandleAuthorizationServerMetadata(w http.ResponseWriter, r *htt
 		"grant_types_supported":                 []string{"authorization_code", "refresh_token"},
 		"code_challenge_methods_supported":      []string{"S256"},
 		"token_endpoint_auth_methods_supported": []string{"client_secret_post", "client_secret_basic", "none"},
+		"client_id_metadata_document_supported": true,
 		"scopes_supported":                      []string{"mcp"},
 	})
 }
 
 func (s *Server) HandleProtectedResourceMetadata(w http.ResponseWriter, r *http.Request) {
+	// RFC 9728 requires the advertised resource to echo the path suffix
+	// exactly; bare requests default to the canonical /mcp endpoint.
+	resourcePath := strings.TrimPrefix(r.URL.Path, "/.well-known/oauth-protected-resource")
+	if resourcePath == "" || resourcePath == "/" {
+		resourcePath = "/mcp"
+	}
+	if resourcePath != "/mcp" && !strings.HasPrefix(resourcePath, "/mcp/") {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "unknown resource"})
+		return
+	}
 	issuer := s.issuerURL(r)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"resource":                 issuer + "/mcp",
+		"resource":                 issuer + resourcePath,
 		"authorization_servers":    []string{issuer},
 		"scopes_supported":         []string{"mcp"},
 		"bearer_methods_supported": []string{"header"},
@@ -241,10 +255,21 @@ func (s *Server) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	clientID = "mcp_" + clientID
-	clientSecret, err := randomString(32)
-	if err != nil {
-		writeOAuthError(w, http.StatusInternalServerError, "server_error", "failed to generate client_secret")
-		return
+
+	// Public clients (RFC 7591 auth method "none") get no secret; PKCE
+	// authenticates the code exchange instead.
+	authMethod := req.TokenEndpointAuthMethod
+	if authMethod != "none" {
+		authMethod = "client_secret_post"
+	}
+	var clientSecret, secretHash string
+	if authMethod != "none" {
+		clientSecret, err = randomString(32)
+		if err != nil {
+			writeOAuthError(w, http.StatusInternalServerError, "server_error", "failed to generate client_secret")
+			return
+		}
+		secretHash = hashSecret(clientSecret)
 	}
 
 	name := strings.TrimSpace(req.ClientName)
@@ -254,7 +279,7 @@ func (s *Server) HandleRegister(w http.ResponseWriter, r *http.Request) {
 
 	client := &persistence.OAuthClient{
 		ID:           clientID,
-		SecretHash:   hashSecret(clientSecret),
+		SecretHash:   secretHash,
 		Name:         name,
 		RedirectURIs: req.RedirectURIs,
 		CreatedAt:    time.Now(),
@@ -265,17 +290,20 @@ func (s *Server) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]any{
+	resp := map[string]any{
 		"client_id":                  client.ID,
-		"client_secret":              clientSecret,
 		"client_id_issued_at":        client.CreatedAt.Unix(),
-		"client_secret_expires_at":   0,
 		"redirect_uris":              client.RedirectURIs,
 		"client_name":                client.Name,
 		"grant_types":                []string{"authorization_code", "refresh_token"},
 		"response_types":             []string{"code"},
-		"token_endpoint_auth_method": "client_secret_post",
-	})
+		"token_endpoint_auth_method": authMethod,
+	}
+	if clientSecret != "" {
+		resp["client_secret"] = clientSecret
+		resp["client_secret_expires_at"] = 0
+	}
+	writeJSON(w, http.StatusCreated, resp)
 }
 
 func (s *Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
@@ -295,8 +323,16 @@ func (s *Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	// Per RFC 6749 §3.1.2.4 we must NOT redirect to the client when the
 	// client_id or redirect_uri is invalid - the redirect URI can't be
 	// trusted yet. Send the user to the SPA error page instead.
-	client, err := s.clientRepo.FindByID(clientID)
-	if err != nil {
+	var client *persistence.OAuthClient
+	var err error
+	if isCIMDClientID(clientID) {
+		client, err = s.resolveCIMDClient(clientID)
+		if err != nil {
+			log.Warn().Err(err).Str("client_id", clientID).Msg("failed to resolve client metadata document")
+			redirectToErrorPage(w, r, "invalid_client", "could not resolve client metadata document")
+			return
+		}
+	} else if client, err = s.clientRepo.FindByID(clientID); err != nil {
 		redirectToErrorPage(w, r, "stale_client", clientID)
 		return
 	}
@@ -801,11 +837,29 @@ func extractClientCredentials(r *http.Request) (id, secret string) {
 
 func redirectURIAllowed(allowed []string, candidate string) bool {
 	for _, a := range allowed {
-		if a == candidate {
+		if a == candidate || loopbackRedirectMatch(a, candidate) {
 			return true
 		}
 	}
 	return false
+}
+
+// loopbackRedirectMatch compares loopback redirect URIs ignoring the port,
+// per RFC 8252 §7.3: native clients bind an ephemeral port per session.
+func loopbackRedirectMatch(registered, candidate string) bool {
+	ru, err := url.Parse(registered)
+	if err != nil {
+		return false
+	}
+	cu, err := url.Parse(candidate)
+	if err != nil {
+		return false
+	}
+	host := ru.Hostname()
+	if host != "localhost" && host != "127.0.0.1" && host != "::1" {
+		return false
+	}
+	return ru.Scheme == cu.Scheme && host == cu.Hostname() && ru.Path == cu.Path
 }
 
 func verifyPKCE(challenge, verifier string) bool {

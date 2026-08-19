@@ -57,7 +57,8 @@ func extractToken(r *http.Request) string {
 }
 
 // writeUnauthorized emits a 401 with WWW-Authenticate pointing to the
-// protected-resource metadata, so MCP clients can discover the auth server.
+// RFC 9728 path-suffixed protected-resource metadata, so MCP clients can
+// discover the auth server for the exact URL they connected to.
 func writeUnauthorized(w http.ResponseWriter, r *http.Request, msg string) {
 	scheme := "http"
 	if r.TLS != nil {
@@ -70,7 +71,9 @@ func writeUnauthorized(w http.ResponseWriter, r *http.Request, msg string) {
 	if forwarded := r.Header.Get("X-Forwarded-Host"); forwarded != "" {
 		host = forwarded
 	}
-	resourceMetadata := scheme + "://" + host + "/.well-known/oauth-protected-resource"
+	resourceMetadata := scheme + "://" + host + "/.well-known/oauth-protected-resource" + r.URL.Path
 	w.Header().Set("WWW-Authenticate", `Bearer resource_metadata="`+resourceMetadata+`"`)
-	http.Error(w, `{"error":"`+msg+`"}`, http.StatusUnauthorized)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+	_, _ = w.Write([]byte(`{"error":"` + msg + `"}`))
 }

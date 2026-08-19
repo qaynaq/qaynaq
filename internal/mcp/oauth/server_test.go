@@ -44,6 +44,9 @@ func (r *fakeClientRepo) Create(c *persistence.OAuthClient) error {
 	r.clients[c.ID] = c
 	return nil
 }
+func (r *fakeClientRepo) Upsert(c *persistence.OAuthClient) error {
+	return r.Create(c)
+}
 func (r *fakeClientRepo) Delete(id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -8,8 +8,9 @@ Qaynaq can act as an OAuth 2.1 Authorization Server for MCP clients, following t
 
 When enabled, Qaynaq:
 
-- Publishes OAuth metadata at `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource`.
+- Publishes OAuth metadata at `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource`, including the path-suffixed variants (`/.well-known/oauth-protected-resource/mcp`) that newer MCP clients probe first.
 - Accepts dynamic client registration at `/mcp/oauth/register` (RFC 7591), so each MCP client provisions its own credentials.
+- Accepts [Client ID Metadata Documents](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization#client-id-metadata-documents), where the client identifies itself with an HTTPS URL instead of registering. Clients that support CIMD (Claude, Claude Code) reuse one stable client identity across reconnects instead of registering a new client each time.
 - Delegates the actual end-user login to your existing app authentication. The user signs in once via your IdP (Okta, Auth0, Keycloak, Google, ...) and the same session is reused for MCP authorization.
 - Issues short-lived JWT access tokens (1 hour) and rotating refresh tokens (30 days) that are scoped to the MCP endpoint.
 
@@ -45,15 +46,21 @@ The MCP spec requires clients to drive the OAuth flow themselves. Most modern cl
 4. On allow, Qaynaq records the consent and redirects back to the MCP client's local callback. Subsequent connections (and refresh-token rotations) skip the consent page.
 5. To reset consent, click **Revoke consent** next to the client in **Settings > OAuth Clients**: the next connection prompts again. (Refresh tokens are revoked at the same time so the client immediately sees `invalid_grant` and walks the flow from scratch.)
 
-### Claude Desktop / Claude Code
+### Claude.ai / Claude Desktop
 
-Add the connector with the bare `/mcp` URL. No token is required:
+Add a custom connector under **Settings > Connectors** with the full `/mcp` URL. Claude's hosted surfaces (claude.ai web, Desktop, mobile) run the OAuth flow from Anthropic's infrastructure, so the Qaynaq host must be reachable from the public internet over HTTPS. A localhost or VPN-only instance fails there with "Couldn't register with the sign-in service" - use Claude Code or `mcp-remote` for local instances instead.
+
+### Claude Code
+
+```bash
+claude mcp add --transport http qaynaq http://localhost:8080/mcp
+```
+
+Claude Code drives the OAuth flow natively: it identifies itself with a Client ID Metadata Document, opens the browser for the IdP login, and receives the callback on an ephemeral localhost port. Older setups using `mcp-remote` keep working:
 
 ```bash
 claude mcp add qaynaq -- npx mcp-remote http://localhost:8080/mcp
 ```
-
-`mcp-remote` opens the browser, walks the user through the IdP login, and stores the issued tokens locally.
 
 ### Cursor
 
@@ -114,7 +121,7 @@ Both mechanisms are accepted simultaneously. You can mix and match per client.
 
 **Client gets `401` without a metadata pointer.** Make sure `MCP_OAUTH_ENABLED=true` is set on the coordinator process and the endpoint is reachable on the host the client is talking to.
 
-**`redirect_uri does not match any registered URI`.** Some clients regenerate their redirect URI between runs. Either delete the existing client in **Settings > OAuth Clients** so it re-registers, or pin a stable redirect on the client side.
+**`redirect_uri does not match any registered URI`.** Some clients regenerate their redirect URI between runs. Loopback redirects (`http://localhost:<port>/...`) match with the port ignored per RFC 8252, so ephemeral-port clients like Claude Code are unaffected. For anything else, either delete the existing client in **Settings > OAuth Clients** so it re-registers, or pin a stable redirect on the client side.
 
 **`PKCE verification failed`.** Older MCP clients omit PKCE. Upgrade the client - the spec mandates PKCE for OAuth flows.
 
