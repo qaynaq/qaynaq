@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type OAuthClient struct {
@@ -22,6 +23,7 @@ func (OAuthClient) TableName() string {
 type OAuthClientRepository interface {
 	List() ([]OAuthClient, error)
 	Create(client *OAuthClient) error
+	Upsert(client *OAuthClient) error
 	Delete(id string) error
 	FindByID(id string) (*OAuthClient, error)
 	UpdateLastUsedAt(id string, t time.Time) error
@@ -43,6 +45,13 @@ func (r *oauthClientRepository) List() ([]OAuthClient, error) {
 
 func (r *oauthClientRepository) Create(client *OAuthClient) error {
 	return r.db.Create(client).Error
+}
+
+func (r *oauthClientRepository) Upsert(client *OAuthClient) error {
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"secret_hash", "name", "redirect_uris"}),
+	}).Create(client).Error
 }
 
 func (r *oauthClientRepository) Delete(id string) error {
