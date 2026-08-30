@@ -147,6 +147,7 @@ type Flow struct {
 	ManagedBy       *string                `protobuf:"bytes,20,opt,name=managed_by,proto3,oneof" json:"managed_by,omitempty"`
 	LastError       string                 `protobuf:"bytes,21,opt,name=last_error,proto3" json:"last_error,omitempty"`
 	LastErrorAt     *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=last_error_at,proto3,oneof" json:"last_error_at,omitempty"`
+	AllowedGroups   []string               `protobuf:"bytes,23,rep,name=allowed_groups,proto3" json:"allowed_groups,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -331,6 +332,13 @@ func (x *Flow) GetLastError() string {
 func (x *Flow) GetLastErrorAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastErrorAt
+	}
+	return nil
+}
+
+func (x *Flow) GetAllowedGroups() []string {
+	if x != nil {
+		return x.AllowedGroups
 	}
 	return nil
 }
@@ -1258,7 +1266,7 @@ const file_common_proto_rawDesc = "" +
 	"\n" +
 	"\fcommon.proto\x12\vprotorender\x1a google/protobuf/descriptor.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17validate/validate.proto\"*\n" +
 	"\x0eCommonResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"\x94\t\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\xbc\t\n" +
 	"\x04Flow\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12!\n" +
 	"\tparent_id\x18\x02 \x01(\x03H\x00R\tparent_id\x88\x01\x01\x12\x1d\n" +
@@ -1294,7 +1302,8 @@ const file_common_proto_rawDesc = "" +
 	"\n" +
 	"last_error\x18\x15 \x01(\tR\n" +
 	"last_error\x12E\n" +
-	"\rlast_error_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampH\x04R\rlast_error_at\x88\x01\x01\x1au\n" +
+	"\rlast_error_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampH\x04R\rlast_error_at\x88\x01\x01\x12&\n" +
+	"\x0eallowed_groups\x18\x17 \x03(\tR\x0eallowed_groups\x1au\n" +
 	"\tProcessor\x122\n" +
 	"\x05label\x18\x01 \x01(\tB\x1c\xfaB\x19r\x17\x10\x01\x18d2\x11^[a-zA-Z0-9 _-]+$R\x05label\x12\x1c\n" +
 	"\tcomponent\x18\x02 \x01(\tR\tcomponent\x12\x16\n" +

@@ -253,7 +253,7 @@ func (c *CoordinatorCLI) Run(ctx context.Context) {
 	if c.mcpOAuthServer != nil {
 		mcpOAuthValidator = c.mcpOAuthServer
 	}
-	mcpWithAuth := mcppkg.AuthMiddleware(c.api, mcpOAuthValidator, c.mcpHandler)
+	mcpWithAuth := mcppkg.AuthMiddleware(c.api, mcpOAuthValidator, c.api, c.mcpHandler)
 	mainMux.Handle("/mcp", mcpWithAuth)
 	mainMux.Handle("/mcp/", mcpWithAuth)
 	mainMux.HandleFunc("/", web.ServeSPA(uiFS, "index.html"))

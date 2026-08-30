@@ -587,6 +587,7 @@ export default function NewStreamPage() {
     name: string;
     status: string;
     bufferId?: number;
+    allowedGroups: string[];
     nodes: StreamNodeData[];
     builderState: string;
     isReady: boolean;
@@ -653,6 +654,7 @@ export default function NewStreamPage() {
         buffer_id: data.bufferId,
         is_ready: data.isReady,
         builder_state: data.builderState,
+        allowed_groups: data.allowedGroups,
         processors: processors,
       };
 

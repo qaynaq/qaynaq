@@ -356,6 +356,7 @@ message MCPServerInfo {
   string transport = 13 [json_name = "transport"];
   string catalog_id = 14 [json_name = "catalog_id"];
   string process_state = 15 [json_name = "process_state"];
+  repeated string allowed_groups = 16 [json_name = "allowed_groups"];
 }
 
 message ListMCPServersResponse {
@@ -372,6 +373,7 @@ message CreateMCPServerRequest {
   string transport = 7 [json_name = "transport"];
   string catalog_id = 8 [json_name = "catalog_id"];
   map<string, string> env = 9 [json_name = "env"];
+  repeated string allowed_groups = 10 [json_name = "allowed_groups"];
 }
 
 message UpdateMCPServerRequest {
@@ -383,6 +385,7 @@ message UpdateMCPServerRequest {
   string auth_value = 6 [json_name = "auth_value"];
   string connection_name = 7 [json_name = "connection_name"];
   map<string, string> env = 8 [json_name = "env"];
+  repeated string allowed_groups = 9 [json_name = "allowed_groups"];
 }
 
 message DeleteMCPServerRequest {
@@ -401,6 +404,56 @@ message MCPServerLogsResponse {
   string last_error = 1 [json_name = "last_error"];
   string stderr = 2 [json_name = "stderr"];
   string process_state = 3 [json_name = "process_state"];
+}
+
+message GroupInfo {
+  string name = 1 [json_name = "name"];
+  string source = 2 [json_name = "source"];
+  google.protobuf.Timestamp created_at = 3 [json_name = "created_at"];
+  optional google.protobuf.Timestamp last_seen_at = 4 [json_name = "last_seen_at"];
+}
+
+message ListGroupsResponse {
+  repeated GroupInfo data = 1;
+}
+
+message ImportGroupsRequest {
+  repeated string names = 1 [(validate.rules).repeated = {
+    min_items: 1
+    items: {string: {min_len: 1, max_len: 200}}
+  }];
+}
+
+message ImportGroupsResponse {
+  int32 imported = 1 [json_name = "imported"];
+}
+
+message DeleteGroupRequest {
+  string name = 1 [(validate.rules).string = {min_len: 1, max_len: 200}];
+}
+
+message MCPCallLogEntry {
+  int64 id = 1 [json_name = "id"];
+  string actor = 2 [json_name = "actor"];
+  string actor_kind = 3 [json_name = "actor_kind"];
+  repeated string groups = 4 [json_name = "groups"];
+  string tool_name = 5 [json_name = "tool_name"];
+  string target_kind = 6 [json_name = "target_kind"];
+  int64 target_id = 7 [json_name = "target_id"];
+  string status = 8 [json_name = "status"];
+  string error = 9 [json_name = "error"];
+  int64 duration_ms = 10 [json_name = "duration_ms"];
+  google.protobuf.Timestamp created_at = 11 [json_name = "created_at"];
+}
+
+message ListMCPCallLogsRequest {
+  int32 limit = 1 [json_name = "limit"];
+  int32 offset = 2 [json_name = "offset"];
+}
+
+message ListMCPCallLogsResponse {
+  repeated MCPCallLogEntry data = 1;
+  int64 total = 2 [json_name = "total"];
 }
 
 message MCPCatalogEntry {
@@ -805,6 +858,23 @@ service Coordinator {
   }
   rpc ListMCPCatalog(google.protobuf.Empty) returns (ListMCPCatalogResponse) {
     option (google.api.http) = {get: "/v0/settings/mcp/catalog"};
+  }
+
+  // Group access methods
+  rpc ListGroups(google.protobuf.Empty) returns (ListGroupsResponse) {
+    option (google.api.http) = {get: "/v0/settings/groups"};
+  }
+  rpc ImportGroups(ImportGroupsRequest) returns (ImportGroupsResponse) {
+    option (google.api.http) = {
+      post: "/v0/settings/groups/import"
+      body: "*"
+    };
+  }
+  rpc DeleteGroup(DeleteGroupRequest) returns (CommonResponse) {
+    option (google.api.http) = {delete: "/v0/settings/groups/{name}"};
+  }
+  rpc ListMCPCallLogs(ListMCPCallLogsRequest) returns (ListMCPCallLogsResponse) {
+    option (google.api.http) = {get: "/v0/settings/mcp/call-logs"};
   }
 
   // Connection methods

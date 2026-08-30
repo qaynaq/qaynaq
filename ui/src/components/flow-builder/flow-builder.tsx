@@ -65,6 +65,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/toast";
+import { GroupMultiSelect } from "@/components/group-multi-select";
 import { fetchBuffers } from "@/lib/api";
 import type { Buffer } from "@/lib/entities";
 import { getComponentIcon } from "@/lib/component-catalog";
@@ -155,6 +156,7 @@ interface FlowBuilderProps {
     name: string;
     status: string;
     bufferId?: number;
+    allowedGroups?: string[];
     nodes: FlowNodeData[];
     builderState?: string;
     last_error?: string;
@@ -164,6 +166,7 @@ interface FlowBuilderProps {
     name: string;
     status: string;
     bufferId?: number;
+    allowedGroups: string[];
     nodes: FlowNodeData[];
     builderState: string;
     isReady: boolean;
@@ -596,6 +599,7 @@ function FlowBuilderContent({
   const [name, setName] = useState(initialData?.name || "");
   const [status, setStatus] = useState(initialData?.status || "active");
   const [bufferId, setBufferId] = useState<number | undefined>(initialData?.bufferId);
+  const [allowedGroups, setAllowedGroups] = useState<string[]>(initialData?.allowedGroups || []);
   const [availableBuffers, setAvailableBuffers] = useState<Buffer[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
@@ -3209,8 +3213,8 @@ function FlowBuilderContent({
       }
     }
 
-    onSave({ name, status, bufferId, nodes: orderedNodes, builderState, isReady });
-  }, [name, status, bufferId, nodes, edges, onSave, addToast, findDisconnectedNodes, validateRequiredFields, setNodes, serializeBranchGroup, serializeCatchGroup, serializeBrokerGroup, serializeBrokerInputGroup, serializeSwitchGroup, serializeProcessorSwitchGroup]);
+    onSave({ name, status, bufferId, allowedGroups, nodes: orderedNodes, builderState, isReady });
+  }, [name, status, bufferId, allowedGroups, nodes, edges, onSave, addToast, findDisconnectedNodes, validateRequiredFields, setNodes, serializeBranchGroup, serializeCatchGroup, serializeBrokerGroup, serializeBrokerInputGroup, serializeSwitchGroup, serializeProcessorSwitchGroup]);
 
   const hasInput = nodes.some((n) => (n.data as StreamFlowNodeData).type === "input");
   const hasOutput = nodes.some((n) => (n.data as StreamFlowNodeData).type === "output");
@@ -3260,6 +3264,12 @@ function FlowBuilderContent({
             </SelectContent>
           </Select>
         </div>
+        {isMcpServer && (
+          <div className="w-56">
+            <Label>Access</Label>
+            <GroupMultiSelect compact value={allowedGroups} onChange={setAllowedGroups} />
+          </div>
+        )}
         {onValidate && (
           <Button variant="outline" onClick={handleValidate} disabled={isValidating || !hasInput || !hasOutput} className="flex items-center gap-1">
             <ShieldCheck className="h-4 w-4" />

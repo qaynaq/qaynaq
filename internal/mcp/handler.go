@@ -71,6 +71,7 @@ type MCPHandler struct {
 	httpHandler     *server.StreamableHTTPServer
 	flowRepo        persistence.FlowRepository
 	serverRepo      persistence.MCPServerRepository
+	callLogRepo     persistence.MCPCallLogRepository
 	forwarder       RequestForwarder
 	aesgcm          *vault.AESGCM
 	connManager     *connection.Manager
@@ -78,38 +79,61 @@ type MCPHandler struct {
 	mu              sync.RWMutex
 	syncMu          sync.Mutex
 	// tool name -> flow ID, used for forwarding via /ingest/{flowID}
-	toolFlowMap   map[string]int64
+	toolFlowMap map[string]int64
+	// tool name -> allowed group names; empty/missing = unrestricted
+	toolAccess    map[string][]string
 	upstreams     map[string]*upstreamServer
 	lastToolsHash string
 }
 
-func NewMCPHandler(flowRepo persistence.FlowRepository, serverRepo persistence.MCPServerRepository, secretRepo persistence.SecretRepository, forwarder RequestForwarder, aesgcm *vault.AESGCM, connManager *connection.Manager, version string) *MCPHandler {
-	mcpServer := server.NewMCPServer(
-		"qaynaq",
-		version,
-		server.WithToolCapabilities(true),
-	)
-
-	httpHandler := server.NewStreamableHTTPServer(mcpServer)
-
+func NewMCPHandler(flowRepo persistence.FlowRepository, serverRepo persistence.MCPServerRepository, secretRepo persistence.SecretRepository, callLogRepo persistence.MCPCallLogRepository, forwarder RequestForwarder, aesgcm *vault.AESGCM, connManager *connection.Manager, version string) *MCPHandler {
 	envResolver := NewEnvResolver(secretRepo, aesgcm)
 	stdioSup := NewStdioSupervisor(envResolver)
 
 	h := &MCPHandler{
-		mcpServer:       mcpServer,
-		httpHandler:     httpHandler,
 		flowRepo:        flowRepo,
 		serverRepo:      serverRepo,
+		callLogRepo:     callLogRepo,
 		forwarder:       forwarder,
 		aesgcm:          aesgcm,
 		connManager:     connManager,
 		stdioSupervisor: stdioSup,
 		toolFlowMap:     make(map[string]int64),
+		toolAccess:      make(map[string][]string),
 		upstreams:       make(map[string]*upstreamServer),
 	}
 
+	h.mcpServer = server.NewMCPServer(
+		"qaynaq",
+		version,
+		server.WithToolCapabilities(true),
+		server.WithToolFilter(h.filterTools),
+	)
+	h.httpHandler = server.NewStreamableHTTPServer(h.mcpServer)
+
 	h.SyncTools()
 	return h
+}
+
+// filterTools hides tools the caller's groups don't grant. API-token and
+// anonymous callers see everything; restrictions apply to OAuth callers only.
+func (h *MCPHandler) filterTools(ctx context.Context, tools []mcp.Tool) []mcp.Tool {
+	p := PrincipalFromContext(ctx)
+	if p == nil || p.Kind != persistence.MCPActorOAuth {
+		return tools
+	}
+
+	h.mu.RLock()
+	access := h.toolAccess
+	h.mu.RUnlock()
+
+	filtered := make([]mcp.Tool, 0, len(tools))
+	for _, t := range tools {
+		if p.CanAccess(access[t.Name]) {
+			filtered = append(filtered, t)
+		}
+	}
+	return filtered
 }
 
 func (h *MCPHandler) StdioSupervisor() *StdioSupervisor {
@@ -124,9 +148,20 @@ func (h *MCPHandler) SyncTools() {
 	h.syncMu.Lock()
 	defer h.syncMu.Unlock()
 
-	nativeTools, nativeToolMap := h.syncNativeTools()
-	upstreamTools, reconnected := h.syncUpstreamServers(nativeToolMap)
+	nativeTools, nativeToolMap, nativeAccess := h.syncNativeTools()
+	upstreamTools, upstreamAccess, reconnected := h.syncUpstreamServers(nativeToolMap)
 	allTools := append(nativeTools, upstreamTools...)
+
+	access := make(map[string][]string, len(nativeAccess)+len(upstreamAccess))
+	for name, groups := range nativeAccess {
+		access[name] = groups
+	}
+	for name, groups := range upstreamAccess {
+		access[name] = groups
+	}
+	h.mu.Lock()
+	h.toolAccess = access
+	h.mu.Unlock()
 
 	// Skip SetTools when nothing changed - it would needlessly notify clients.
 	// But if any upstream rotated its client, we MUST re-register tool handlers
@@ -151,14 +186,15 @@ func (h *MCPHandler) SyncTools() {
 		Msg("MCP tools synced")
 }
 
-func (h *MCPHandler) syncNativeTools() ([]server.ServerTool, map[string]int64) {
+func (h *MCPHandler) syncNativeTools() ([]server.ServerTool, map[string]int64, map[string][]string) {
 	flows, err := h.flowRepo.ListAllByStatuses(persistence.FlowStatusActive)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list flows for MCP tool sync")
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	newToolMap := make(map[string]int64)
+	newAccess := make(map[string][]string)
 	var newTools []server.ServerTool
 
 	for _, flow := range flows {
@@ -187,6 +223,9 @@ func (h *MCPHandler) syncNativeTools() ([]server.ServerTool, map[string]int64) {
 			flowID = *flow.ParentID
 		}
 		newToolMap[cfg.Name] = flowID
+		if len(flow.AllowedGroups) > 0 {
+			newAccess[cfg.Name] = flow.AllowedGroups
+		}
 
 		tool := mcp.NewToolWithRawSchema(cfg.Name, cfg.Description, cfg.InputSchema)
 		tool.Annotations = mcp.ToolAnnotation{
@@ -198,7 +237,7 @@ func (h *MCPHandler) syncNativeTools() ([]server.ServerTool, map[string]int64) {
 		}
 		newTools = append(newTools, server.ServerTool{
 			Tool:    tool,
-			Handler: h.createNativeToolHandler(flowID),
+			Handler: h.withAccessAudit(cfg.Name, persistence.MCPTargetNative, flowID, h.createNativeToolHandler(flowID)),
 		})
 	}
 
@@ -206,22 +245,22 @@ func (h *MCPHandler) syncNativeTools() ([]server.ServerTool, map[string]int64) {
 	h.toolFlowMap = newToolMap
 	h.mu.Unlock()
 
-	return newTools, newToolMap
+	return newTools, newToolMap, newAccess
 }
 
 // syncUpstreamServers returns the registered upstream tools and a flag
 // indicating whether any upstream client was created or rotated this pass.
 // The flag forces SetTools even when tool names are unchanged, since the
 // previously-registered handlers close over the now-closed client.
-func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]server.ServerTool, bool) {
+func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]server.ServerTool, map[string][]string, bool) {
 	if h.serverRepo == nil {
-		return nil, false
+		return nil, nil, false
 	}
 
 	servers, err := h.serverRepo.ListMonitored()
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list MCP servers for upstream sync")
-		return nil, false
+		return nil, nil, false
 	}
 
 	if len(servers) == 0 {
@@ -232,7 +271,7 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]se
 			delete(h.upstreams, name)
 		}
 		h.mu.Unlock()
-		return nil, removed
+		return nil, nil, removed
 	}
 
 	activeNames := make(map[string]bool, len(servers))
@@ -256,9 +295,10 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]se
 	defer cancel()
 
 	type serverResult struct {
-		name        string
-		tools       []server.ServerTool
-		reconnected bool
+		name          string
+		tools         []server.ServerTool
+		allowedGroups []string
+		reconnected   bool
 	}
 
 	var resultMu sync.Mutex
@@ -270,7 +310,7 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]se
 		g.Go(func() error {
 			tools, reconnected := h.syncOneUpstream(gCtx, &srv, nativeToolNames)
 			resultMu.Lock()
-			results = append(results, serverResult{name: srv.Name, tools: tools, reconnected: reconnected})
+			results = append(results, serverResult{name: srv.Name, tools: tools, allowedGroups: srv.AllowedGroups, reconnected: reconnected})
 			resultMu.Unlock()
 			// Never fail the group - one bad server shouldn't block the rest.
 			return nil
@@ -280,14 +320,20 @@ func (h *MCPHandler) syncUpstreamServers(nativeToolNames map[string]int64) ([]se
 	_ = g.Wait()
 
 	var allUpstreamTools []server.ServerTool
+	access := make(map[string][]string)
 	for _, r := range results {
 		allUpstreamTools = append(allUpstreamTools, r.tools...)
+		if len(r.allowedGroups) > 0 {
+			for _, t := range r.tools {
+				access[t.Tool.Name] = r.allowedGroups
+			}
+		}
 		if r.reconnected {
 			rotated = true
 		}
 	}
 
-	return allUpstreamTools, rotated
+	return allUpstreamTools, access, rotated
 }
 
 // syncOneUpstream returns the tools registered for srv plus a flag that's
@@ -363,7 +409,7 @@ func (h *MCPHandler) syncOneUpstream(ctx context.Context, srv *persistence.MCPSe
 
 		tools = append(tools, server.ServerTool{
 			Tool:    toolDef,
-			Handler: h.createUpstreamToolHandler(client, t.Name),
+			Handler: h.withAccessAudit(namespacedName, persistence.MCPTargetUpstream, srv.ID, h.createUpstreamToolHandler(client, t.Name)),
 		})
 	}
 
@@ -449,7 +495,7 @@ func (h *MCPHandler) syncOneStdioUpstream(ctx context.Context, srv *persistence.
 
 		tools = append(tools, server.ServerTool{
 			Tool:    toolDef,
-			Handler: h.createStdioToolHandler(srv.ID, srv.Name, t.Name),
+			Handler: h.withAccessAudit(namespacedName, persistence.MCPTargetStdio, srv.ID, h.createStdioToolHandler(srv.ID, srv.Name, t.Name)),
 		})
 	}
 
@@ -498,6 +544,81 @@ func (h *MCPHandler) recordUpstreamFailure(srv *persistence.MCPServer, err error
 			_ = h.serverRepo.UpdateStatus(srv.ID, "error")
 		}
 	}
+}
+
+// withAccessAudit enforces group restrictions and records every call in the
+// audit log. Denials never reveal which groups would have been allowed.
+func (h *MCPHandler) withAccessAudit(toolName, targetKind string, targetID int64, inner server.ToolHandlerFunc) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		p := PrincipalFromContext(ctx)
+
+		h.mu.RLock()
+		allowed := h.toolAccess[toolName]
+		h.mu.RUnlock()
+
+		if !p.CanAccess(allowed) {
+			h.recordCall(p, toolName, targetKind, targetID, persistence.MCPCallStatusDenied, "caller is not in an allowed group", 0)
+			return mcp.NewToolResultError("access denied: you are not in a group allowed to call this tool"), nil
+		}
+
+		start := time.Now()
+		result, err := inner(ctx, request)
+		duration := time.Since(start).Milliseconds()
+
+		callStatus := persistence.MCPCallStatusOK
+		errMsg := ""
+		switch {
+		case err != nil:
+			callStatus = persistence.MCPCallStatusError
+			errMsg = err.Error()
+		case result != nil && result.IsError:
+			callStatus = persistence.MCPCallStatusError
+			errMsg = resultErrorText(result)
+		}
+		h.recordCall(p, toolName, targetKind, targetID, callStatus, errMsg, duration)
+
+		return result, err
+	}
+}
+
+func (h *MCPHandler) recordCall(p *Principal, toolName, targetKind string, targetID int64, callStatus, errMsg string, durationMs int64) {
+	if h.callLogRepo == nil {
+		return
+	}
+	entry := &persistence.MCPCallLog{
+		Actor:      "anonymous",
+		ActorKind:  persistence.MCPActorAnonymous,
+		ToolName:   toolName,
+		TargetKind: targetKind,
+		TargetID:   targetID,
+		Status:     callStatus,
+		Error:      truncate(errMsg, 500),
+		DurationMs: durationMs,
+	}
+	if p != nil {
+		entry.Actor = p.Name
+		entry.ActorKind = p.Kind
+		entry.Groups = p.Groups
+	}
+	if err := h.callLogRepo.Add(entry); err != nil {
+		log.Warn().Err(err).Str("tool", toolName).Msg("Failed to record MCP call log")
+	}
+}
+
+func resultErrorText(result *mcp.CallToolResult) string {
+	for _, c := range result.Content {
+		if t, ok := c.(mcp.TextContent); ok {
+			return t.Text
+		}
+	}
+	return "tool returned an error"
+}
+
+func truncate(s string, limit int) string {
+	if len(s) <= limit {
+		return s
+	}
+	return s[:limit]
 }
 
 func (h *MCPHandler) createNativeToolHandler(flowID int64) server.ToolHandlerFunc {

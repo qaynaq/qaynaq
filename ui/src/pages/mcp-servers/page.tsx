@@ -35,8 +35,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Server, RefreshCw, Terminal, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Server, RefreshCw, Terminal, Eye, EyeOff, Users } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/components/toast";
+import { GroupMultiSelect } from "@/components/group-multi-select";
 import {
   Connection,
   MCPServer,
@@ -47,6 +53,7 @@ import {
 import {
   fetchMCPServers,
   createMCPServer,
+  updateMCPServer,
   deleteMCPServer,
   restartMCPServer,
   fetchMCPServerLogs,
@@ -78,6 +85,85 @@ const MaintainerBadge = ({ maintainer }: { maintainer: string }) => {
 };
 
 type Transport = "http" | "stdio";
+
+const ServerAccess = ({
+  server,
+  onSaved,
+}: {
+  server: MCPServer;
+  onSaved: (updated: MCPServer) => void;
+}) => {
+  const { addToast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [groups, setGroups] = useState<string[]>(server.allowed_groups || []);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    try {
+      setSaving(true);
+      const updated = await updateMCPServer(server.id, {
+        allowed_groups: groups,
+      });
+      onSaved(updated);
+      setOpen(false);
+      addToast({
+        id: "server-access-updated",
+        title: "Access updated",
+        description:
+          groups.length === 0
+            ? `Tools from "${server.name}" are now callable by everyone.`
+            : `Tools from "${server.name}" are now restricted to ${groups.join(", ")}.`,
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        id: "server-access-error",
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to update access",
+        variant: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setGroups(server.allowed_groups || []);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-foreground"
+          title="Access"
+        >
+          <Users className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 space-y-3" align="end">
+        <div>
+          <p className="text-sm font-medium">Who can call these tools</p>
+          <p className="text-xs text-muted-foreground">
+            Applies to every tool proxied from this server. Empty means
+            everyone.
+          </p>
+        </div>
+        <GroupMultiSelect value={groups} onChange={setGroups} />
+        <div className="flex justify-end">
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 // Whole-string ${NAME} ref. Composed strings stay masked because they may
 // surround real secret data.
@@ -168,6 +254,7 @@ export default function MCPServersPage() {
   const [newServerAuthHeader, setNewServerAuthHeader] = useState("");
   const [newServerAuthValue, setNewServerAuthValue] = useState("");
   const [newServerConnectionName, setNewServerConnectionName] = useState("");
+  const [newServerAllowedGroups, setNewServerAllowedGroups] = useState<string[]>([]);
 
   const [selectedCatalogId, setSelectedCatalogId] = useState("");
   const [stdioEnv, setStdioEnv] = useState<Record<string, string>>({});
@@ -215,6 +302,7 @@ export default function MCPServersPage() {
     setNewServerAuthHeader("");
     setNewServerAuthValue("");
     setNewServerConnectionName("");
+    setNewServerAllowedGroups([]);
     setSelectedCatalogId("");
     setStdioEnv({});
     setShowAdvancedEnv(false);
@@ -246,6 +334,7 @@ export default function MCPServersPage() {
           transport: "stdio",
           catalog_id: selectedCatalogId,
           env: stdioEnv,
+          allowed_groups: newServerAllowedGroups,
         });
       } else {
         if (!newServerUrl.trim()) return;
@@ -257,6 +346,7 @@ export default function MCPServersPage() {
           auth_header: newServerAuthHeader.trim(),
           auth_value: newServerAuthValue.trim(),
           connection_name: newServerConnectionName,
+          allowed_groups: newServerAllowedGroups,
         });
       }
       setMcpServers((prev) => [server, ...prev]);
@@ -634,6 +724,21 @@ export default function MCPServersPage() {
                     </>
                   )}
 
+                  <div className="space-y-2">
+                    <Label>
+                      Access{" "}
+                      <span className="text-muted-foreground">(optional)</span>
+                    </Label>
+                    <GroupMultiSelect
+                      value={newServerAllowedGroups}
+                      onChange={setNewServerAllowedGroups}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Restrict this server's tools to specific IdP groups.
+                      Empty means everyone.
+                    </p>
+                  </div>
+
                   <div className="flex justify-end gap-2">
                     <Button
                       type="button"
@@ -698,6 +803,16 @@ export default function MCPServersPage() {
                         <Badge variant="outline" className="text-xs">
                           {isStdio ? "local" : "remote"}
                         </Badge>
+                        {(server.allowed_groups?.length ?? 0) > 0 && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs"
+                            title={server.allowed_groups.join(", ")}
+                          >
+                            <Users className="h-3 w-3 mr-1" />
+                            {server.allowed_groups.join(", ")}
+                          </Badge>
+                        )}
                         {server.tool_count > 0 && (
                           <span className="text-xs text-muted-foreground">
                             {server.tool_count} tools
@@ -737,6 +852,14 @@ export default function MCPServersPage() {
                         )}
                       </div>
                     </div>
+                    <ServerAccess
+                      server={server}
+                      onSaved={(updated) =>
+                        setMcpServers((prev) =>
+                          prev.map((s) => (s.id === updated.id ? updated : s)),
+                        )
+                      }
+                    />
                     {isStdio && (
                       <Button
                         variant="ghost"

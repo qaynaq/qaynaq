@@ -45,6 +45,14 @@ func NewManager(cfg *config.AuthConfig, secretKey string) (*Manager, error) {
 	return manager, nil
 }
 
+// SetGroupSink registers a callback invoked with the user's IdP groups on
+// every successful OAuth2 login. No-op for other auth types.
+func (m *Manager) SetGroupSink(sink func(email string, groups []string)) {
+	if m.oauth2Handler != nil {
+		m.oauth2Handler.groupSink = sink
+	}
+}
+
 func (m *Manager) Middleware(next http.Handler) http.Handler {
 	switch m.authType {
 	case config.AuthTypeNone:

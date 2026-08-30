@@ -6,6 +6,8 @@ const tabs = [
   { to: "/settings/tokens", label: "API Tokens" },
   { to: "/settings/sessions", label: "Sessions" },
   { to: "/settings/clients", label: "OAuth Clients" },
+  { to: "/settings/groups", label: "Groups" },
+  { to: "/settings/tool-calls", label: "Tool Calls" },
 ];
 
 export default function SettingsLayout() {

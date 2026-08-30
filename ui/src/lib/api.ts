@@ -18,6 +18,8 @@ import {
   OAuthConsentRequest,
   Template,
   TemplateInstallResult,
+  GroupInfo,
+  MCPCallLog,
 } from "./entities";
 import * as yaml from "js-yaml";
 
@@ -185,6 +187,7 @@ export async function fetchStream(id: string): Promise<Flow> {
       is_mcp_tool: data.data.is_mcp_tool || false,
       is_ready: data.data.is_ready || false,
       builder_state: data.data.builder_state || undefined,
+      allowed_groups: data.data.allowed_groups || [],
       last_error: data.data.last_error || undefined,
       last_error_at: data.data.last_error_at || undefined,
     };
@@ -256,6 +259,7 @@ export async function createFlow(flow: {
   is_ready?: boolean;
   builder_state?: string;
   managed_by?: string;
+  allowed_groups?: string[];
   processors: Array<{
     label: string;
     component: string;
@@ -280,6 +284,7 @@ export async function createFlow(flow: {
           is_ready: flow.is_ready ?? true,
           builder_state: flow.builder_state || "",
           managed_by: flow.managed_by || undefined,
+          allowed_groups: flow.allowed_groups || [],
           processors: flow.processors.map((processor) => ({
             label: processor.label,
             component: processor.component,
@@ -340,6 +345,7 @@ export async function updateFlow(
     is_ready?: boolean;
     builder_state?: string;
     managed_by?: string;
+    allowed_groups?: string[];
     processors: Array<{
       label: string;
       component: string;
@@ -365,6 +371,7 @@ export async function updateFlow(
           is_ready: flow.is_ready ?? true,
           builder_state: flow.builder_state || "",
           managed_by: flow.managed_by || undefined,
+          allowed_groups: flow.allowed_groups || [],
           processors: flow.processors.map((processor) => ({
             label: processor.label,
             component: processor.component,
@@ -1675,6 +1682,7 @@ export async function createMCPServer(params: {
   transport?: string;
   catalog_id?: string;
   env?: Record<string, string>;
+  allowed_groups?: string[];
 }): Promise<MCPServer> {
   const response = await handleResponse(
     await fetch(`${API_BASE_URL}/settings/mcp/servers`, {
@@ -1700,6 +1708,7 @@ export async function updateMCPServer(
     auth_value?: string;
     connection_name?: string;
     env?: Record<string, string>;
+    allowed_groups?: string[];
   },
 ): Promise<MCPServer> {
   const response = await handleResponse(
@@ -1839,4 +1848,83 @@ export async function installTemplate(install: {
     console.error("Error installing template:", error);
     throw error;
   }
+}
+
+export async function fetchGroups(): Promise<GroupInfo[]> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/groups`, {
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return (data.data || []).map((group: any) => ({
+    name: group.name,
+    source: group.source,
+    created_at: group.created_at,
+    last_seen_at: group.last_seen_at || undefined,
+  }));
+}
+
+export async function importGroups(names: string[]): Promise<number> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/groups/import`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ names }),
+    }),
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.imported || 0;
+}
+
+export async function deleteGroup(name: string): Promise<void> {
+  const response = await handleResponse(
+    await fetch(`${API_BASE_URL}/settings/groups/${encodeURIComponent(name)}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    }),
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP error! status: ${response.status}`);
+  }
+}
+
+export async function fetchMCPCallLogs(
+  limit: number,
+  offset: number,
+): Promise<{ logs: MCPCallLog[]; total: number }> {
+  const response = await handleResponse(
+    await fetch(
+      `${API_BASE_URL}/settings/mcp/call-logs?limit=${limit}&offset=${offset}`,
+      { headers: getAuthHeaders() },
+    ),
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = await response.json();
+  return {
+    logs: (data.data || []).map((entry: any) => ({
+      id: entry.id,
+      actor: entry.actor,
+      actor_kind: entry.actor_kind,
+      groups: entry.groups || [],
+      tool_name: entry.tool_name,
+      target_kind: entry.target_kind,
+      target_id: entry.target_id,
+      status: entry.status,
+      error: entry.error || "",
+      duration_ms: Number(entry.duration_ms) || 0,
+      created_at: entry.created_at,
+    })),
+    total: Number(data.total) || 0,
+  };
 }

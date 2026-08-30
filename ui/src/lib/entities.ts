@@ -53,6 +53,7 @@ export type Flow = {
   is_ready: boolean;
   builder_state?: string;
   managed_by?: string;
+  allowed_groups?: string[];
   last_error?: string;
   last_error_at?: string;
 
@@ -206,6 +207,28 @@ export type MCPServer = {
   transport: string;
   catalog_id: string;
   process_state: string;
+  allowed_groups: string[];
+};
+
+export type GroupInfo = {
+  name: string;
+  source: "manual" | "observed" | string;
+  created_at: string;
+  last_seen_at?: string;
+};
+
+export type MCPCallLog = {
+  id: number;
+  actor: string;
+  actor_kind: "oauth" | "api_token" | "anonymous" | string;
+  groups: string[];
+  tool_name: string;
+  target_kind: string;
+  target_id: number;
+  status: "ok" | "error" | "denied" | string;
+  error: string;
+  duration_ms: number;
+  created_at: string;
 };
 
 export type MCPCatalogEnvSpec = {

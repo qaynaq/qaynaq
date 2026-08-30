@@ -82,6 +82,10 @@ const (
 	Coordinator_RestartMCPServer_FullMethodName       = "/protorender.Coordinator/RestartMCPServer"
 	Coordinator_GetMCPServerLogs_FullMethodName       = "/protorender.Coordinator/GetMCPServerLogs"
 	Coordinator_ListMCPCatalog_FullMethodName         = "/protorender.Coordinator/ListMCPCatalog"
+	Coordinator_ListGroups_FullMethodName             = "/protorender.Coordinator/ListGroups"
+	Coordinator_ImportGroups_FullMethodName           = "/protorender.Coordinator/ImportGroups"
+	Coordinator_DeleteGroup_FullMethodName            = "/protorender.Coordinator/DeleteGroup"
+	Coordinator_ListMCPCallLogs_FullMethodName        = "/protorender.Coordinator/ListMCPCallLogs"
 	Coordinator_ListProviders_FullMethodName          = "/protorender.Coordinator/ListProviders"
 	Coordinator_ListConnections_FullMethodName        = "/protorender.Coordinator/ListConnections"
 	Coordinator_DeleteConnection_FullMethodName       = "/protorender.Coordinator/DeleteConnection"
@@ -172,6 +176,11 @@ type CoordinatorClient interface {
 	RestartMCPServer(ctx context.Context, in *RestartMCPServerRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	GetMCPServerLogs(ctx context.Context, in *GetMCPServerLogsRequest, opts ...grpc.CallOption) (*MCPServerLogsResponse, error)
 	ListMCPCatalog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMCPCatalogResponse, error)
+	// Group access methods
+	ListGroups(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListGroupsResponse, error)
+	ImportGroups(ctx context.Context, in *ImportGroupsRequest, opts ...grpc.CallOption) (*ImportGroupsResponse, error)
+	DeleteGroup(ctx context.Context, in *DeleteGroupRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	ListMCPCallLogs(ctx context.Context, in *ListMCPCallLogsRequest, opts ...grpc.CallOption) (*ListMCPCallLogsResponse, error)
 	// Connection methods
 	ListProviders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListProvidersResponse, error)
 	ListConnections(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListConnectionsResponse, error)
@@ -816,6 +825,46 @@ func (c *coordinatorClient) ListMCPCatalog(ctx context.Context, in *emptypb.Empt
 	return out, nil
 }
 
+func (c *coordinatorClient) ListGroups(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListGroupsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ListGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) ImportGroups(ctx context.Context, in *ImportGroupsRequest, opts ...grpc.CallOption) (*ImportGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportGroupsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ImportGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) DeleteGroup(ctx context.Context, in *DeleteGroupRequest, opts ...grpc.CallOption) (*CommonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonResponse)
+	err := c.cc.Invoke(ctx, Coordinator_DeleteGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) ListMCPCallLogs(ctx context.Context, in *ListMCPCallLogsRequest, opts ...grpc.CallOption) (*ListMCPCallLogsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMCPCallLogsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ListMCPCallLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *coordinatorClient) ListProviders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListProvidersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListProvidersResponse)
@@ -985,6 +1034,11 @@ type CoordinatorServer interface {
 	RestartMCPServer(context.Context, *RestartMCPServerRequest) (*CommonResponse, error)
 	GetMCPServerLogs(context.Context, *GetMCPServerLogsRequest) (*MCPServerLogsResponse, error)
 	ListMCPCatalog(context.Context, *emptypb.Empty) (*ListMCPCatalogResponse, error)
+	// Group access methods
+	ListGroups(context.Context, *emptypb.Empty) (*ListGroupsResponse, error)
+	ImportGroups(context.Context, *ImportGroupsRequest) (*ImportGroupsResponse, error)
+	DeleteGroup(context.Context, *DeleteGroupRequest) (*CommonResponse, error)
+	ListMCPCallLogs(context.Context, *ListMCPCallLogsRequest) (*ListMCPCallLogsResponse, error)
 	// Connection methods
 	ListProviders(context.Context, *emptypb.Empty) (*ListProvidersResponse, error)
 	ListConnections(context.Context, *emptypb.Empty) (*ListConnectionsResponse, error)
@@ -1191,6 +1245,18 @@ func (UnimplementedCoordinatorServer) GetMCPServerLogs(context.Context, *GetMCPS
 }
 func (UnimplementedCoordinatorServer) ListMCPCatalog(context.Context, *emptypb.Empty) (*ListMCPCatalogResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListMCPCatalog not implemented")
+}
+func (UnimplementedCoordinatorServer) ListGroups(context.Context, *emptypb.Empty) (*ListGroupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListGroups not implemented")
+}
+func (UnimplementedCoordinatorServer) ImportGroups(context.Context, *ImportGroupsRequest) (*ImportGroupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportGroups not implemented")
+}
+func (UnimplementedCoordinatorServer) DeleteGroup(context.Context, *DeleteGroupRequest) (*CommonResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteGroup not implemented")
+}
+func (UnimplementedCoordinatorServer) ListMCPCallLogs(context.Context, *ListMCPCallLogsRequest) (*ListMCPCallLogsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMCPCallLogs not implemented")
 }
 func (UnimplementedCoordinatorServer) ListProviders(context.Context, *emptypb.Empty) (*ListProvidersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProviders not implemented")
@@ -2345,6 +2411,78 @@ func _Coordinator_ListMCPCatalog_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_ListGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ListGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListGroups(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_ImportGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ImportGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ImportGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ImportGroups(ctx, req.(*ImportGroupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_DeleteGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).DeleteGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_DeleteGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).DeleteGroup(ctx, req.(*DeleteGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_ListMCPCallLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMCPCallLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListMCPCallLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ListMCPCallLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListMCPCallLogs(ctx, req.(*ListMCPCallLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Coordinator_ListProviders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -2757,6 +2895,22 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMCPCatalog",
 			Handler:    _Coordinator_ListMCPCatalog_Handler,
+		},
+		{
+			MethodName: "ListGroups",
+			Handler:    _Coordinator_ListGroups_Handler,
+		},
+		{
+			MethodName: "ImportGroups",
+			Handler:    _Coordinator_ImportGroups_Handler,
+		},
+		{
+			MethodName: "DeleteGroup",
+			Handler:    _Coordinator_DeleteGroup_Handler,
+		},
+		{
+			MethodName: "ListMCPCallLogs",
+			Handler:    _Coordinator_ListMCPCallLogs_Handler,
 		},
 		{
 			MethodName: "ListProviders",

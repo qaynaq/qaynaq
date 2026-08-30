@@ -73,6 +73,8 @@ func buildAuthConfig(ctx *cli.Context) *config.AuthConfig {
 		OAuth2RoleAttributePath: expandStr(ctx, "auth.oauth2-role-attribute-path"),
 		OAuth2AdminUsers:        splitComma(expandStr(ctx, "auth.oauth2-admin-users")),
 		OAuth2MCPUsers:          splitComma(expandStr(ctx, "auth.oauth2-mcp-users")),
+
+		OAuth2GroupsAttributePath: expandStr(ctx, "auth.oauth2-groups-attribute-path"),
 	}
 }
 
@@ -131,11 +133,22 @@ func InitializeCoordinatorCommand(ctx *cli.Context) *intcli.CoordinatorCLI {
 	connManager := connection.NewManager(connectionRepository, aesgcm)
 	connRefreshJob := connection.NewRefreshJob(connManager)
 	mcpServerRepository := persistence.NewMCPServerRepository(db)
+	groupRepository := persistence.NewGroupRepository(db)
+	userGroupsRepository := persistence.NewUserGroupsRepository(db)
+	mcpCallLogRepository := persistence.NewMCPCallLogRepository(db)
+	authManager.SetGroupSink(func(email string, groups []string) {
+		if err := userGroupsRepository.Set(email, groups); err != nil {
+			log.Warn().Err(err).Str("email", email).Msg("Failed to persist user groups snapshot")
+		}
+		if err := groupRepository.UpsertObserved(groups); err != nil {
+			log.Warn().Err(err).Msg("Failed to upsert observed groups")
+		}
+	})
 	mcpOAuthEnabled := ctx.Bool("mcp.oauth-enabled")
 	coordinatorExecutor := executor.NewCoordinatorExecutor(workerRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, workerFlowRepository, fileRepository, flowWorkerMap)
 	oauthHandler := connection.NewOAuthHandler(connManager)
-	mcpHandler := mcppkg.NewMCPHandler(flowRepository, mcpServerRepository, secretRepository, coordinatorExecutor, aesgcm, connManager, Version)
-	coordinatorAPI := coordinator.NewCoordinatorAPI(eventRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, flowBufferRepository, flowProcessorRepository, workerRepository, workerFlowRepository, secretRepository, cacheRepository, bufferRepository, rateLimitRepository, fileRepository, settingRepository, apiTokenRepository, oauthClientRepository, oauthRefreshTokenRepository, oauthConsentRepository, rateLimiterEngine, aesgcm, analyticsProvider, connManager, flowWorkerMap, mcpServerRepository, mcpHandler, authConfig.Type, mcpOAuthEnabled)
+	mcpHandler := mcppkg.NewMCPHandler(flowRepository, mcpServerRepository, secretRepository, mcpCallLogRepository, coordinatorExecutor, aesgcm, connManager, Version)
+	coordinatorAPI := coordinator.NewCoordinatorAPI(eventRepository, flowRepository, flowCacheRepository, flowRateLimitRepository, flowBufferRepository, flowProcessorRepository, workerRepository, workerFlowRepository, secretRepository, cacheRepository, bufferRepository, rateLimitRepository, fileRepository, settingRepository, apiTokenRepository, oauthClientRepository, oauthRefreshTokenRepository, oauthConsentRepository, rateLimiterEngine, aesgcm, analyticsProvider, connManager, flowWorkerMap, mcpServerRepository, mcpHandler, groupRepository, userGroupsRepository, mcpCallLogRepository, authConfig.Type, mcpOAuthEnabled)
 
 	var mcpOAuthServer *mcpoauth.Server
 	if mcpOAuthEnabled {

@@ -24,9 +24,10 @@ type AuthConfig struct {
 	OAuth2AllowedDomains    []string
 	OAuth2SessionCookieName string
 
-	OAuth2RoleAttributePath string
-	OAuth2AdminUsers        []string
-	OAuth2MCPUsers          []string
+	OAuth2RoleAttributePath   string
+	OAuth2AdminUsers          []string
+	OAuth2MCPUsers            []string
+	OAuth2GroupsAttributePath string
 }
 
 func (c *AuthConfig) Validate() error {

@@ -24,6 +24,7 @@ type MCPServer struct {
 	ToolCount          int        `gorm:"default:0" json:"tool_count"`
 	LastSyncAt         *time.Time `json:"last_sync_at"`
 	LastError          string     `gorm:"default:''" json:"last_error"`
+	AllowedGroups      []string   `gorm:"type:text;not null;default:'[]';serializer:json" json:"allowed_groups"`
 	CreatedAt          time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt          time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 

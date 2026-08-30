@@ -61,6 +61,9 @@ type CoordinatorAPI struct {
 	connManager       *connection.Manager
 	mcpServerRepo     persistence.MCPServerRepository
 	mcpHandler        *mcp.MCPHandler
+	groupRepo         persistence.GroupRepository
+	userGroupsRepo    persistence.UserGroupsRepository
+	mcpCallLogRepo    persistence.MCPCallLogRepository
 	authType          config.AuthType
 	mcpOAuthEnabled   bool
 	cache             settingsCache
@@ -93,6 +96,9 @@ func NewCoordinatorAPI(
 	flowWorkerMap FlowWorkerMap,
 	mcpServerRepo persistence.MCPServerRepository,
 	mcpHandler *mcp.MCPHandler,
+	groupRepo persistence.GroupRepository,
+	userGroupsRepo persistence.UserGroupsRepository,
+	mcpCallLogRepo persistence.MCPCallLogRepository,
 	authType config.AuthType,
 	mcpOAuthEnabled bool,
 ) *CoordinatorAPI {
@@ -122,6 +128,9 @@ func NewCoordinatorAPI(
 		flowWorkerMap:     flowWorkerMap,
 		mcpServerRepo:     mcpServerRepo,
 		mcpHandler:        mcpHandler,
+		groupRepo:         groupRepo,
+		userGroupsRepo:    userGroupsRepo,
+		mcpCallLogRepo:    mcpCallLogRepo,
 		authType:          authType,
 		mcpOAuthEnabled:   mcpOAuthEnabled,
 		tokenUsage:        tokenUsageTracker{pending: make(map[int64]time.Time)},

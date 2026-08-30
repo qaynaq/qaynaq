@@ -161,14 +161,14 @@ func (c *CoordinatorAPI) IsMCPProtected() bool {
 	return protected
 }
 
-func (c *CoordinatorAPI) ValidateMCPToken(rawToken string) bool {
+func (c *CoordinatorAPI) ValidateMCPToken(rawToken string) (string, bool) {
 	hash := hashToken(rawToken)
 	token, err := c.apiTokenRepo.FindByHash(hash)
 	if err != nil {
-		return false
+		return "", false
 	}
 	if !hasScope(token.Scopes, "mcp") {
-		return false
+		return "", false
 	}
 
 	now := time.Now()
@@ -176,7 +176,16 @@ func (c *CoordinatorAPI) ValidateMCPToken(rawToken string) bool {
 	c.tokenUsage.pending[token.ID] = now
 	c.tokenUsage.mu.Unlock()
 
-	return true
+	return token.Name, true
+}
+
+func (c *CoordinatorAPI) GroupsForUser(email string) []string {
+	groups, err := c.userGroupsRepo.Get(email)
+	if err != nil {
+		log.Error().Err(err).Str("email", email).Msg("Failed to load user groups")
+		return nil
+	}
+	return groups
 }
 
 func (c *CoordinatorAPI) FlushTokenUsage() {
@@ -387,6 +396,7 @@ func (c *CoordinatorAPI) ListMCPServers(_ context.Context, _ *emptypb.Empty) (*p
 			Transport:      s.Transport,
 			CatalogId:      s.CatalogID,
 			ProcessState:   s.ProcessState,
+			AllowedGroups:  s.AllowedGroups,
 		}
 		if s.LastSyncAt != nil {
 			pbServers[i].LastSyncAt = timestamppb.New(*s.LastSyncAt)
@@ -407,9 +417,10 @@ func (c *CoordinatorAPI) CreateMCPServer(_ context.Context, req *pb.CreateMCPSer
 	}
 
 	server := &persistence.MCPServer{
-		Name:      req.Name,
-		Status:    "active",
-		Transport: transport,
+		Name:          req.Name,
+		Status:        "active",
+		Transport:     transport,
+		AllowedGroups: req.AllowedGroups,
 	}
 
 	switch transport {
@@ -486,6 +497,7 @@ func (c *CoordinatorAPI) CreateMCPServer(_ context.Context, req *pb.CreateMCPSer
 		Transport:      server.Transport,
 		CatalogId:      server.CatalogID,
 		ProcessState:   server.ProcessState,
+		AllowedGroups:  server.AllowedGroups,
 		CreatedAt:      timestamppb.New(server.CreatedAt),
 		UpdatedAt:      timestamppb.New(server.UpdatedAt),
 	}, nil
@@ -542,6 +554,10 @@ func (c *CoordinatorAPI) UpdateMCPServer(_ context.Context, req *pb.UpdateMCPSer
 		}
 	}
 
+	// The UI always sends the full list, so assign unconditionally: an empty
+	// list is how restrictions get cleared.
+	server.AllowedGroups = req.AllowedGroups
+
 	// Reset status to active on update (resets circuit breaker)
 	server.Status = "active"
 
@@ -567,6 +583,7 @@ func (c *CoordinatorAPI) UpdateMCPServer(_ context.Context, req *pb.UpdateMCPSer
 		Transport:      server.Transport,
 		CatalogId:      server.CatalogID,
 		ProcessState:   server.ProcessState,
+		AllowedGroups:  server.AllowedGroups,
 		CreatedAt:      timestamppb.New(server.CreatedAt),
 		UpdatedAt:      timestamppb.New(server.UpdatedAt),
 	}, nil

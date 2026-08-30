@@ -159,6 +159,11 @@ func main() {
 				Usage:   "OAuth2 MCP-only user email patterns (comma-separated, supports globs like *@x.com)",
 				EnvVars: []string{"AUTH_OAUTH2_MCP_USERS"},
 			}),
+			altsrc.NewStringFlag(&cli.StringFlag{
+				Name:    "auth.oauth2-groups-attribute-path",
+				Usage:   "JMESPath expression evaluated against OAuth2 userinfo claims to derive the user's group names (e.g. groups)",
+				EnvVars: []string{"AUTH_OAUTH2_GROUPS_ATTRIBUTE_PATH"},
+			}),
 			// MCP OAuth (separate from app auth: this lets MCP clients
 			// such as Claude Desktop authenticate via the OAuth 2.1 flow
 			// defined in the MCP spec, with Qaynaq acting as the AS).

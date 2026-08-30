@@ -89,3 +89,38 @@ Sign-out clears the Qaynaq session cookie only. Your identity provider session i
 | MCP | redirects to `/mcp-access` | 403 | allowed | allowed |
 | No role | redirects to `/no-access` | 403 | redirects to `/no-access` | n/a |
 | Not signed in | redirects to `/login` | 401 | redirects to `/auth/login` | 401 |
+
+## Group-based tool access
+
+Roles decide who may reach the MCP endpoint at all. Groups decide which tools each caller sees once they are in. The accountant's assistant lists only the finance tools, the lawyer's only the legal ones, and each restricted tool also rejects calls from members of other groups.
+
+Qaynaq does not manage group membership itself. Your identity provider already knows who is in `accounting` and who is in `legal`; Qaynaq reads that claim and applies it. There is one env var:
+
+- `AUTH_OAUTH2_GROUPS_ATTRIBUTE_PATH` - a JMESPath expression evaluated against the userinfo claims that yields the user's group names, either a string array or a single string. For most providers it is simply `groups`.
+
+```bash
+AUTH_OAUTH2_GROUPS_ATTRIBUTE_PATH=groups
+```
+
+### Tagging tools and servers
+
+- **Qaynaq tools**: in the flow builder, MCP tool flows get an **Access** picker next to the buffer selector. Pick one or more groups; empty means everyone.
+- **External MCP servers**: on the MCP Servers page, each server has an access control (the people icon) that restricts every tool proxied from that server.
+
+Restrictions apply to MCP clients authenticated through the OAuth flow, where Qaynaq knows which person is calling. Static API tokens and instances running without auth are not restricted, since there is no user identity to match against; treat those tokens as admin credentials.
+
+### The groups registry
+
+The **Settings → Groups** page lists every group Qaynaq knows about. It fills itself: each time a user signs in, the groups from their IdP claims are recorded. To tag a tool for a group before its first member has ever signed in, use **Import groups** and paste the names straight from your IdP admin console, one per line.
+
+The Access picker only offers names from this registry, so a typo cannot silently lock a team out of a tool. Groups that have never been seen at a login carry a warning badge, and if a tagged name looks like a near-miss of a real observed group, the picker points that out.
+
+The registry is a convenience for the UI only. Access decisions always use the groups from the caller's identity, never this list, so a stale registry can never grant or deny the wrong access.
+
+### How group changes take effect
+
+Each user's groups are captured from the IdP at sign-in and refreshed on every subsequent sign-in. When someone leaves a group in your IdP, their Qaynaq access updates the next time they sign in to Qaynaq. To cut off a user immediately, revoke their MCP session under **Settings → Sessions**.
+
+## Tool call audit log
+
+**Settings → Tool Calls** records every call made through the MCP endpoint: who called (the signed-in user's email, the API token's name, or anonymous), which tool, whether it succeeded, failed, or was denied by a group restriction, and how long it took. Denied calls are recorded with the caller's groups at the time of the call, so you can reconstruct why a call was rejected weeks later.

@@ -26,6 +26,7 @@ export default function EditStreamPage() {
     name: string;
     status: string;
     bufferId?: number;
+    allowedGroups?: string[];
     nodes: StreamNodeData[];
     builderState?: string;
     last_error?: string;
@@ -87,6 +88,7 @@ export default function EditStreamPage() {
           name: streamResponse.name,
           status: streamResponse.status,
           bufferId: streamResponse.buffer_id,
+          allowedGroups: streamResponse.allowed_groups,
           nodes,
           builderState: streamResponse.builder_state,
           last_error: streamResponse.last_error,
@@ -142,7 +144,7 @@ export default function EditStreamPage() {
     return tryFlow(data);
   };
 
-  const handleSaveStream = async (data: { name: string; status: string; bufferId?: number; nodes: StreamNodeData[]; builderState: string; isReady: boolean }) => {
+  const handleSaveStream = async (data: { name: string; status: string; bufferId?: number; allowedGroups: string[]; nodes: StreamNodeData[]; builderState: string; isReady: boolean }) => {
     setIsSubmitting(true);
 
     try {
@@ -194,6 +196,7 @@ export default function EditStreamPage() {
         buffer_id: data.bufferId,
         is_ready: data.isReady,
         builder_state: data.builderState,
+        allowed_groups: data.allowedGroups,
         processors: processors
       };
 

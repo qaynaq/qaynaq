@@ -32,6 +32,9 @@ type OAuth2Handler struct {
 	cookieName     string
 	stateStore     map[string]stateEntry
 	stateStoreMux  sync.RWMutex
+	// groupSink receives the user's IdP groups on every successful login so
+	// the caller can persist the snapshot. Optional; errors are the sink's.
+	groupSink func(email string, groups []string)
 }
 
 type oidcDiscovery struct {
@@ -239,6 +242,10 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		log.Warn().Str("email", userInfo.Email).Msg("User authenticated but has no role mapping")
 		http.Redirect(w, r, "/no-access", http.StatusTemporaryRedirect)
 		return
+	}
+
+	if h.groupSink != nil {
+		h.groupSink(userInfo.Email, EvaluateGroups(h.authConfig, claimsMap))
 	}
 
 	jwtToken, err := h.createJWTToken(userInfo.Email, claimsMap)

@@ -87,6 +87,7 @@ message Flow {
   optional string managed_by = 20 [json_name = "managed_by"];
   string last_error = 21 [json_name = "last_error"];
   optional google.protobuf.Timestamp last_error_at = 22 [json_name = "last_error_at"];
+  repeated string allowed_groups = 23 [json_name = "allowed_groups"];
 }
 
 message Secret {

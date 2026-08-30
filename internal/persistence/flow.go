@@ -38,6 +38,7 @@ type Flow struct {
 	IsReady         bool       `json:"is_ready" gorm:"default:false"`
 	BuilderState    []byte     `json:"builder_state"`
 	ManagedBy       *string    `json:"managed_by"`
+	AllowedGroups   []string   `json:"allowed_groups" gorm:"type:text;not null;default:'[]';serializer:json"`
 	Status          FlowStatus `json:"status" gorm:"not null"`
 	LastError       string     `json:"last_error,omitempty"`
 	LastErrorAt     *time.Time `json:"last_error_at,omitempty"`
@@ -77,6 +78,7 @@ func (s *Flow) ToProto() *pb.Flow {
 		IsReady:         s.IsReady,
 		BuilderState:    string(s.BuilderState),
 		ManagedBy:       s.ManagedBy,
+		AllowedGroups:   s.AllowedGroups,
 		Status:          string(s.Status),
 		LastError:       s.LastError,
 		LastErrorAt:     lastErrorAt,
@@ -114,6 +116,7 @@ func (s *Flow) FromProto(p *pb.Flow) {
 	s.IsReady = p.GetIsReady()
 	s.BuilderState = []byte(p.GetBuilderState())
 	s.ManagedBy = p.ManagedBy
+	s.AllowedGroups = p.GetAllowedGroups()
 	s.Status = FlowStatus(p.GetStatus())
 	s.LastError = p.GetLastError()
 	if p.GetLastErrorAt() != nil {

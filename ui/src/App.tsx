@@ -45,6 +45,8 @@ const AuthenticationSettings = lazy(
 const TokensSettings = lazy(() => import("./pages/settings/tokens.tsx"));
 const SessionsSettings = lazy(() => import("./pages/settings/sessions.tsx"));
 const ClientsSettings = lazy(() => import("./pages/settings/clients.tsx"));
+const GroupsSettings = lazy(() => import("./pages/settings/groups.tsx"));
+const ToolCallsSettings = lazy(() => import("./pages/settings/tool-calls.tsx"));
 const MCPServersPage = lazy(() => import("./pages/mcp-servers/page.tsx"));
 const OAuthConsentPage = lazy(() => import("./pages/oauth/consent.tsx"));
 const OAuthErrorPage = lazy(() => import("./pages/oauth/error.tsx"));
@@ -174,6 +176,8 @@ function App() {
                 <Route path="tokens" element={<TokensSettings />} />
                 <Route path="sessions" element={<SessionsSettings />} />
                 <Route path="clients" element={<ClientsSettings />} />
+                <Route path="groups" element={<GroupsSettings />} />
+                <Route path="tool-calls" element={<ToolCallsSettings />} />
               </Route>
               <Route path="mcp-servers" element={<MCPServersPage />} />
             </Route>
