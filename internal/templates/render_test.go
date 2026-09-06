@@ -142,6 +142,7 @@ func TestDefaultCatalogLoads(t *testing.T) {
 		"google_drive":    22,
 		"google_sheets":   28,
 		"shopify":         7,
+		"hubspot":         24,
 	}
 	if len(c.List()) != len(wantFlows) {
 		t.Errorf("packs = %d, want %d", len(c.List()), len(wantFlows))
